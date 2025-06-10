@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'facilities_dentalclinics.dart'; // ✅ Ajouté
-
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: FacilitiesPage(),
-  ));
-}
+import 'facilities_dentalclinics.dart';
+import 'dashboard.dart';
+import 'calendar_page.dart';
+import 'chat_page.dart';
+import 'onlineconsult.dart';
+import 'profile_page.dart';
 
 class FacilitiesPage extends StatelessWidget {
   const FacilitiesPage({super.key});
@@ -41,10 +39,7 @@ class FacilitiesPage extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(height: 20),
-
-              // Titre
               const Text(
                 'Facilities',
                 style: TextStyle(
@@ -54,48 +49,38 @@ class FacilitiesPage extends StatelessWidget {
                 ),
                 textAlign: TextAlign.center,
               ),
-
               const SizedBox(height: 6),
               Container(
                 width: 169,
                 height: 4,
                 color: const Color(0xFF159BBD),
               ),
-
               const SizedBox(height: 30),
-
-              // Ligne 1
               _buildRow(context, [
                 'Dental clinics',
                 'Community\nHealth Centers',
                 'Mental Health\nClinics',
               ]),
-
               const SizedBox(height: 20),
-
-              // Ligne 2
               _buildRow(context, [
                 'General\nHospitals',
                 'Physiotherapy\nCenters',
                 'Diagnostic\nLaboratories',
               ]),
-
               const SizedBox(height: 20),
-
-              // Ligne 3
               _buildRow(context, [
                 'Eye Clinics',
                 'Pediatrics Clinics',
                 'Gynecology &\nFertility Centers',
               ]),
-
               const SizedBox(height: 20),
-
-              // Dernier box au centre
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    // TODO: Action pour ENT
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const FacilitiesDentalClinicsPage()),
+                    );
                   },
                   child: Container(
                     width: 94,
@@ -119,7 +104,6 @@ class FacilitiesPage extends StatelessWidget {
                   ),
                 ),
               ),
-
               const SizedBox(height: 100),
             ],
           ),
@@ -140,7 +124,23 @@ class FacilitiesPage extends StatelessWidget {
           type: BottomNavigationBarType.fixed,
           currentIndex: 0,
           onTap: (index) {
-            // TODO: handle navigation
+            switch (index) {
+              case 0:
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const DashboardPage()));
+                break;
+              case 1:
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineConsultPage()));
+                break;
+              case 2:
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarPage()));
+                break;
+              case 3:
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatPage()));
+                break;
+              case 4:
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+                break;
+            }
           },
           items: const [
             BottomNavigationBarItem(
@@ -182,14 +182,12 @@ class FacilitiesPage extends StatelessWidget {
   Widget _facilityBox(BuildContext context, String title) {
     return GestureDetector(
       onTap: () {
-        if (title.trim().toLowerCase() == 'dental clinics') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const FacilitiesDentalClinicsPage(),
-            ),
-          );
-        }
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const FacilitiesDentalClinicsPage(),
+          ),
+        );
       },
       child: Container(
         width: 94,

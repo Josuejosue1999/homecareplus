@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login.dart';
 
 class SignupPage extends StatefulWidget {
@@ -9,32 +11,47 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  final _fullNameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   bool isTermsAccepted = false;
 
   void onBackPressed(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
   }
 
-  void onContinuePressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Continue pressed')),
-    );
+  Future<void> onContinuePressed() async {
+    if (!isTermsAccepted) {
+      _showMessage('Please accept the Terms and Conditions');
+      return;
+    }
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showMessage('Passwords do not match');
+      return;
+    }
+
+    try {
+      final userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        'fullName': _fullNameController.text.trim(),
+        'email': _emailController.text.trim(),
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+
+      _showMessage("Account created successfully!");
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginPage()));
+    } catch (e) {
+      _showMessage('Error: ${e.toString()}');
+    }
   }
 
-  void onGoogleSignupPressed() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Sign up with Google')),
-    );
-  }
-
-  void onLoginPressed(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -66,52 +83,25 @@ class _SignupPageState extends State<SignupPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Center(
-                      child: Text(
-                        'Sign Up',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF159BBD),
-                        ),
-                      ),
-                    ),
+                    const Center(child: Text('Sign Up', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: Color(0xFF159BBD)))),
                     const SizedBox(height: 8),
-                    Center(
-                      child: Container(
-                        width: 169,
-                        height: 3,
-                        color: const Color(0xFF159BBD),
-                      ),
-                    ),
+                    Center(child: Container(width: 169, height: 3, color: const Color(0xFF159BBD))),
                     const SizedBox(height: 40),
-                    const Text(
-                      'Your Full Name',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Your Full Name', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
-                    buildInputField(),
+                    buildInputField(controller: _fullNameController),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Your Email',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Your Email', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
-                    buildInputField(keyboardType: TextInputType.emailAddress),
+                    buildInputField(controller: _emailController, keyboardType: TextInputType.emailAddress),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Password',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Password', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
-                    buildInputField(obscureText: true),
+                    buildInputField(controller: _passwordController, obscureText: true),
                     const SizedBox(height: 20),
-                    const Text(
-                      'Confirm Password',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
+                    const Text('Confirm Password', style: TextStyle(fontWeight: FontWeight.bold)),
                     const SizedBox(height: 6),
-                    buildInputField(obscureText: true),
+                    buildInputField(controller: _confirmPasswordController, obscureText: true),
                     const SizedBox(height: 16),
                     Row(
                       children: [
@@ -125,10 +115,7 @@ class _SignupPageState extends State<SignupPage> {
                           },
                         ),
                         const Expanded(
-                          child: Text(
-                            'I accept the Terms and Conditions',
-                            style: TextStyle(fontSize: 14),
-                          ),
+                          child: Text('I accept the Terms and Conditions', style: TextStyle(fontSize: 14)),
                         ),
                       ],
                     ),
@@ -140,34 +127,21 @@ class _SignupPageState extends State<SignupPage> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF159BBD),
                           padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        child: const Text(
-                          'Continue',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                        child: const Text('Continue', style: TextStyle(fontSize: 18, color: Colors.white)),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    Row(
+                    const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          width: 98,
-                          height: 1,
-                          color: const Color(0xFFE1E1E1),
-                        ),
-                        const Padding(
+                        Expanded(child: Divider(color: Color(0xFFE1E1E1), thickness: 1)),
+                        Padding(
                           padding: EdgeInsets.symmetric(horizontal: 12),
                           child: Text('OR'),
                         ),
-                        Container(
-                          width: 98,
-                          height: 1,
-                          color: const Color(0xFFE1E1E1),
-                        ),
+                        Expanded(child: Divider(color: Color(0xFFE1E1E1), thickness: 1)),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -175,49 +149,31 @@ class _SignupPageState extends State<SignupPage> {
                       width: double.infinity,
                       height: 56,
                       child: OutlinedButton(
-                        onPressed: onGoogleSignupPressed,
+                        onPressed: () {},
                         style: OutlinedButton.styleFrom(
                           side: const BorderSide(color: Color(0xFFD9D9D9)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Image.asset(
-                              'assets/pngwing2.png',
-                              width: 24,
-                              height: 24,
-                            ),
+                            Image.asset('assets/pngwing2.png', width: 24, height: 24),
                             const SizedBox(width: 12),
-                            const Text(
-                              'Sign up with Google',
-                              style: TextStyle(fontSize: 16, color: Colors.black),
-                            ),
+                            const Text('Sign up with Google', style: TextStyle(fontSize: 16, color: Colors.black)),
                           ],
                         ),
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Center(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Text("Already have an account? "),
-                          GestureDetector(
-                            onTap: () => onLoginPressed(context),
-                            child: const Text(
-                              "Login",
-                              style: TextStyle(
-                                color: Color(0xFF159BBD),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text("Already have an account? "),
+                        GestureDetector(
+                          onTap: () => onBackPressed(context),
+                          child: const Text("Login", style: TextStyle(color: Color(0xFF159BBD), fontWeight: FontWeight.bold)),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -229,25 +185,22 @@ class _SignupPageState extends State<SignupPage> {
     );
   }
 
-  Widget buildInputField({bool obscureText = false, TextInputType keyboardType = TextInputType.text}) {
-    return SizedBox(
-      height: 56,
-      width: double.infinity,
-      child: TextField(
-        obscureText: obscureText,
-        keyboardType: keyboardType,
-        decoration: const InputDecoration(
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: EdgeInsets.symmetric(horizontal: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-            borderSide: BorderSide(color: Color(0xFFD9D9D9)),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(12)),
-            borderSide: BorderSide(color: Color(0xFFD9D9D9)),
-          ),
+  Widget buildInputField({required TextEditingController controller, bool obscureText = false, TextInputType keyboardType = TextInputType.text}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      keyboardType: keyboardType,
+      decoration: const InputDecoration(
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: EdgeInsets.symmetric(horizontal: 16),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFFD9D9D9)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12)),
+          borderSide: BorderSide(color: Color(0xFFD9D9D9)),
         ),
       ),
     );

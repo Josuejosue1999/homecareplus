@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'choose.dart';
 import 'signup.dart';
 import 'forgot1.dart';
-import 'dashboard.dart'; // ✅ Ajouté pour redirection vers le dashboard
+import 'dashboard.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   void onBackPressed(BuildContext context) {
     Navigator.pushReplacement(
@@ -14,11 +23,32 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  void onContinuePressed(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const DashboardPage()),
-    );
+  Future<void> onContinuePressed(BuildContext context) async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
+    }
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const DashboardPage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Login failed: ${e.toString()}')),
+      );
+    }
   }
 
   void onForgotPasswordPressed(BuildContext context) {
@@ -46,7 +76,6 @@ class LoginPage extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // Bouton retour
             Positioned(
               top: 16,
               left: 16,
@@ -63,8 +92,6 @@ class LoginPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // Contenu principal
             SingleChildScrollView(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -102,7 +129,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      width: 376,
+                      width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -110,8 +137,10 @@ class LoginPage extends StatelessWidget {
                         border: Border.all(color: Color(0xFFD9D9D9)),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: const TextField(
-                        decoration: InputDecoration(
+                      child: TextField(
+                        controller: emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(
                           border: InputBorder.none,
                           hintText: 'Enter your email',
                         ),
@@ -130,7 +159,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      width: 376,
+                      width: double.infinity,
                       height: 56,
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -138,9 +167,10 @@ class LoginPage extends StatelessWidget {
                         border: Border.all(color: Color(0xFFD9D9D9)),
                       ),
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: const TextField(
+                      child: TextField(
+                        controller: passwordController,
                         obscureText: true,
-                        decoration: InputDecoration(
+                        decoration: const InputDecoration(
                           border: InputBorder.none,
                           hintText: 'Enter your password',
                         ),
@@ -204,7 +234,7 @@ class LoginPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     SizedBox(
-                      width: 376,
+                      width: double.infinity,
                       height: 56,
                       child: OutlinedButton(
                         onPressed: onGoogleLoginPressed,

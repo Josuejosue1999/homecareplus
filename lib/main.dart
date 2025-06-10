@@ -1,24 +1,137 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'package:vector_math/vector_math_64.dart' as vector;
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/welcome1.dart'; // après animation
+// import 'screens/signup.dart';  // Ne démarre plus ici
 
-class ClinicSignupPage extends StatefulWidget {
-  const ClinicSignupPage({super.key});
 
-  @override
-  State<ClinicSignupPage> createState() => _ClinicSignupPageState();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(HomeCareApp()); // ❌ on retire "const" ici
 }
 
-class _ClinicSignupPageState extends State<ClinicSignupPage> {
-  final _formKey = GlobalKey<FormState>();
-  File? _clinicImage;
 
-  Future<void> _pickImage() async {
-    final pickedFile =
-        await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+class HomeCareApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'HomeCare+',
+      debugShowCheckedModeBanner: false,
+      home: SplashScreenWithAnimation(),
+    );
+  }
+}
+
+class SplashScreenWithAnimation extends StatefulWidget {
+  @override
+  _SplashScreenWithAnimationState createState() => _SplashScreenWithAnimationState();
+}
+
+class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation> with TickerProviderStateMixin {
+  late AnimationController _rotationController;
+  late AnimationController _expansionController;
+  late AnimationController _repositionController;
+  late AnimationController _buttonFloatController;
+  late AnimationController _buttonScaleController;
+
+  late Animation<double> _rotationAnimation;
+  late Animation<double> _expansionAnimation;
+  late Animation<double> _repositionAnimation;
+  late Animation<Offset> _buttonFloatAnimation;
+  late Animation<double> _buttonScaleAnimation;
+
+  bool _animationStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat();
+
+    _expansionController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    );
+
+    _repositionController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _buttonFloatController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _buttonScaleController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _rotationAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
+      parent: _rotationController,
+      curve: Curves.linear,
+    ));
+
+    _expansionAnimation = Tween<double>(begin: 1.0, end: 20.0).animate(CurvedAnimation(
+      parent: _expansionController,
+      curve: Curves.easeOut,
+    ));
+
+    _repositionAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(CurvedAnimation(
+      parent: _repositionController,
+      curve: Curves.linear,
+    ));
+
+    _buttonFloatAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: Offset(0, -0.05),
+    ).animate(CurvedAnimation(
+      parent: _buttonFloatController,
+      curve: Curves.easeInOut,
+    ));
+
+    _buttonScaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.1,
+    ).animate(CurvedAnimation(
+      parent: _buttonScaleController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    _expansionController.dispose();
+    _repositionController.dispose();
+    _buttonFloatController.dispose();
+    _buttonScaleController.dispose();
+    super.dispose();
+  }
+
+  void _startAnimation() {
+    if (!_animationStarted) {
       setState(() {
-        _clinicImage = File(pickedFile.path);
+        _animationStarted = true;
+      });
+
+      _rotationController.stop();
+
+      _repositionController.forward().then((_) {
+        Timer(Duration(seconds: 1), () {
+          _expansionController.forward().then((_) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => Welcome1Page()),
+            );
+          });
+        });
       });
     }
   }
@@ -26,97 +139,102 @@ class _ClinicSignupPageState extends State<ClinicSignupPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF159BBD),
-        elevation: 0,
-        title: const Text('Clinic Registration'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: const Color(0xFF159BBD).withOpacity(0.2),
-                  backgroundImage:
-                      _clinicImage != null ? FileImage(_clinicImage!) : null,
-                  child: _clinicImage == null
-                      ? const Icon(Icons.add_a_photo, size: 30, color: Color(0xFF159BBD))
-                      : null,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildTextField(label: 'Clinic Name'),
-              _buildTextField(label: 'Email'),
-              _buildTextField(label: 'Phone Number'),
-              _buildTextField(label: 'Address'),
-              _buildTextField(label: 'Password', obscure: true),
-              _buildTextField(label: 'About', maxLines: 4),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // Future action: Send data to Firebase or backend
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Clinic registered")),
-                      );
-                    }
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF159BBD),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      body: Stack(
+        children: [
+          Align(
+            alignment: Alignment.bottomCenter,
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'The Best Platform for Online Consultation!',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF159BBD),
+                      fontFamily: 'Ubuntu',
+                      shadows: [
+                        Shadow(
+                          offset: Offset(5.0, 5.0),
+                          blurRadius: 10.0,
+                          color: Colors.white,
+                        ),
+                      ],
                     ),
                   ),
-                  child: const Text(
-                    'Sign Up',
-                    style: TextStyle(fontSize: 16, color: Colors.white),
+                  SizedBox(height: 20),
+                  SlideTransition(
+                    position: _buttonFloatAnimation,
+                    child: ScaleTransition(
+                      scale: _buttonScaleAnimation,
+                      child: SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: _animationStarted ? null : _startAnimation,
+                          child: Text('Get Started'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Color(0xFF159BBD),
+                            foregroundColor: Colors.white,
+                            padding: EdgeInsets.symmetric(vertical: 16.0),
+                            textStyle: TextStyle(
+                              fontSize: 20,
+                              fontFamily: 'Ubuntu',
+                              fontWeight: FontWeight.bold,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20.0),
+                            ),
+                            elevation: 10,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required String label,
-    bool obscure = false,
-    int maxLines = 1,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: TextFormField(
-        obscureText: obscure,
-        maxLines: maxLines,
-        decoration: InputDecoration(
-          labelText: label,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          focusedBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Color(0xFF159BBD)),
-            borderRadius: BorderRadius.circular(12),
+          Center(
+            child: AnimatedBuilder(
+              animation: Listenable.merge([
+                _rotationController,
+                _expansionController,
+                _repositionController,
+              ]),
+              builder: (context, child) {
+                double rotationValue = _animationStarted
+                    ? _repositionAnimation.value * 2 * vector.radians(180)
+                    : _rotationAnimation.value * 2 * vector.radians(180);
+                return Transform(
+                  alignment: Alignment.center,
+                  transform: Matrix4.identity()
+                    ..setEntry(3, 2, 0.001)
+                    ..rotateY(rotationValue)
+                    ..scale(_expansionAnimation.value),
+                  child: Text(
+                    'H',
+                    style: TextStyle(
+                      fontSize: 200.0,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF159BBD),
+                      shadows: [
+                        Shadow(
+                          offset: Offset(10, 10),
+                          blurRadius: 10.0,
+                          color: Colors.grey,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
-        validator: (value) {
-          if (value == null || value.isEmpty) {
-            return 'Please enter $label';
-          }
-          return null;
-        },
+        ],
       ),
     );
   }
