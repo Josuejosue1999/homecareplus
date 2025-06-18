@@ -406,7 +406,10 @@ class HospitalDetailsPage extends StatelessWidget {
                                             Navigator.pushReplacement(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => const LoginPage(),
+                                                builder: (context) => LoginPage(
+                                                  selectedHospitalName: hospitalName,
+                                                  selectedHospitalImage: hospitalImage,
+                                                ),
                                               ),
                                             );
                                           },

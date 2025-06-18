@@ -1,15 +1,66 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_navigation.dart';
+import 'package:homecare_app/screens/main_dashboard.dart';
+import 'package:homecare_app/screens/profile_page.dart';
+import 'package:homecare_app/screens/appointments_page.dart';
 
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: ChatPage(),
-  ));
+class ChatPage extends StatefulWidget {
+  const ChatPage({Key? key}) : super(key: key);
+
+  @override
+  State<ChatPage> createState() => _ChatPageState();
 }
 
-class ChatPage extends StatelessWidget {
-  const ChatPage({Key? key}) : super(key: key);
+class _ChatPageState extends State<ChatPage> {
+  int _selectedIndex = 2;
+  String userName = 'User';
+  String greeting = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _updateGreeting();
+  }
+
+  void _updateGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      greeting = 'Good Morning';
+    } else if (hour < 17) {
+      greeting = 'Good Afternoon';
+    } else {
+      greeting = 'Good Evening';
+    }
+  }
+
+  void _onItemTapped(int index) {
+    if (index == _selectedIndex) return;
+    setState(() {
+      _selectedIndex = index;
+    });
+    switch (index) {
+      case 0:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainDashboard()),
+        );
+        break;
+      case 1:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+        );
+        break;
+      case 2:
+        // Déjà sur cette page
+        break;
+      case 3:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ProfilePage()),
+        );
+        break;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,24 +86,45 @@ class ChatPage extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          greeting,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          userName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Messages',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                    CircleAvatar(
+                      radius: 25,
+                      backgroundColor: Colors.white,
+                      child: IconButton(
+                        icon: const Icon(Icons.person, color: Color(0xFF159BBD)),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (context) => const ProfilePage()),
+                          );
+                        },
                       ),
                     ),
                   ],
                 ),
               ),
-
               // Chat List
               Expanded(
                 child: Container(
@@ -98,12 +170,29 @@ class ChatPage extends StatelessWidget {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // TODO: Implement new message functionality
-        },
-        backgroundColor: const Color(0xFF159BBD),
-        child: const Icon(Icons.message),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Appointments',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.message),
+            label: 'Messages',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: const Color(0xFF159BBD),
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -139,13 +228,13 @@ class ChatPage extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 15),
-          Expanded(
+            Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
+                children: [
                     Text(
                       name,
                       style: TextStyle(
@@ -159,10 +248,10 @@ class ChatPage extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 12,
                         color: isUnread ? const Color(0xFF159BBD) : Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
+              ),
+            ),
+          ],
+        ),
                 const SizedBox(height: 5),
                 Text(
                   lastMessage,

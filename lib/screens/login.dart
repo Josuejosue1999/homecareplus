@@ -6,7 +6,14 @@ import 'package:homecare_app/screens/choose.dart';
 import 'package:homecare_app/screens/signup.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+  final String? selectedHospitalName;
+  final String? selectedHospitalImage;
+
+  const LoginPage({
+    Key? key,
+    this.selectedHospitalName,
+    this.selectedHospitalImage,
+  }) : super(key: key);
 
   @override
   State<LoginPage> createState() => _LoginPageState();
@@ -45,7 +52,10 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
             MaterialPageRoute(
-              builder: (context) => const MainDashboard(),
+              builder: (context) => MainDashboard(
+                selectedHospitalName: widget.selectedHospitalName,
+                selectedHospitalImage: widget.selectedHospitalImage,
+              ),
             ),
       );
         }
