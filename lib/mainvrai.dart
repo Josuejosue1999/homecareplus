@@ -9,6 +9,7 @@ void main() {
 }
 
 class HomeCareApp extends StatelessWidget {
+  const HomeCareApp({Key? key}) : super(key: key);
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -20,6 +21,7 @@ class HomeCareApp extends StatelessWidget {
 }
 
 class SplashScreenWithAnimation extends StatefulWidget {
+  const SplashScreenWithAnimation({Key? key}) : super(key: key);
   @override
   _SplashScreenWithAnimationState createState() => _SplashScreenWithAnimationState();
 }

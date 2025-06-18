@@ -2,29 +2,38 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/welcome1.dart'; // après animation
-// import 'screens/signup.dart';  // Ne démarre plus ici
-
+import 'screens/choose.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(HomeCareApp()); // ❌ on retire "const" ici
+  runApp(const MyApp());
 }
 
+class MyApp extends StatelessWidget {
+  const MyApp({Key? key}) : super(key: key);
 
-class HomeCareApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'HomeCare+',
+      title: 'HomeCare Plus',
       debugShowCheckedModeBanner: false,
-      home: SplashScreenWithAnimation(),
+      theme: ThemeData(
+        primaryColor: const Color(0xFF159BBD),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF159BBD),
+          primary: const Color(0xFF159BBD),
+          secondary: const Color(0xFF42A5F5),
+        ),
+        useMaterial3: true,
+      ),
+      home: const SplashScreenWithAnimation(),
     );
   }
 }
 
 class SplashScreenWithAnimation extends StatefulWidget {
+  const SplashScreenWithAnimation({Key? key}) : super(key: key);
   @override
   _SplashScreenWithAnimationState createState() => _SplashScreenWithAnimationState();
 }
@@ -124,11 +133,11 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation> w
       _rotationController.stop();
 
       _repositionController.forward().then((_) {
-        Timer(Duration(seconds: 1), () {
+        Timer(const Duration(seconds: 1), () {
           _expansionController.forward().then((_) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => Welcome1Page()),
+              MaterialPageRoute(builder: (context) => const ChoosePage()),
             );
           });
         });
@@ -166,7 +175,7 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation> w
                       ],
                     ),
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   SlideTransition(
                     position: _buttonFloatAnimation,
                     child: ScaleTransition(
@@ -175,7 +184,7 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation> w
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _animationStarted ? null : _startAnimation,
-                          child: Text('Get Started'),
+                          child: const Text('Get Started'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Color(0xFF159BBD),
                             foregroundColor: Colors.white,

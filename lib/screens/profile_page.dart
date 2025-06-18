@@ -1,146 +1,244 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:homecare_app/screens/choose.dart';
+import 'package:homecare_app/screens/login.dart';
 
-void main() {
-  runApp(const MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: ProfilePage(),
-  ));
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({Key? key}) : super(key: key);
+
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+class _ProfilePageState extends State<ProfilePage> {
+  String userName = '';
+  String userEmail = '';
+  String userPhone = '';
+  String userAddress = '';
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userData = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (userData.exists) {
+          setState(() {
+            userName = userData.data()?['name'] ?? '';
+            userEmail = userData.data()?['email'] ?? '';
+            userPhone = userData.data()?['phone'] ?? '';
+            userAddress = userData.data()?['address'] ?? '';
+            isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _signOut() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      if (mounted) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error signing out: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF159BBD),
+              const Color(0xFF0D5C73),
+              const Color(0xFF0D5C73).withOpacity(0.8),
+              Colors.white,
+            ],
+            stops: const [0.0, 0.3, 0.6, 0.8],
+          ),
+        ),
+        child: SafeArea(
         child: Column(
           children: [
-            // Bouton retour
+              // Header
             Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Align(
-                alignment: Alignment.topLeft,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF159BBD),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  width: 48,
-                  height: 48,
-                  child: IconButton(
-                    icon: const Icon(Icons.arrow_back, color: Colors.white),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 16),
+                    const Text(
+                      'Profile',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
 
+              // Profile Content
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(30),
+                      topRight: Radius.circular(30),
+                    ),
+                  ),
+                  child: isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            children: [
+                              // Profile Picture
+                              const CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Color(0xFF159BBD),
+                                child: Icon(
+                                  Icons.person,
+                                  size: 50,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // User Info
+                              _buildInfoCard(
+                                title: 'Personal Information',
+                                items: [
+                                  _buildInfoItem(Icons.person, userName),
+                                  _buildInfoItem(Icons.email, userEmail),
+                                  _buildInfoItem(Icons.phone, userPhone),
+                                  _buildInfoItem(Icons.location_on, userAddress),
+                                ],
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Settings
+                              _buildInfoCard(
+                                title: 'Settings',
+                                items: [
+                                  _buildInfoItem(Icons.notifications, 'Notifications'),
+                                  _buildInfoItem(Icons.language, 'Language'),
+                                  _buildInfoItem(Icons.security, 'Privacy & Security'),
+                                ],
+                              ),
             const SizedBox(height: 20),
 
-            // Titre
-            const Text(
-              'My Profile',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF159BBD),
+                              // Logout Button
+                              ElevatedButton(
+                                onPressed: _signOut,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF159BBD),
+                                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+            ),
+                                child: const Text(
+                                  'Logout',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white,
+                                  ),
+            ),
+                              ),
+                            ],
+                          ),
+                        ),
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              width: 169,
-              height: 4,
-              color: const Color(0xFF159BBD),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Photo + Nom + Email
-            const CircleAvatar(
-              radius: 50,
-              backgroundImage: AssetImage('assets/profil.png'),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Josue Doe',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'josue@email.com',
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
-
-            const SizedBox(height: 30),
-
-            // Options
-            ListTile(
-              leading: const Icon(Icons.edit, color: Color(0xFF159BBD)),
-              title: const Text('Edit Profile'),
-              onTap: () {
-                // Action de modification
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.lock, color: Color(0xFF159BBD)),
-              title: const Text('Change Password'),
-              onTap: () {
-                // Action mot de passe
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.redAccent),
-              title: const Text('Logout'),
-              onTap: () {
-                // Action logout
-              },
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
 
-      // ✅ Barre de navigation bas
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: const Color(0xFF159BBD),
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          type: BottomNavigationBarType.fixed,
-          currentIndex: 4, // ✅ Index pour "Profile"
-          onTap: (index) {
-            // TODO: Navigation entre pages
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/home.png')),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/video.png')),
-              label: 'Videos',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/calendar.png')),
-              label: 'Calendar',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/chat.png')),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/profil.png')),
-              label: 'Profile',
+  Widget _buildInfoCard({required String title, required List<Widget> items}) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
             ),
           ],
         ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF159BBD),
+            ),
+          ),
+          const SizedBox(height: 15),
+          ...items,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(IconData icon, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 15),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF159BBD), size: 20),
+          const SizedBox(width: 15),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+            ),
+            ),
+        ),
+        ],
       ),
     );
   }

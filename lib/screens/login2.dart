@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:homecare_app/screens/main_dashboard.dart';
-import 'package:homecare_app/screens/choose.dart';
-import 'package:homecare_app/screens/signup.dart';
+import 'clinic_signup2.dart';
+import 'clinic_dashboard.dart';
+import 'choose.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({Key? key}) : super(key: key);
+class Login2Page extends StatefulWidget {
+  const Login2Page({Key? key}) : super(key: key);
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  State<Login2Page> createState() => _Login2PageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _Login2PageState extends State<Login2Page> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -31,37 +31,34 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _isLoading = true;
       });
-
-    try {
+      try {
         final userCredential = await FirebaseAuth.instance.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
-      );
-
+        );
         if (userCredential.user != null) {
           if (!mounted) return;
-          
-          // Navigate to MainDashboard
-      Navigator.pushReplacement(
-        context,
+          // Rediriger vers un dashboard clinique (à personnaliser)
+          Navigator.pushReplacement(
+            context,
             MaterialPageRoute(
-              builder: (context) => const MainDashboard(),
+              builder: (context) => const ClinicDashboardPage(),
             ),
-      );
+          );
         }
       } on FirebaseAuthException catch (e) {
         String message = 'An error occurred';
         if (e.code == 'user-not-found') {
-          message = 'No user found with this email';
+          message = 'No clinic found with this email';
         } else if (e.code == 'wrong-password') {
           message = 'Wrong password provided';
         } else if (e.code == 'invalid-email') {
           message = 'Invalid email address';
         }
         if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+        ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
-    );
+        );
       } finally {
         if (mounted) {
           setState(() {
@@ -76,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-                decoration: BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -87,11 +84,11 @@ class _LoginPageState extends State<LoginPage> {
               Colors.white,
             ],
             stops: const [0.0, 0.4, 0.7, 0.9],
-              ),
-            ),
+          ),
+        ),
         child: SafeArea(
           child: SingleChildScrollView(
-              child: Padding(
+            child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Form(
                 key: _formKey,
@@ -109,8 +106,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     const SizedBox(height: 40),
                     const Text(
-                      'Welcome Back!',
-                        style: TextStyle(
+                      'Clinic Login',
+                      style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -119,13 +116,13 @@ class _LoginPageState extends State<LoginPage> {
                             offset: Offset(0, 2),
                             blurRadius: 4,
                             color: Colors.black26,
-                        ),
+                          ),
                         ],
                       ),
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Sign in to continue',
+                      'Sign in as a clinic',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white70,
@@ -142,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                         keyboardType: TextInputType.emailAddress,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Email',
+                          labelText: 'Clinic Email',
                           labelStyle: const TextStyle(color: Colors.white70),
                           prefixIcon: const Icon(Icons.email, color: Colors.white70),
                           border: OutlineInputBorder(
@@ -152,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
                           enabledBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
-                    ),
+                          ),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Colors.white),
@@ -203,7 +200,7 @@ class _LoginPageState extends State<LoginPage> {
                                 _obscurePassword = !_obscurePassword;
                               });
                             },
-                      ),
+                          ),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
@@ -219,14 +216,14 @@ class _LoginPageState extends State<LoginPage> {
                           errorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Colors.red),
-                        ),
+                          ),
                           focusedErrorBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: const BorderSide(color: Colors.red),
                           ),
                           filled: true,
                           fillColor: Colors.white.withOpacity(0.1),
-                          ),
+                        ),
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your password';
@@ -238,64 +235,39 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          // TODO: Implement forgot password
-                        },
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(color: Colors.white70),
-                          ),
-                        ),
-                    ),
-                    const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _signIn,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF159BBD),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                    const SizedBox(height: 30),
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : SizedBox(
+                            width: double.infinity,
+                            height: 55,
+                            child: ElevatedButton(
+                              onPressed: _signIn,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF159BBD),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                              )
-                            : const Text(
+                              ),
+                              child: const Text(
                                 'Sign In',
-                              style: TextStyle(
-                                fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                                style: TextStyle(fontSize: 16, color: Colors.white),
+                              ),
                             ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                          ),
+                    const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Text(
-                          "Don't have an account? ",
+                          'Don\'t have an account?',
                           style: TextStyle(color: Color(0xFF159BBD)),
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacement(
+                            Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const SignupPage()),
+                              MaterialPageRoute(builder: (context) => const ClinicSignup2Page()),
                             );
                           },
                           child: const Text(
@@ -317,4 +289,4 @@ class _LoginPageState extends State<LoginPage> {
       ),
     );
   }
-}
+} 

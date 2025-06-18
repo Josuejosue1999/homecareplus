@@ -5,6 +5,15 @@ import 'calendar_page.dart';
 import 'chat_page.dart';
 import 'onlineconsult.dart';
 import 'profile_page.dart';
+import 'general.dart';
+import 'physiotherapy.dart';
+import 'diagnostic.dart';
+import 'mentalhealth.dart';
+import 'eye.dart';
+import 'pediatrics.dart';
+import 'gynecology.dart';
+import 'ent.dart';
+import 'communityhealth.dart';
 
 class FacilitiesPage extends StatelessWidget {
   const FacilitiesPage({super.key});
@@ -18,7 +27,7 @@ class FacilitiesPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 16),
           child: Column(
             children: [
-              // Bouton retour
+              // Back button
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Align(
@@ -33,7 +42,10 @@ class FacilitiesPage extends StatelessWidget {
                     child: IconButton(
                       icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () {
-                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => const DashboardPage()),
+                        );
                       },
                     ),
                   ),
@@ -57,21 +69,21 @@ class FacilitiesPage extends StatelessWidget {
               ),
               const SizedBox(height: 30),
               _buildRow(context, [
-                'Dental clinics',
-                'Community\nHealth Centers',
-                'Mental Health\nClinics',
+                {'title': 'Dental clinics', 'page': const FacilitiesDentalClinicsPage()},
+                {'title': 'Community\nHealth Centers', 'page': const FacilitiesCommunityHealthPage()},
+                {'title': 'Mental Health\nClinics', 'page': const FacilitiesMentalHealthPage()},
               ]),
               const SizedBox(height: 20),
               _buildRow(context, [
-                'General\nHospitals',
-                'Physiotherapy\nCenters',
-                'Diagnostic\nLaboratories',
+                {'title': 'General\nHospitals', 'page': const FacilitiesGeneralHospitalsPage()},
+                {'title': 'Physiotherapy\nCenters', 'page': const FacilitiesPhysiotherapyPage()},
+                {'title': 'Diagnostic\nLaboratories', 'page': const FacilitiesDiagnosticPage()},
               ]),
               const SizedBox(height: 20),
               _buildRow(context, [
-                'Eye Clinics',
-                'Pediatrics Clinics',
-                'Gynecology &\nFertility Centers',
+                {'title': 'Eye Clinics', 'page': const FacilitiesEyeClinicsPage()},
+                {'title': 'Pediatrics Clinics', 'page': const FacilitiesPediatricsPage()},
+                {'title': 'Gynecology &\nFertility Centers', 'page': const FacilitiesGynecologyPage()},
               ]),
               const SizedBox(height: 20),
               Center(
@@ -79,7 +91,7 @@ class FacilitiesPage extends StatelessWidget {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (_) => const FacilitiesDentalClinicsPage()),
+                      MaterialPageRoute(builder: (_) => const FacilitiesENTPage()),
                     );
                   },
                   child: Container(
@@ -126,19 +138,19 @@ class FacilitiesPage extends StatelessWidget {
           onTap: (index) {
             switch (index) {
               case 0:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const DashboardPage()));
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const DashboardPage()));
                 break;
               case 1:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const OnlineConsultPage()));
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const OnlineConsultPage()));
                 break;
               case 2:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const CalendarPage()));
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const CalendarPage()));
                 break;
               case 3:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatPage()));
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ChatPage()));
                 break;
               case 4:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
                 break;
             }
           },
@@ -169,24 +181,22 @@ class FacilitiesPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRow(BuildContext context, List<String> titles) {
+  Widget _buildRow(BuildContext context, List<Map<String, dynamic>> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: titles.map((title) => _facilityBox(context, title)).toList(),
+        children: items.map((item) => _facilityBox(context, item['title'], item['page'])).toList(),
       ),
     );
   }
 
-  Widget _facilityBox(BuildContext context, String title) {
+  Widget _facilityBox(BuildContext context, String title, Widget page) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => const FacilitiesDentalClinicsPage(),
-          ),
+          MaterialPageRoute(builder: (context) => page),
         );
       },
       child: Container(

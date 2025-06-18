@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../widgets/bottom_navigation.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -77,43 +78,9 @@ class CalendarPage extends StatelessWidget {
       ),
 
       // ✅ Barre de navigation bas
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: const Color(0xFF159BBD),
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          type: BottomNavigationBarType.fixed,
-          currentIndex: 2, // ✅ Index du bouton "Calendar"
-          onTap: (index) {
-            // TODO: Navigation selon l'index
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/home.png')),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/video.png')),
-              label: 'Videos',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/calendar.png')),
-              label: 'Calendar',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/chat.png')),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/profil.png')),
-              label: 'Profile',
-            ),
-          ],
-        ),
+      bottomNavigationBar: BottomNavigation(
+        currentIndex: 2,
+        context: context,
       ),
     );
   }

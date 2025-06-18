@@ -1,29 +1,30 @@
 import 'package:flutter/material.dart';
-import 'welcome3.dart';
-import 'login.dart';
+import 'package:homecare_app/main.dart';
+import 'package:homecare_app/screens/login.dart';
+import 'package:homecare_app/screens/patient_dashboard.dart';
+import 'login2.dart';
 
 class ChoosePage extends StatelessWidget {
   const ChoosePage({super.key});
 
-  void navigateBack(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const Welcome3Page()),
-    );
-  }
-
-  void navigateToLogin(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              const Color(0xFF159BBD),
+              const Color(0xFF0D5C73),
+              const Color(0xFF0D5C73).withOpacity(0.8),
+              Colors.white,
+            ],
+            stops: const [0.0, 0.4, 0.7, 0.9],
+          ),
+        ),
+        child: SafeArea(
         child: Stack(
           children: [
             // Bouton retour
@@ -32,14 +33,26 @@ class ChoosePage extends StatelessWidget {
               left: 16,
               child: Container(
                 decoration: BoxDecoration(
-                  color: const Color(0xFF159BBD),
+                    color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
                 ),
                 width: 48,
                 height: 48,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => navigateBack(context),
+                    icon: const Icon(Icons.arrow_back, color: Color(0xFF159BBD)),
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const SplashScreenWithAnimation()),
+                      );
+                    },
                 ),
               ),
             ),
@@ -56,25 +69,47 @@ class ChoosePage extends StatelessWidget {
                     'How would you like to continue?',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 20,
+                        fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(
+                            offset: Offset(0, 2),
+                            blurRadius: 4,
+                            color: Colors.black26,
+                          ),
+                        ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                    const SizedBox(height: 40),
 
                   // Conteneur patient
-                  InkWell(
-                    onTap: () => navigateToLogin(context),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
+                    Container(
                       width: 302,
                       height: 194,
-                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0x176BCDF9), // bleu 9%
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const PatientDashboardPage()),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -85,32 +120,49 @@ class ChoosePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            "I'm a Patient",
+                            'As a Patient',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                                    color: Color(0xFF159BBD),
                             ),
                           ),
                         ],
+                            ),
+                          ),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 20),
 
-                  // Conteneur doctor
-                  InkWell(
-                    onTap: () => navigateToLogin(context),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
+                  // Conteneur clinic
+                    Container(
                       width: 302,
                       height: 194,
-                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: const Color(0x176BCDF9), // bleu 9%
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
                       ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(16),
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (context) => const Login2Page()),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -121,14 +173,16 @@ class ChoosePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
                           const Text(
-                            "I'm a Doctor",
+                            'As a Health Center',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w600,
-                              color: Colors.black87,
+                                    color: Color(0xFF159BBD),
                             ),
                           ),
                         ],
+                            ),
+                          ),
                       ),
                     ),
                   ),
@@ -136,6 +190,7 @@ class ChoosePage extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );

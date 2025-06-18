@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'facilities.dart'; // <-- Pour la navigation vers FacilitiesPage
 import 'onlineconsult.dart'; // <-- Pour la navigation vers OnlineConsultPage
+import '../widgets/bottom_navigation.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -14,6 +17,9 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final userName = user?.displayName ?? 'User';
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -41,13 +47,26 @@ class DashboardPage extends StatelessWidget {
                               backgroundImage: AssetImage('assets/profil.png'),
                             ),
                             const SizedBox(width: 10),
-                            const Text(
-                              'Good Morning, Josue',
-                              style: TextStyle(
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Text('Loading...', style: TextStyle(color: Colors.white));
+                                }
+                                if (snapshot.hasError) {
+                                  return const Text('Error loading name', style: TextStyle(color: Colors.white));
+                                }
+                                final data = snapshot.data?.data() as Map<String, dynamic>?;
+                                final realName = data?['fullName'] ?? 'User';
+                                return Text(
+                                  'Good Morning, $realName',
+                                  style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
                                 fontWeight: FontWeight.w500,
                               ),
+                                );
+                              },
                             ),
                           ],
                         ),
@@ -266,48 +285,9 @@ class DashboardPage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: const Color(0xFF159BBD),
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: BottomNavigation(
           currentIndex: 0,
-          onTap: (index) {
-            if (index == 1) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const OnlineConsultPage()),
-              );
-            }
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/home.png')),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/video.png')),
-              label: 'Videos',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/calendar.png')),
-              label: 'Calendar',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/chat.png')),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/profil.png')),
-              label: 'Profile',
-            ),
-          ],
-        ),
+        context: context,
       ),
     );
   }

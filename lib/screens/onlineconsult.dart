@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'aboutdoctor.dart'; // ✅ Assure-toi que ce fichier existe et contient une classe AboutDoctorPage
+import '../widgets/bottom_navigation.dart';
 
 void main() {
   runApp(const MaterialApp(
@@ -193,43 +194,9 @@ class OnlineConsultPage extends StatelessWidget {
           ),
         ),
       ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-        child: BottomNavigationBar(
-          backgroundColor: const Color(0xFF159BBD),
-          selectedItemColor: Colors.white,
-          unselectedItemColor: Colors.white70,
-          type: BottomNavigationBarType.fixed,
+      bottomNavigationBar: BottomNavigation(
           currentIndex: 1,
-          onTap: (index) {
-            // Navigation à gérer ici
-          },
-          items: const [
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/home.png')),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/video.png')),
-              label: 'Videos',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/calendar.png')),
-              label: 'Calendar',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/chat.png')),
-              label: 'Chat',
-            ),
-            BottomNavigationBarItem(
-              icon: ImageIcon(AssetImage('assets/profil.png')),
-              label: 'Profile',
-            ),
-          ],
-        ),
+        context: context,
       ),
     );
   }
