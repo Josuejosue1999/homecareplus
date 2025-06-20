@@ -202,11 +202,15 @@ class PatientDashboardPage extends StatelessWidget {
                                               color: Colors.grey,
                                             ),
                                             const SizedBox(width: 2),
-                                            const Text(
-                                              '200 First St SW, Rochester, MN 55905',
-                                              style: TextStyle(
-                                                fontSize: 9,
-                                                color: Colors.grey,
+                                            const Expanded(
+                                              child: Text(
+                                                '200 First St SW, Rochester, MN',
+                                                style: TextStyle(
+                                                  fontSize: 8,
+                                                  color: Colors.grey,
+                                                ),
+                                                textAlign: TextAlign.center,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                           ],
@@ -226,7 +230,7 @@ class PatientDashboardPage extends StatelessWidget {
                                                   builder: (context) => HospitalDetailsPage(
                                                     hospitalName: 'Mayo Clinic',
                                                     hospitalImage: 'assets/hospital.PNG',
-                                                    address: '200 First St SW, Rochester, MN 55905',
+                                                    address: '200 First St SW, Rochester, MN',
                                                     facilities: ['Emergency Care', 'Surgery', 'ICU', 'Laboratory'],
                                                     rating: 4.5,
                                                     reviewCount: 128,

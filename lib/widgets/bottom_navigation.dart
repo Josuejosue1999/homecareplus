@@ -47,40 +47,71 @@ class BottomNavigation extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        topLeft: Radius.circular(24),
-        topRight: Radius.circular(24),
-      ),
-      child: BottomNavigationBar(
-        backgroundColor: const Color(0xFF159BBD),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
-        type: BottomNavigationBarType.fixed,
-        currentIndex: currentIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/home.png')),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/video.png')),
-            label: 'Videos',
-          ),
-          BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/calendar.png')),
-            label: 'Calendar',
-          ),
-          BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/chat.png')),
-            label: 'Chat',
-          ),
-          BottomNavigationBarItem(
-            icon: ImageIcon(AssetImage('assets/profil.png')),
-            label: 'Profile',
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF159BBD),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(25),
+          topRight: Radius.circular(25),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 15,
+            offset: const Offset(0, -3),
+            spreadRadius: 0,
           ),
         ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: BottomNavigationBar(
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+            selectedItemColor: Colors.white,
+            unselectedItemColor: Colors.white.withOpacity(0.7),
+            selectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+            unselectedLabelStyle: TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 11,
+              color: Colors.white.withOpacity(0.7),
+            ),
+            type: BottomNavigationBarType.fixed,
+            currentIndex: currentIndex,
+            onTap: _onItemTapped,
+            items: const [
+              BottomNavigationBarItem(
+                icon: Icon(Icons.dashboard_rounded),
+                activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.video_call_outlined),
+                activeIcon: Icon(Icons.video_call_rounded, color: Colors.white),
+                label: 'Videos',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.event_note_rounded),
+                activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
+                label: 'Calendar',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.chat_bubble_outline_rounded),
+                activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
+                label: 'Chat',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.account_circle_outlined),
+                activeIcon: Icon(Icons.account_circle_rounded, color: Colors.white),
+                label: 'Profile',
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

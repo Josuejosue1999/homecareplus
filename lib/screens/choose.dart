@@ -50,7 +50,7 @@ class ChoosePage extends StatelessWidget {
                     onPressed: () {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (context) => const SplashScreenWithAnimation()),
+                        MaterialPageRoute(builder: (context) => const ProfessionalWelcomeScreen()),
                       );
                     },
                 ),

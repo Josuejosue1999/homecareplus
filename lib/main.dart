@@ -1,6 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:vector_math/vector_math_64.dart' as vector;
 import 'package:firebase_core/firebase_core.dart';
 import 'screens/choose.dart';
 
@@ -26,180 +24,350 @@ class MyApp extends StatelessWidget {
           secondary: const Color(0xFF42A5F5),
         ),
         useMaterial3: true,
+        fontFamily: 'Ubuntu',
       ),
-      home: const SplashScreenWithAnimation(),
+      home: const ProfessionalWelcomeScreen(),
     );
   }
 }
 
-class SplashScreenWithAnimation extends StatefulWidget {
-  const SplashScreenWithAnimation({Key? key}) : super(key: key);
+class ProfessionalWelcomeScreen extends StatefulWidget {
+  const ProfessionalWelcomeScreen({Key? key}) : super(key: key);
+
   @override
-  _SplashScreenWithAnimationState createState() => _SplashScreenWithAnimationState();
+  State<ProfessionalWelcomeScreen> createState() => _ProfessionalWelcomeScreenState();
 }
 
-class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation> with TickerProviderStateMixin {
-  late AnimationController _rotationController;
-  late AnimationController _expansionController;
-  late AnimationController _repositionController;
-  late AnimationController _buttonFloatController;
-  late AnimationController _buttonScaleController;
+class _ProfessionalWelcomeScreenState extends State<ProfessionalWelcomeScreen>
+    with TickerProviderStateMixin {
+  late AnimationController _logoController;
+  late AnimationController _textController;
+  late AnimationController _featuresController;
+  late AnimationController _buttonController;
 
-  late Animation<double> _rotationAnimation;
-  late Animation<double> _expansionAnimation;
-  late Animation<double> _repositionAnimation;
-  late Animation<Offset> _buttonFloatAnimation;
-  late Animation<double> _buttonScaleAnimation;
-
-  bool _animationStarted = false;
+  late Animation<double> _logoScale;
+  late Animation<double> _logoOpacity;
+  late Animation<Offset> _textSlide;
+  late Animation<double> _textOpacity;
+  late Animation<Offset> _featuresSlide;
+  late Animation<double> _buttonScale;
 
   @override
   void initState() {
     super.initState();
+    _initializeAnimations();
+    _startAnimations();
+  }
 
-    _rotationController = AnimationController(
-      duration: const Duration(seconds: 4),
-      vsync: this,
-    )..repeat();
-
-    _expansionController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    );
-
-    _repositionController = AnimationController(
-      duration: const Duration(milliseconds: 500),
+  void _initializeAnimations() {
+    _logoController = AnimationController(
+      duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
 
-    _buttonFloatController = AnimationController(
-      duration: const Duration(seconds: 3),
+    _textController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
-    )..repeat(reverse: true);
+    );
 
-    _buttonScaleController = AnimationController(
-      duration: const Duration(seconds: 3),
+    _featuresController = AnimationController(
+      duration: const Duration(milliseconds: 800),
       vsync: this,
-    )..repeat(reverse: true);
+    );
 
-    _rotationAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: _rotationController,
-      curve: Curves.linear,
-    ));
+    _buttonController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
 
-    _expansionAnimation = Tween<double>(begin: 1.0, end: 20.0).animate(CurvedAnimation(
-      parent: _expansionController,
-      curve: Curves.easeOut,
-    ));
-
-    _repositionAnimation = Tween<double>(begin: 1.0, end: 0.0).animate(CurvedAnimation(
-      parent: _repositionController,
-      curve: Curves.linear,
-    ));
-
-    _buttonFloatAnimation = Tween<Offset>(
-      begin: Offset.zero,
-      end: Offset(0, -0.05),
+    _logoScale = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
     ).animate(CurvedAnimation(
-      parent: _buttonFloatController,
+      parent: _logoController,
+      curve: Curves.elasticOut,
+    ));
+
+    _logoOpacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _logoController,
       curve: Curves.easeInOut,
     ));
 
-    _buttonScaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 1.1,
+    _textSlide = Tween<Offset>(
+      begin: const Offset(0, 0.5),
+      end: Offset.zero,
     ).animate(CurvedAnimation(
-      parent: _buttonScaleController,
+      parent: _textController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _textOpacity = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _textController,
       curve: Curves.easeInOut,
     ));
+
+    _featuresSlide = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(
+      parent: _featuresController,
+      curve: Curves.easeOutCubic,
+    ));
+
+    _buttonScale = Tween<double>(
+      begin: 0.8,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _buttonController,
+      curve: Curves.elasticOut,
+    ));
+  }
+
+  void _startAnimations() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    _logoController.forward();
+    await Future.delayed(const Duration(milliseconds: 400));
+    _textController.forward();
+    await Future.delayed(const Duration(milliseconds: 300));
+    _featuresController.forward();
+    await Future.delayed(const Duration(milliseconds: 200));
+    _buttonController.forward();
   }
 
   @override
   void dispose() {
-    _rotationController.dispose();
-    _expansionController.dispose();
-    _repositionController.dispose();
-    _buttonFloatController.dispose();
-    _buttonScaleController.dispose();
+    _logoController.dispose();
+    _textController.dispose();
+    _featuresController.dispose();
+    _buttonController.dispose();
     super.dispose();
   }
 
-  void _startAnimation() {
-    if (!_animationStarted) {
-      setState(() {
-        _animationStarted = true;
-      });
-
-      _rotationController.stop();
-
-      _repositionController.forward().then((_) {
-        Timer(const Duration(seconds: 1), () {
-          _expansionController.forward().then((_) {
+  void _navigateToChoose() {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => const ChoosePage()),
-            );
-          });
-        });
-      });
-    }
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => const ChoosePage(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(1.0, 0.0),
+              end: Offset.zero,
+            ).animate(CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeInOutCubic,
+            )),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 600),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-      body: Stack(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF159BBD),
+              Color(0xFF0D5C73),
+              Color(0xFF0A4A5E),
+              Color(0xFF083D4F),
+            ],
+            stops: [0.0, 0.3, 0.7, 1.0],
+          ),
+        ),
+        child: SafeArea(
+          child: Stack(
         children: [
-          Align(
-            alignment: Alignment.bottomCenter,
+              // Background Pattern
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: BackgroundPatternPainter(),
+                ),
+              ),
+              
+              // Main Content
+              SingleChildScrollView(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 40),
+                      
+                      // Logo Section
+                      AnimatedBuilder(
+                        animation: _logoController,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _logoScale.value,
+                            child: Opacity(
+                              opacity: _logoOpacity.value,
+                              child: Container(
+                                width: 140,
+                                height: 140,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(35),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.2),
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 15),
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.local_hospital,
+                                  size: 70,
+                                  color: Color(0xFF159BBD),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      
+                      const SizedBox(height: 40),
+                      
+                      // Text Section
+                      SlideTransition(
+                        position: _textSlide,
+                        child: FadeTransition(
+                          opacity: _textOpacity,
               child: Column(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'The Best Platform for Online Consultation!',
-                    textAlign: TextAlign.center,
+                              const Text(
+                                'HomeCare Plus',
                     style: TextStyle(
-                      fontSize: 16,
+                                  fontSize: 36,
                       fontWeight: FontWeight.bold,
-                      color: Color(0xFF159BBD),
-                      fontFamily: 'Ubuntu',
+                                  color: Colors.white,
+                                  letterSpacing: 1.5,
                       shadows: [
                         Shadow(
-                          offset: Offset(5.0, 5.0),
-                          blurRadius: 10.0,
-                          color: Colors.white,
+                                      offset: Offset(0, 2),
+                                      blurRadius: 8,
+                                      color: Colors.black38,
+                                    ),
+                                  ],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 12),
+                              const Text(
+                                'Your Health, Our Priority',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  color: Colors.white70,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.5,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         ),
+                      ),
+                      
+                      const SizedBox(height: 50),
+                      
+                      // Features Section
+                      SlideTransition(
+                        position: _featuresSlide,
+                        child: Column(
+                          children: [
+                            _buildProfessionalFeature(
+                              icon: Icons.medical_services,
+                              title: 'Professional Healthcare',
+                              subtitle: 'Connect with certified medical professionals',
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildProfessionalFeature(
+                              icon: Icons.schedule,
+                              title: '24/7 Availability',
+                              subtitle: 'Get medical assistance anytime, anywhere',
+                              color: Colors.green,
+                            ),
+                            const SizedBox(height: 16),
+                            _buildProfessionalFeature(
+                              icon: Icons.security,
+                              title: 'Secure & Private',
+                              subtitle: 'Your health data is protected and confidential',
+                              color: Colors.orange,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.15),
+                    ],
+                  ),
+                ),
+              ),
+              
+              // Bottom Button Section
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.transparent,
+                        const Color(0xFF0A4A5E).withOpacity(0.8),
+                        const Color(0xFF0A4A5E),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  SlideTransition(
-                    position: _buttonFloatAnimation,
-                    child: ScaleTransition(
-                      scale: _buttonScaleAnimation,
+                  child: AnimatedBuilder(
+                    animation: _buttonController,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _buttonScale.value,
                       child: SizedBox(
                         width: double.infinity,
+                          height: 60,
                         child: ElevatedButton(
-                          onPressed: _animationStarted ? null : _startAnimation,
-                          child: const Text('Get Started'),
+                            onPressed: _navigateToChoose,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Color(0xFF159BBD),
-                            foregroundColor: Colors.white,
-                            padding: EdgeInsets.symmetric(vertical: 16.0),
-                            textStyle: TextStyle(
-                              fontSize: 20,
-                              fontFamily: 'Ubuntu',
-                              fontWeight: FontWeight.bold,
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF159BBD),
+                              elevation: 12,
+                              shadowColor: Colors.black.withOpacity(0.4),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(20.0),
+                            child: const Text(
+                              'Get Started',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.2,
+                              ),
                             ),
-                            elevation: 10,
                           ),
                         ),
+                      );
+                    },
                       ),
                     ),
                   ),
@@ -207,44 +375,98 @@ class _SplashScreenWithAnimationState extends State<SplashScreenWithAnimation> w
               ),
             ),
           ),
-          Center(
-            child: AnimatedBuilder(
-              animation: Listenable.merge([
-                _rotationController,
-                _expansionController,
-                _repositionController,
-              ]),
-              builder: (context, child) {
-                double rotationValue = _animationStarted
-                    ? _repositionAnimation.value * 2 * vector.radians(180)
-                    : _rotationAnimation.value * 2 * vector.radians(180);
-                return Transform(
-                  alignment: Alignment.center,
-                  transform: Matrix4.identity()
-                    ..setEntry(3, 2, 0.001)
-                    ..rotateY(rotationValue)
-                    ..scale(_expansionAnimation.value),
-                  child: Text(
-                    'H',
-                    style: TextStyle(
-                      fontSize: 200.0,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF159BBD),
-                      shadows: [
-                        Shadow(
-                          offset: Offset(10, 10),
-                          blurRadius: 10.0,
-                          color: Colors.grey,
+    );
+  }
+
+  Widget _buildProfessionalFeature({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
                         ),
                       ],
                     ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: color.withOpacity(0.3),
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              icon,
+              color: color,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
                   ),
-                );
-              },
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 14,
+                    height: 1.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
     );
   }
+}
+
+class BackgroundPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..strokeWidth = 1;
+
+    // Draw diagonal lines
+    for (int i = 0; i < size.width + size.height; i += 30) {
+      canvas.drawLine(
+        Offset(i.toDouble(), 0),
+        Offset(0, i.toDouble()),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

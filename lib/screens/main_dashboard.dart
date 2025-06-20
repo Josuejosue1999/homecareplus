@@ -8,6 +8,7 @@ import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/hospital_details.dart';
 import 'package:homecare_app/screens/book_appointment.dart';
+import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 
 class MainDashboard extends StatefulWidget {
   final String? selectedHospitalName;
@@ -287,50 +288,77 @@ class _MainDashboardState extends State<MainDashboard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               // Quick Actions
-                              const Text(
-                                'Quick Actions',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF159BBD),
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      const Color(0xFF159BBD).withOpacity(0.05),
+                                      const Color(0xFF0D5C73).withOpacity(0.03),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                                    width: 1,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 20),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                children: [
-                                  _buildActionCard(
-                                    icon: Icons.calendar_today,
-                                    title: 'Appointments',
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => const AppointmentsPage()),
-                                      );
-                                    },
-                                    textSize: 11,
-                                  ),
-                                  _buildActionCard(
-                                    icon: Icons.medical_services,
-                                    title: 'Lab Tests',
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => const LabTestPage()),
-                                      );
-                                    },
-                                  ),
-                                  _buildActionCard(
-                                    icon: Icons.message,
-                                    title: 'Messages',
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(builder: (context) => const ChatPage()),
-                                      );
-                                    },
-                                  ),
-                                ],
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text(
+                                      'Quick Actions',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF159BBD),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 20),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                      children: [
+                                        _buildActionCard(
+                                          icon: Icons.calendar_today,
+                                          title: 'Appointments',
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                                            );
+                                          },
+                                          textSize: 9,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildActionCard(
+                                          icon: Icons.medical_services,
+                                          title: 'Lab Tests',
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const LabTestPage()),
+                                            );
+                                          },
+                                          textSize: 12,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        _buildActionCard(
+                                          icon: Icons.message,
+                                          title: 'Messages',
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const ChatPage()),
+                                            );
+                                          },
+                                          textSize: 12,
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
                               ),
 
                               const SizedBox(height: 30),
@@ -596,29 +624,34 @@ class _MainDashboardState extends State<MainDashboard> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      bottomNavigationBar: ProfessionalBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        backgroundColor: const Color(0xFF159BBD),
+        selectedColor: Colors.white,
+        unselectedColor: Colors.white.withOpacity(0.7),
+        items: const [
+          BottomNavItem(
+            icon: Icon(Icons.dashboard_rounded),
+            activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+          BottomNavItem(
+            icon: Icon(Icons.event_note_rounded),
+            activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+          BottomNavItem(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
             label: 'Messages',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+          BottomNavItem(
+            icon: Icon(Icons.account_circle_outlined),
+            activeIcon: Icon(Icons.account_circle_rounded, color: Colors.white),
             label: 'Profile',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF159BBD),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
       ),
     );
   }
@@ -633,7 +666,8 @@ class _MainDashboardState extends State<MainDashboard> {
       onTap: onTap,
       child: Container(
         width: 100,
-        padding: const EdgeInsets.all(15),
+        height: 100,
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(15),
@@ -646,22 +680,24 @@ class _MainDashboardState extends State<MainDashboard> {
           ],
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 30,
+              size: 26,
               color: const Color(0xFF159BBD),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Text(
               title,
               style: TextStyle(
                 fontSize: textSize,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 color: const Color(0xFF159BBD),
               ),
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),

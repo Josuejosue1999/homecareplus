@@ -207,7 +207,7 @@ class _LoginPageState extends State<LoginPage> {
                             icon: Icon(
                               _obscurePassword ? Icons.visibility : Icons.visibility_off,
                               color: Colors.white70,
-                            ),
+                          ),
                             onPressed: () {
                               setState(() {
                                 _obscurePassword = !_obscurePassword;

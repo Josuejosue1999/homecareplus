@@ -5,6 +5,7 @@ import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 
 class AppointmentsPage extends StatefulWidget {
   const AppointmentsPage({Key? key}) : super(key: key);
@@ -320,29 +321,34 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      bottomNavigationBar: ProfessionalBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        backgroundColor: const Color(0xFF159BBD),
+        selectedColor: Colors.white,
+        unselectedColor: Colors.white.withOpacity(0.7),
+        items: const [
+          BottomNavItem(
+            icon: Icon(Icons.dashboard_rounded),
+            activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+          BottomNavItem(
+            icon: Icon(Icons.event_note_rounded),
+            activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+          BottomNavItem(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
             label: 'Messages',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+          BottomNavItem(
+            icon: Icon(Icons.account_circle_outlined),
+            activeIcon: Icon(Icons.account_circle_rounded, color: Colors.white),
             label: 'Profile',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF159BBD),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
       ),
     );
   }

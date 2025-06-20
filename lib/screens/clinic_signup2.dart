@@ -16,9 +16,6 @@ class _ClinicSignup2PageState extends State<ClinicSignup2Page> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _aboutController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -36,9 +33,6 @@ class _ClinicSignup2PageState extends State<ClinicSignup2Page> {
         await FirebaseFirestore.instance.collection('clinics').doc(userCredential.user!.uid).set({
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'address': _addressController.text.trim(),
-          'about': _aboutController.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
         });
         if (mounted) {
@@ -141,17 +135,11 @@ class _ClinicSignup2PageState extends State<ClinicSignup2Page> {
                     const SizedBox(height: 40),
                     _buildTextField(controller: _nameController, label: 'Clinic Name'),
                     const SizedBox(height: 20),
-                    _buildTextField(controller: _emailController, label: 'Email'),
-                    const SizedBox(height: 20),
-                    _buildTextField(controller: _phoneController, label: 'Phone Number'),
-                    const SizedBox(height: 20),
-                    _buildTextField(controller: _addressController, label: 'Address'),
+                    _buildTextField(controller: _emailController, label: 'Email Address'),
                     const SizedBox(height: 20),
                     _buildTextField(controller: _passwordController, label: 'Password', obscure: true),
                     const SizedBox(height: 20),
                     _buildTextField(controller: _confirmPasswordController, label: 'Confirm Password', obscure: true),
-                    const SizedBox(height: 20),
-                    _buildTextField(controller: _aboutController, label: 'About', maxLines: 4),
                     const SizedBox(height: 30),
                     _isLoading
                         ? const Center(child: CircularProgressIndicator())
@@ -198,15 +186,24 @@ class _ClinicSignup2PageState extends State<ClinicSignup2Page> {
         labelStyle: const TextStyle(color: Colors.white70),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Color(0xFF159BBD)),
+          borderSide: const BorderSide(color: Colors.white),
           borderRadius: BorderRadius.circular(12),
         ),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withOpacity(0.08),
       ),
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please enter $label';
+        }
+        if (label == 'Email Address' && !value.contains('@')) {
+          return 'Please enter a valid email address';
+        }
+        if (label == 'Password' && value.length < 6) {
+          return 'Password must be at least 6 characters';
+        }
+        if (label == 'Confirm Password' && value != _passwordController.text) {
+          return 'Passwords do not match';
         }
         return null;
       },

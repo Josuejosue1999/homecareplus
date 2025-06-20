@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
+import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({Key? key}) : super(key: key);
@@ -80,10 +81,10 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
         child: SafeArea(
-          child: Column(
-            children: [
+        child: Column(
+          children: [
               // Header
-              Padding(
+            Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -170,29 +171,34 @@ class _ChatPageState extends State<ChatPage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      bottomNavigationBar: ProfessionalBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        backgroundColor: const Color(0xFF159BBD),
+        selectedColor: Colors.white,
+        unselectedColor: Colors.white.withOpacity(0.7),
+        items: const [
+          BottomNavItem(
+            icon: Icon(Icons.dashboard_rounded),
+            activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+          BottomNavItem(
+            icon: Icon(Icons.event_note_rounded),
+            activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+          BottomNavItem(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
             label: 'Messages',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+          BottomNavItem(
+            icon: Icon(Icons.account_circle_outlined),
+            activeIcon: Icon(Icons.account_circle_rounded, color: Colors.white),
             label: 'Profile',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF159BBD),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
       ),
     );
   }
@@ -226,7 +232,7 @@ class _ChatPageState extends State<ChatPage> {
               Icons.person,
               color: Color(0xFF159BBD),
             ),
-          ),
+            ),
           const SizedBox(width: 15),
             Expanded(
             child: Column(
@@ -272,7 +278,7 @@ class _ChatPageState extends State<ChatPage> {
               decoration: const BoxDecoration(
                 color: Color(0xFF159BBD),
                 shape: BoxShape.circle,
-              ),
+            ),
             ),
         ],
       ),
