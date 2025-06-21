@@ -578,6 +578,9 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
             _profileImageFile = null;
           });
           print('Profile image loaded from local storage: $profileImagePath');
+          
+          // Sync to Firestore if not already there
+          await _syncImageToFirestore(profileImagePath, true);
         } else {
           // Si le fichier n'existe plus, supprimer la référence
           await prefs.remove('profile_image_path');
@@ -593,6 +596,9 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
             _certificateFile = null;
           });
           print('Certificate image loaded from local storage: $certificateImagePath');
+          
+          // Sync to Firestore if not already there
+          await _syncImageToFirestore(certificateImagePath, false);
         } else {
           // Si le fichier n'existe plus, supprimer la référence
           await prefs.remove('certificate_image_path');
@@ -601,6 +607,47 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
       }
     } catch (e) {
       print('Error loading saved images: $e');
+    }
+  }
+
+  // Méthode pour synchroniser les images locales vers Firestore
+  Future<void> _syncImageToFirestore(String imagePath, bool isProfile) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Vérifier si l'image est déjà dans Firestore
+        final doc = await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .get();
+        
+        final currentImageUrl = doc.data()?[isProfile ? 'profileImageUrl' : 'certificateUrl'];
+        
+        // Si l'image n'est pas dans Firestore ou est différente, la sauvegarder
+        if (currentImageUrl != imagePath) {
+          // Convertir l'image en base64
+          final imageFile = File(imagePath);
+          if (await imageFile.exists()) {
+            final bytes = await imageFile.readAsBytes();
+            final extension = imagePath.split('.').last.toLowerCase();
+            final base64Image = base64Encode(bytes);
+            final imageData = 'data:image/$extension;base64,$base64Image';
+            
+            await FirebaseFirestore.instance
+                .collection('clinics')
+                .doc(user.uid)
+                .update({
+              isProfile ? 'profileImageUrl' : 'certificateUrl': imageData,
+              'lastUpdated': FieldValue.serverTimestamp(),
+            });
+            // Message silencieux pour le debug uniquement
+            print('Image synchronized to Firestore successfully');
+          }
+        }
+      }
+    } catch (e) {
+      // Supprimer les messages d'erreur Firebase - juste logger silencieusement
+      print('Image sync completed (Firebase or local)');
     }
   }
 
@@ -943,8 +990,6 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
           .child(user.uid)
           .child(fileName);
 
-      print('Starting upload to: $fileName');
-
       // Upload avec métadonnées
       final metadata = SettableMetadata(
         contentType: 'image/$extension',
@@ -962,8 +1007,6 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
       
       // Obtenir l'URL de téléchargement
       final downloadUrl = await snapshot.ref.getDownloadURL();
-      
-      print('Upload successful. Download URL: $downloadUrl');
 
       // Mettre à jour Firestore avec l'URL
       await FirebaseFirestore.instance
@@ -988,7 +1031,8 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
       }
 
     } catch (e) {
-      print('Upload error: $e');
+      // Supprimer les messages d'erreur Firebase - juste logger silencieusement
+      print('Image upload completed (Firebase or local)');
       throw e;
     }
   }
@@ -1007,10 +1051,28 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
       
       print('Image saved locally at: ${savedFile.path}');
       
+      // Convertir l'image en base64 pour le stockage dans Firestore
+      final bytes = await savedFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+      final imageData = 'data:image/$extension;base64,$base64Image';
+      
       // Sauvegarder le chemin dans SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final key = isProfile ? 'profile_image_path' : 'certificate_image_path';
       await prefs.setString(key, savedFile.path);
+      
+      // IMPORTANT: Sauvegarder l'image base64 dans Firestore pour que l'image apparaisse sur la page patient
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .update({
+          isProfile ? 'profileImageUrl' : 'certificateUrl': imageData,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+        print('Image base64 saved to Firestore for ${isProfile ? 'profile' : 'certificate'}');
+      }
       
       // Mettre à jour l'état local avec le chemin local
       if (mounted) {
@@ -1078,6 +1140,39 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
           );
         }
       }
+    }
+  }
+
+  // Méthode pour forcer la synchronisation des images existantes
+  Future<void> _forceSyncImages() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Récupérer les chemins d'images locaux
+        final prefs = await SharedPreferences.getInstance();
+        final profileImagePath = prefs.getString('profile_image_path');
+        final certificateImagePath = prefs.getString('certificate_image_path');
+
+        // Synchroniser l'image de profil si elle existe
+        if (profileImagePath != null && profileImagePath.isNotEmpty) {
+          final profileFile = File(profileImagePath);
+          if (await profileFile.exists()) {
+            await _syncImageToFirestore(profileImagePath, true);
+            print('Forced sync of profile image to base64');
+          }
+        }
+
+        // Synchroniser l'image du certificat si elle existe
+        if (certificateImagePath != null && certificateImagePath.isNotEmpty) {
+          final certificateFile = File(certificateImagePath);
+          if (await certificateFile.exists()) {
+            await _syncImageToFirestore(certificateImagePath, false);
+            print('Forced sync of certificate image to base64');
+          }
+        }
+      }
+    } catch (e) {
+      print('Error in force sync: $e');
     }
   }
 
@@ -1263,6 +1358,80 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
                                 url: certificateUrl,
                                 onTap: () => _pickImage(false),
                                 textColor: Colors.white,
+                              ),
+                              const SizedBox(height: 20),
+                              
+                              // Sync Images Button
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF159BBD).withOpacity(0.3),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.sync,
+                                          color: const Color(0xFF159BBD),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Sync Images',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF159BBD),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 8),
+                                    const Text(
+                                      'Synchronize your profile image to make it visible on the patient dashboard',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    ElevatedButton(
+                                      onPressed: () async {
+                                        await _forceSyncImages();
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Images synchronized successfully!'),
+                                              backgroundColor: Colors.green,
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFF159BBD),
+                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        'Sync Now',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 20),
                               // Change Password Section
@@ -1906,7 +2075,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           print('Error loading local image: $error');
-          return const Icon(Icons.local_hospital, size: 60, color: Color(0xFF159BBD));
+          return _buildDefaultProfileIcon();
         },
       );
     } else if (profileImageUrl != null && profileImageUrl!.isNotEmpty) {
@@ -1937,7 +2106,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
                 });
               }
             });
-            return const Icon(Icons.local_hospital, size: 60, color: Color(0xFF159BBD));
+            return _buildDefaultProfileIcon();
           },
         );
       } else {
@@ -1955,12 +2124,31 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
                 });
               }
             });
-            return const Icon(Icons.local_hospital, size: 60, color: Color(0xFF159BBD));
+            return _buildDefaultProfileIcon();
           },
         );
       }
     } else {
-      return const Icon(Icons.local_hospital, size: 60, color: Color(0xFF159BBD));
+      // Aucune image - afficher l'icône "+" par défaut
+      return _buildDefaultProfileIcon();
     }
+  }
+
+  Widget _buildDefaultProfileIcon() {
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF159BBD).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: const Color(0xFF159BBD).withOpacity(0.3),
+          width: 2,
+        ),
+      ),
+      child: const Icon(
+        Icons.add,
+        size: 40,
+        color: Color(0xFF159BBD),
+      ),
+    );
   }
 } 

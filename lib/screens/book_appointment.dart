@@ -1,20 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../models/appointment.dart';
+import '../services/appointment_service.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final String hospitalName;
   final String hospitalImage;
+  final String hospitalLocation;
+  final List<String> hospitalFacilities;
+  final String hospitalAbout;
+  final Map<String, Map<String, String>> hospitalSchedule;
 
   const BookAppointmentPage({
     Key? key,
     required this.hospitalName,
     required this.hospitalImage,
+    required this.hospitalLocation,
+    required this.hospitalFacilities,
+    required this.hospitalAbout,
+    required this.hospitalSchedule,
   }) : super(key: key);
 
   @override
@@ -22,46 +34,133 @@ class BookAppointmentPage extends StatefulWidget {
 }
 
 class _BookAppointmentPageState extends State<BookAppointmentPage> {
-  DateTime selectedDate = DateTime.now();
-  TimeOfDay selectedTime = TimeOfDay.now();
-  String selectedDepartment = 'General Medicine';
-  final TextEditingController _reasonController = TextEditingController();
   int _selectedIndex = 0;
-  String userName = 'User';
-  String greeting = '';
+  String? selectedDepartment;
+  DateTime? selectedDate;
+  String? selectedTime;
+  String? selectedSpecialty;
+  String patientName = '';
+  String patientPhone = '';
+  String patientEmail = '';
+  String symptoms = '';
+  String notes = '';
 
-  final List<String> departments = [
-    'General Medicine',
-    'Cardiology',
-    'Neurology',
-    'Pediatrics',
-    'Gynecology',
-    'Dermatology',
-    'Orthopedics',
-    'ENT',
-  ];
+  // Controllers pour les champs de texte
+  late TextEditingController _symptomsController;
+
+  // Variables pour la gestion des horaires
+  List<String> availableDays = [];
+  List<String> availableTimeSlots = [];
+  Map<String, List<String>> dayTimeSlots = {};
 
   @override
   void initState() {
     super.initState();
-    _updateGreeting();
+    _symptomsController = TextEditingController(text: symptoms);
+    _initializeAvailableSlots();
   }
 
-  void _updateGreeting() {
-    final hour = DateTime.now().hour;
-    if (hour < 12) {
-      greeting = 'Good Morning';
-    } else if (hour < 17) {
-      greeting = 'Good Afternoon';
-    } else {
-      greeting = 'Good Evening';
+  @override
+  void dispose() {
+    _symptomsController.dispose();
+    super.dispose();
+  }
+
+  void _initializeAvailableSlots() {
+    // Extraire les jours disponibles
+    availableDays = widget.hospitalSchedule.keys.toList();
+    
+    // Générer les créneaux horaires pour chaque jour
+    for (String day in availableDays) {
+      final schedule = widget.hospitalSchedule[day];
+      if (schedule != null) {
+        final startTime = schedule['startTime'] ?? '';
+        final endTime = schedule['endTime'] ?? '';
+        
+        if (startTime.isNotEmpty && endTime.isNotEmpty) {
+          dayTimeSlots[day] = _generateTimeSlots(startTime, endTime);
+        }
+      }
     }
+  }
+
+  List<String> _generateTimeSlots(String startTime, String endTime) {
+    List<String> slots = [];
+    
+    try {
+      // Parser les heures de début et fin
+      final start = _parseTime(startTime);
+      final end = _parseTime(endTime);
+      
+      if (start != null && end != null) {
+        DateTime current = start;
+        while (current.isBefore(end)) {
+          slots.add(_formatTime(current));
+          current = current.add(const Duration(minutes: 30)); // Créneaux de 30 minutes
+        }
+      }
+    } catch (e) {
+      print('Error generating time slots: $e');
+    }
+    
+    return slots;
+  }
+
+  DateTime? _parseTime(String timeStr) {
+    try {
+      final parts = timeStr.split(':');
+      if (parts.length == 2) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return DateTime(2024, 1, 1, hour, minute);
+      }
+    } catch (e) {
+      print('Error parsing time: $e');
+    }
+    return null;
+  }
+
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatTimeForDisplay(String time) {
+    try {
+      final parts = time.split(':');
+      if (parts.length == 2) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
+      }
+    } catch (e) {
+      print('Error formatting time: $e');
+    }
+    return time;
+  }
+
+  List<String> _getAvailableDates() {
+    List<String> dates = [];
+    final now = DateTime.now();
+    
+    for (int i = 0; i < 30; i++) { // Prochains 30 jours
+      final date = now.add(Duration(days: i));
+      final dayName = DateFormat('EEEE').format(date);
+      
+      if (availableDays.contains(dayName)) {
+        dates.add(DateFormat('yyyy-MM-dd').format(date));
+      }
+    }
+    
+    return dates;
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
     });
+
     switch (index) {
       case 0:
         Navigator.pushReplacement(
@@ -90,56 +189,138 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     }
   }
 
-  void _bookAppointment() async {
-    if (selectedDepartment.isEmpty) {
+  Future<void> _bookAppointment() async {
+    // Validation des champs
+    if (selectedDepartment == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a department'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Please select a department'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
-    if (_reasonController.text.isEmpty) {
+
+    if (selectedDate == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter the reason for your visit'), backgroundColor: Colors.red),
+        const SnackBar(
+          content: Text('Please select a date'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
-    // Enregistrement Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('appointments').add({
-        'userId': user.uid,
-        'hospitalName': widget.hospitalName,
-        'hospitalImage': widget.hospitalImage,
-        'department': selectedDepartment,
-        'date': Timestamp.fromDate(selectedDate),
-        'time': selectedTime.format(context),
-        'reason': _reasonController.text,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+
+    if (selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a time'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
     }
+
+    if (symptoms.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please describe your symptoms'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // Afficher un indicateur de progression
     showDialog(
       context: context,
+        barrierDismissible: false,
       builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Booking Confirmed'),
-          content: const Text('Your appointment has been successfully booked!'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MainDashboard()),
-                  (route) => false,
-                );
-              },
-              child: const Text('OK'),
+          return const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                ),
+                SizedBox(width: 20),
+                Text('Booking your appointment...'),
+              ],
             ),
-          ],
         );
       },
     );
+
+      // Récupérer les informations de l'utilisateur connecté
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Créer l'objet Appointment
+      final appointment = Appointment(
+        id: '', // Sera généré par Firestore
+        patientId: user.uid,
+        patientName: user.displayName ?? 'Unknown',
+        patientEmail: user.email ?? '',
+        patientPhone: '', // Peut être ajouté plus tard
+        hospitalName: widget.hospitalName,
+        hospitalImage: widget.hospitalImage,
+        hospitalLocation: widget.hospitalLocation,
+        department: selectedDepartment!,
+        appointmentDate: selectedDate!,
+        appointmentTime: selectedTime!,
+        symptoms: symptoms.trim(),
+        status: 'pending',
+        createdAt: DateTime.now(),
+      );
+
+      // Sauvegarder dans Firebase
+      await AppointmentService.createAppointment(appointment);
+
+      // Fermer le dialogue de progression
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Afficher un message de succès
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Appointment booked successfully!'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // Rediriger vers la page des rendez-vous au lieu de la page d'accueil
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const AppointmentsPage(),
+          ),
+        );
+      }
+
+    } catch (e) {
+      // Fermer le dialogue de progression
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      // Afficher un message d'erreur
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error booking appointment: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    }
   }
 
   @override
@@ -172,7 +353,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          greeting,
+                          'Good Morning',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -181,7 +362,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          userName,
+                          'User',
                           style: const TextStyle(
                             fontSize: 18,
                             color: Colors.white,
@@ -261,11 +442,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                 height: 200,
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(15),
-                                  image: DecorationImage(
-                                    image: AssetImage(widget.hospitalImage),
-                                    fit: BoxFit.cover,
-                                  ),
                                 ),
+                                child: _buildHospitalImage(),
                               ),
                               const SizedBox(height: 10),
                               Center(
@@ -279,150 +457,404 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                 ),
                               ),
                               const SizedBox(height: 20),
+                              
+                              // Hospital Information Section
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.grey.withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Location
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.location_on,
+                                          color: Color(0xFF159BBD),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            widget.hospitalLocation,
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.grey,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    
+                                    // Available Hours
+                                    Row(
+                                      children: [
+                                        const Icon(
+                                          Icons.access_time,
+                                          color: Color(0xFF159BBD),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Available Hours: 24/7',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    
+                                    // Available Services
+                                    Row(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Icon(
+                                          Icons.medical_services,
+                                          color: Color(0xFF159BBD),
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              const Text(
+                                                'Available Services:',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.grey,
+                                                ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Wrap(
+                                                spacing: 4,
+                                                runSpacing: 4,
+                                                children: widget.hospitalFacilities.map((facility) {
+                                                  return Container(
+                                                    padding: const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Text(
+                                                      facility,
+                                                      style: const TextStyle(
+                                                        fontSize: 11,
+                                                        color: Color(0xFF159BBD),
+                                                      ),
+                                                    ),
+                                                  );
+                                                }).toList(),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 20),
                               // Department Selection
                               Text(
                                 'Select Department',
                                 style: TextStyle(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
                                 ),
                               ),
                               const SizedBox(height: 8),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.grey[300]!),
-                                  borderRadius: BorderRadius.circular(8),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
+                                child: DropdownButtonFormField<String>(
                                     value: selectedDepartment,
-                                    isExpanded: true,
-                                    items: departments.map((String department) {
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                    prefixIcon: Icon(Icons.medical_services, color: Color(0xFF159BBD)),
+                                  ),
+                                  hint: const Text('Choose a department'),
+                                  items: widget.hospitalFacilities.isEmpty 
+                                      ? ['General Care'].map((String value) {
+                                          return DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Text(value),
+                                          );
+                                        }).toList()
+                                      : widget.hospitalFacilities.map((String facility) {
                                       return DropdownMenuItem<String>(
-                                        value: department,
-                                        child: Text(department),
+                                            value: facility,
+                                            child: Text(facility),
                                       );
                                     }).toList(),
                                     onChanged: (String? newValue) {
-                                      if (newValue != null) {
                                         setState(() {
                                           selectedDepartment = newValue;
                                         });
-                                      }
                                     },
-                                  ),
                                 ),
                               ),
                               const SizedBox(height: 20),
+
+                              // Date and Time Selection
+                              Text(
+                                'Select Date & Time',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey[800],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              
                               // Date Selection
-                              Text(
-                                'Select Date',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: Colors.grey[300]!),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              InkWell(
-                                onTap: () async {
-                                  final DateTime? picked = await showDatePicker(
-                                    context: context,
-                                    initialDate: selectedDate,
-                                    firstDate: DateTime.now(),
-                                    lastDate: DateTime.now().add(const Duration(days: 30)),
-                                    builder: (context, child) {
-                                      return Theme(
-                                        data: Theme.of(context).copyWith(
-                                          colorScheme: const ColorScheme.light(
-                                            primary: Color(0xFF159BBD),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.calendar_today, color: Color(0xFF159BBD)),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Available Dates',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.grey[700],
                                           ),
                                         ),
-                                        child: child!,
-                                      );
-                                    },
-                                  );
-                                  if (picked != null && picked != selectedDate) {
-                                    setState(() {
-                                      selectedDate = picked;
-                                    });
-                                  }
-                                },
-                                child: Container(
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
+                                    if (availableDays.isEmpty)
+                                      Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: Colors.grey[300]!),
+                                          color: Colors.orange[50],
                                     borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(color: Colors.orange[200]!),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: Text(
+                                                'No schedule available. Please contact the hospital for availability.',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.orange[700],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      SizedBox(
+                                        height: 100,
+                                        child: ListView.builder(
+                                          scrollDirection: Axis.horizontal,
+                                          itemCount: _getAvailableDates().length,
+                                          itemBuilder: (context, index) {
+                                            final dateStr = _getAvailableDates()[index];
+                                            final date = DateTime.parse(dateStr);
+                                            final dayName = DateFormat('EEEE').format(date);
+                                            final isSelected = selectedDate?.year == date.year &&
+                                                             selectedDate?.month == date.month &&
+                                                             selectedDate?.day == date.day;
+                                            
+                                            return GestureDetector(
+                                              onTap: () {
+                                                setState(() {
+                                                  selectedDate = date;
+                                                  selectedTime = null; // Reset time when date changes
+                                                });
+                                              },
+                                              child: Container(
+                                                width: 80,
+                                                margin: const EdgeInsets.only(right: 8),
+                                                decoration: BoxDecoration(
+                                                  color: isSelected ? const Color(0xFF159BBD) : Colors.white,
+                                                  borderRadius: BorderRadius.circular(12),
+                                                  border: Border.all(
+                                                    color: isSelected ? const Color(0xFF159BBD) : Colors.grey[300]!,
+                                                  ),
+                                                  boxShadow: isSelected ? [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF159BBD).withOpacity(0.3),
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, 2),
+                                                    ),
+                                                  ] : null,
+                                                ),
+                                                child: Column(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Text(
-                                        DateFormat('MMMM d, y').format(selectedDate),
-                                        style: const TextStyle(fontSize: 16),
+                                                      DateFormat('MMM').format(date),
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        fontWeight: FontWeight.w600,
+                                                        color: isSelected ? Colors.white : Colors.grey[600],
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      date.day.toString(),
+                                                      style: TextStyle(
+                                                        fontSize: 18,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: isSelected ? Colors.white : Colors.grey[800],
+                                                      ),
+                                                    ),
+                                                    Text(
+                                                      dayName.substring(0, 3),
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        color: isSelected ? Colors.white70 : Colors.grey[500],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        ),
                                       ),
-                                      const Icon(Icons.calendar_today, color: Color(0xFF159BBD)),
-                                    ],
-                                  ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(height: 16),
+
                               // Time Selection
-                              Text(
-                                'Select Time',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              InkWell(
-                                onTap: () async {
-                                  final TimeOfDay? picked = await showTimePicker(
-                                    context: context,
-                                    initialTime: selectedTime,
-                                    builder: (context, child) {
-                                      return Theme(
-                                        data: Theme.of(context).copyWith(
-                                          colorScheme: const ColorScheme.light(
-                                            primary: Color(0xFF159BBD),
-                                          ),
-                                        ),
-                                        child: child!,
-                                      );
-                                    },
-                                  );
-                                  if (picked != null && picked != selectedTime) {
-                                    setState(() {
-                                      selectedTime = picked;
-                                    });
-                                  }
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
+                              if (selectedDate != null)
+                                Container(
+                                  padding: const EdgeInsets.all(16),
                                   decoration: BoxDecoration(
+                                    color: Colors.grey[50],
+                                    borderRadius: BorderRadius.circular(12),
                                     border: Border.all(color: Colors.grey[300]!),
-                                    borderRadius: BorderRadius.circular(8),
                                   ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.access_time, color: Color(0xFF159BBD)),
+                                          const SizedBox(width: 8),
                                       Text(
-                                        selectedTime.format(context),
-                                        style: const TextStyle(fontSize: 16),
+                                            'Available Times',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.grey[700],
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                      const Icon(Icons.access_time, color: Color(0xFF159BBD)),
+                                      const SizedBox(height: 12),
+                                      Builder(
+                                        builder: (context) {
+                                          final dayName = DateFormat('EEEE').format(selectedDate!);
+                                          final timeSlots = dayTimeSlots[dayName] ?? [];
+                                          
+                                          if (timeSlots.isEmpty) {
+                                            return Container(
+                                              padding: const EdgeInsets.all(12),
+                                              decoration: BoxDecoration(
+                                                color: Colors.orange[50],
+                                                borderRadius: BorderRadius.circular(8),
+                                                border: Border.all(color: Colors.orange[200]!),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'No time slots available for this day.',
+                                                      style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.orange[700],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }
+                                          
+                                          return Wrap(
+                                            spacing: 8,
+                                            runSpacing: 8,
+                                            children: timeSlots.map((time) {
+                                              final isSelected = selectedTime == time;
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    selectedTime = time;
+                                                  });
+                                                },
+                                                child: Container(
+                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                                  decoration: BoxDecoration(
+                                                    color: isSelected ? const Color(0xFF159BBD) : Colors.white,
+                                                    borderRadius: BorderRadius.circular(20),
+                                                    border: Border.all(
+                                                      color: isSelected ? const Color(0xFF159BBD) : Colors.grey[300]!,
+                                                    ),
+                                                    boxShadow: isSelected ? [
+                                                      BoxShadow(
+                                                        color: const Color(0xFF159BBD).withOpacity(0.3),
+                                                        blurRadius: 4,
+                                                        offset: const Offset(0, 1),
+                                                      ),
+                                                    ] : null,
+                                                  ),
+                                                  child: Text(
+                                                    _formatTimeForDisplay(time),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: isSelected ? Colors.white : Colors.grey[700],
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
+                                          );
+                                        },
+                                      ),
                                     ],
-                                  ),
                                 ),
                               ),
                               const SizedBox(height: 20),
                               // Reason for Booking
                               Text(
-                                'Reason for Booking',
+                                'Symptoms',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -431,9 +863,14 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                               ),
                               const SizedBox(height: 8),
                               TextField(
-                                controller: _reasonController,
+                                controller: _symptomsController,
+                                onChanged: (value) {
+                                  setState(() {
+                                    symptoms = value;
+                                  });
+                                },
                                 decoration: InputDecoration(
-                                  hintText: 'Reason for Visit',
+                                  hintText: 'Enter your symptoms',
                                   prefixIcon: const Icon(Icons.medical_services_outlined, color: Color(0xFF159BBD)),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
@@ -509,6 +946,131 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         selectedItemColor: const Color(0xFF159BBD),
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
+      ),
+    );
+  }
+
+  Widget _buildHospitalImage() {
+    if (widget.hospitalImage.isNotEmpty) {
+      // Check if it's a base64 image (starts with data:image)
+      if (widget.hospitalImage.startsWith('data:image')) {
+        // Base64 image from Firestore
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Image.memory(
+            base64Decode(widget.hospitalImage.split(',')[1]),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+          ),
+        );
+      }
+      // Check if it's a network URL
+      else if (widget.hospitalImage.startsWith('http')) {
+        // Network image
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Image.network(
+            widget.hospitalImage,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                ),
+              );
+            },
+          ),
+        );
+      } else if (widget.hospitalImage.startsWith('assets/')) {
+        // Asset image
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Image.asset(
+            widget.hospitalImage,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+          ),
+        );
+      } else {
+        // Local file path
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(15),
+          child: Image.file(
+            File(widget.hospitalImage),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+          ),
+        );
+      }
+    } else {
+      return _buildPlaceholderImage();
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(15),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF0D5C73).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF159BBD).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_hospital,
+                size: 48,
+                color: Color(0xFF159BBD),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Healthcare Facility',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF159BBD).withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Professional Medical Care',
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFF159BBD).withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

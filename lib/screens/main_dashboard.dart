@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/lab_test_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
@@ -9,15 +11,25 @@ import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/hospital_details.dart';
 import 'package:homecare_app/screens/book_appointment.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
+import '../models/appointment.dart';
+import '../services/appointment_service.dart';
 
 class MainDashboard extends StatefulWidget {
   final String? selectedHospitalName;
   final String? selectedHospitalImage;
+  final String? selectedHospitalLocation;
+  final List<String>? selectedHospitalFacilities;
+  final String? selectedHospitalAbout;
+  final Map<String, Map<String, String>>? selectedHospitalSchedule;
   
   const MainDashboard({
     Key? key,
     this.selectedHospitalName,
     this.selectedHospitalImage,
+    this.selectedHospitalLocation,
+    this.selectedHospitalFacilities,
+    this.selectedHospitalAbout,
+    this.selectedHospitalSchedule,
   }) : super(key: key);
 
   @override
@@ -161,51 +173,8 @@ class _MainDashboardState extends State<MainDashboard> {
                         topLeft: Radius.circular(20),
                         topRight: Radius.circular(20),
                       ),
-                      image: DecorationImage(
-                        image: AssetImage(widget.selectedHospitalImage ?? 'assets/hospital.PNG'),
-                        fit: BoxFit.cover,
-                      ),
                     ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                        ),
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withOpacity(0.3),
-                          ],
-                        ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.9),
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: const Text(
-                                'Premium Healthcare',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF159BBD),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    child: _buildHospitalImage(),
                   ),
                   
                   // Informations détaillées
@@ -254,15 +223,8 @@ class _MainDashboardState extends State<MainDashboard> {
                         _buildInfoRow(
                           icon: Icons.location_on,
                           title: 'Location',
-                          subtitle: '200 First St SW, Rochester, MN',
+                          subtitle: widget.selectedHospitalLocation ?? 'Location not available',
                           color: Colors.red,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildInfoRow(
-                          icon: Icons.phone,
-                          title: 'Contact',
-                          subtitle: '+1 (555) 123-4567',
-                          color: Colors.green,
                         ),
                         const SizedBox(height: 12),
                         _buildInfoRow(
@@ -286,13 +248,9 @@ class _MainDashboardState extends State<MainDashboard> {
                         Wrap(
                           spacing: 6,
                           runSpacing: 6,
-                          children: [
-                            _buildServiceChip('Emergency Care'),
-                            _buildServiceChip('Surgery'),
-                            _buildServiceChip('ICU'),
-                            _buildServiceChip('Laboratory'),
-                            _buildServiceChip('Radiology'),
-                          ],
+                          children: (widget.selectedHospitalFacilities ?? ['General Care', 'Consultation']).map((facility) {
+                            return _buildServiceChip(facility);
+                          }).toList(),
                         ),
                         const SizedBox(height: 20),
                         
@@ -335,6 +293,10 @@ class _MainDashboardState extends State<MainDashboard> {
                                       builder: (context) => BookAppointmentPage(
                                         hospitalName: widget.selectedHospitalName ?? '',
                                         hospitalImage: widget.selectedHospitalImage ?? '',
+                                        hospitalLocation: widget.selectedHospitalLocation ?? '',
+                                        hospitalFacilities: widget.selectedHospitalFacilities ?? [],
+                                        hospitalAbout: widget.selectedHospitalAbout ?? '',
+                                        hospitalSchedule: widget.selectedHospitalSchedule ?? {},
                                       ),
                                     ),
                                   );
@@ -599,6 +561,306 @@ class _MainDashboardState extends State<MainDashboard> {
 
                               const SizedBox(height: 30),
 
+                              // Section Upcoming Appointments
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 5),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        const Text(
+                                          'Upcoming Appointments',
+                                          style: TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF159BBD),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                                            );
+                                          },
+                                          child: const Text(
+                                            'See All',
+                                            style: TextStyle(
+                                              color: Color(0xFF159BBD),
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 15),
+                                    StreamBuilder<QuerySnapshot>(
+                                      stream: FirebaseFirestore.instance
+                                          .collection('appointments')
+                                          .where('patientId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
+                                          .snapshots(),
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState == ConnectionState.waiting) {
+                                          return const Center(
+                                            child: Padding(
+                                              padding: EdgeInsets.all(20),
+                                              child: CircularProgressIndicator(
+                                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                                              ),
+                                            ),
+                                          );
+                                        }
+                                        
+                                        if (snapshot.hasError) {
+                                          print('Error in appointments stream: ${snapshot.error}');
+                                          return Container(
+                                            padding: const EdgeInsets.all(20),
+                                      child: Column(
+                                        children: [
+                                                Icon(
+                                                  Icons.error_outline,
+                                                  color: Colors.red[300],
+                                                  size: 48,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'Error loading appointments',
+                                                  style: TextStyle(
+                                                    color: Colors.red[300],
+                                                    fontSize: 14,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'Please try again later',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[500],
+                                                    fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                          );
+                                        }
+
+                                        final appointments = snapshot.data?.docs ?? [];
+                                        print('Found ${appointments.length} appointments');
+
+                                        if (appointments.isEmpty) {
+                                          return Container(
+                                padding: const EdgeInsets.all(20),
+                                child: Column(
+                                  children: [
+                                                Icon(
+                                                  Icons.calendar_today_outlined,
+                                                  color: Colors.grey[400],
+                                                  size: 48,
+                                                ),
+                                                const SizedBox(height: 8),
+                                                Text(
+                                                  'No upcoming appointments',
+                                          style: TextStyle(
+                                                    color: Colors.grey[600],
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Text(
+                                                  'Book an appointment to see it here!',
+                                                  style: TextStyle(
+                                                    color: Colors.grey[500],
+                                                    fontSize: 14,
+                                                  ),
+                                                  textAlign: TextAlign.center,
+                                        ),
+                                      ],
+                                    ),
+                                          );
+                                        }
+                                        
+                                        // Filtrer et trier les rendez-vous
+                                        final now = DateTime.now();
+                                        final upcomingAppointments = appointments.where((doc) {
+                                          final data = doc.data() as Map<String, dynamic>;
+                                          final appointmentDate = data['appointmentDate'] is Timestamp 
+                                              ? (data['appointmentDate'] as Timestamp).toDate()
+                                              : DateTime.now();
+                                          return appointmentDate.isAfter(now);
+                                        }).toList();
+                                        
+                                        upcomingAppointments.sort((a, b) {
+                                          final aDate = (a.data() as Map<String, dynamic>)['appointmentDate'] is Timestamp 
+                                              ? ((a.data() as Map<String, dynamic>)['appointmentDate'] as Timestamp).toDate()
+                                              : DateTime.now();
+                                          final bDate = (b.data() as Map<String, dynamic>)['appointmentDate'] is Timestamp 
+                                              ? ((b.data() as Map<String, dynamic>)['appointmentDate'] as Timestamp).toDate()
+                                              : DateTime.now();
+                                          return aDate.compareTo(bDate);
+                                        });
+                                        
+                                        final displayAppointments = upcomingAppointments.take(2).toList();
+                                        
+                                        return Column(
+                                          children: displayAppointments.map((doc) {
+                                            final data = doc.data() as Map<String, dynamic>;
+                                            final appointmentDate = data['appointmentDate'] is Timestamp 
+                                                ? (data['appointmentDate'] as Timestamp).toDate()
+                                                : DateTime.now();
+                                            final status = data['status'] ?? 'pending';
+                                            
+                                            return Container(
+                                              margin: const EdgeInsets.only(bottom: 12),
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                  colors: [
+                                                    const Color(0xFF159BBD).withOpacity(0.05),
+                                                    const Color(0xFF0D5C73).withOpacity(0.03),
+                                                  ],
+                                                ),
+                                                borderRadius: BorderRadius.circular(15),
+                                                border: Border.all(
+                                                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                children: [
+                                                  // Image de l'hôpital
+                                                  Container(
+                                                    width: 50,
+                                                    height: 50,
+                                                    decoration: BoxDecoration(
+                                                    borderRadius: BorderRadius.circular(10),
+                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                    ),
+                                                    child: _buildHospitalImageForAppointment(data['hospitalImage']),
+                                                  ),
+                                                  const SizedBox(width: 12),
+                                                  
+                                                  // Informations du rendez-vous
+                                                  Expanded(
+                                                    child: Column(
+                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                      children: [
+                                                        Text(
+                                                          data['hospitalName'] ?? 'Unknown Hospital',
+                                                          style: const TextStyle(
+                                                            fontSize: 14,
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Color(0xFF159BBD),
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        const SizedBox(height: 2),
+                                                            Text(
+                                                          data['department'] ?? 'General',
+                                                          style: TextStyle(
+                                                            fontSize: 12,
+                                                            color: Colors.grey[600],
+                                                            fontWeight: FontWeight.w500,
+                                                          ),
+                                                          maxLines: 1,
+                                                          overflow: TextOverflow.ellipsis,
+                                                        ),
+                                                        const SizedBox(height: 6),
+                                                        Row(
+                                                          children: [
+                                                            Icon(
+                                                              Icons.calendar_today,
+                                                              size: 14,
+                                                              color: Colors.grey[600],
+                                                            ),
+                                                            const SizedBox(width: 4),
+                                                            Expanded(
+                                                              child: Text(
+                                                                DateFormat('MMM dd').format(appointmentDate),
+                                                                style: TextStyle(
+                                                                  fontSize: 11,
+                                                                  color: Colors.grey[600],
+                                                                ),
+                                                                overflow: TextOverflow.ellipsis,
+                                                              ),
+                                                            ),
+                                                            const SizedBox(width: 8),
+                                                            Icon(
+                                                              Icons.access_time,
+                                                              size: 14,
+                                                              color: Colors.grey[600],
+                                                            ),
+                                                            const SizedBox(width: 4),
+                                                            Expanded(
+                                                              child: Text(
+                                                                data['appointmentTime'] ?? 'TBD',
+                                                                style: TextStyle(
+                                                                  fontSize: 11,
+                                                                  color: Colors.grey[600],
+                                                                ),
+                                                                overflow: TextOverflow.ellipsis,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                  
+                                                  // Statut du rendez-vous
+                                                  Container(
+                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                    decoration: BoxDecoration(
+                                                      color: status == 'confirmed' 
+                                                          ? Colors.green.withOpacity(0.1)
+                                                          : Colors.orange.withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                      border: Border.all(
+                                                        color: status == 'confirmed' 
+                                                            ? Colors.green.withOpacity(0.3)
+                                                            : Colors.orange.withOpacity(0.3),
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                    child: Text(
+                                                      status == 'confirmed' ? 'CONF' : 'PEND',
+                                                      style: TextStyle(
+                                                        fontSize: 10,
+                                                        fontWeight: FontWeight.bold,
+                                                        color: status == 'confirmed' 
+                                                            ? Colors.green[700]
+                                                            : Colors.orange[700],
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }).toList(),
+                                        );
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+
+                              const SizedBox(height: 30),
+
                               // Nearby Hospitals Section
                               Container(
                                 padding: const EdgeInsets.all(20),
@@ -644,10 +906,10 @@ class _MainDashboardState extends State<MainDashboard> {
                                               color: Color(0xFF159BBD),
                                               fontWeight: FontWeight.w600,
                                             ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                ),
+              ),
+            ],
+          ),
                                     const SizedBox(height: 15),
                                     Container(
                                       padding: const EdgeInsets.all(15),
@@ -677,176 +939,6 @@ class _MainDashboardState extends State<MainDashboard> {
                                           ),
                                         ],
                                       ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(height: 30),
-
-                              // Nouvelle section Upcoming Appointments PRO (robuste)
-                              Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'Upcoming Appointments',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF159BBD),
-                                          ),
-                                        ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
-                                            );
-                                          },
-                                          child: const Text('See All'),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 15),
-                                    StreamBuilder<QuerySnapshot>(
-                                      stream: FirebaseFirestore.instance
-                                          .collection('appointments')
-                                          .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                                          .limit(10)
-                                          .snapshots(),
-                                      builder: (context, snapshot) {
-                                        if (snapshot.connectionState == ConnectionState.waiting) {
-                                          return const Center(child: CircularProgressIndicator());
-                                        }
-                                        if (snapshot.hasError) {
-                                          return Text('Error: \\${snapshot.error}');
-                                        }
-                                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                                          return const Text('No appointments found.\nBook an appointment to see it here!', textAlign: TextAlign.center);
-                                        }
-                                        final appointments = snapshot.data!.docs;
-                                        final sorted = List.from(appointments);
-                                        sorted.sort((a, b) {
-                                          final ad = (a['date'] is Timestamp) ? (a['date'] as Timestamp).toDate() : DateTime.now();
-                                          final bd = (b['date'] is Timestamp) ? (b['date'] as Timestamp).toDate() : DateTime.now();
-                                          return bd.compareTo(ad);
-                                        });
-                                        final mostRecent = sorted.take(2).toList();
-                                        if (mostRecent.isEmpty) {
-                                          return const Text('No upcoming appointments.');
-                                        }
-                                        return Column(
-                                          children: mostRecent.map((doc) {
-                                            final data = doc.data() as Map<String, dynamic>;
-                                            String dateStr = '';
-                                            try {
-                                              if (data['date'] is Timestamp) {
-                                                dateStr = DateFormat('MMM dd, yyyy').format((data['date'] as Timestamp).toDate());
-                                              } else if (data['date'] is String) {
-                                                dateStr = data['date'];
-                                              }
-                                            } catch (_) {}
-                                            return Container(
-                                              margin: const EdgeInsets.only(bottom: 16),
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFF7FAFC),
-                                                borderRadius: BorderRadius.circular(15),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black.withOpacity(0.04),
-                                                    blurRadius: 6,
-                                                    offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: Row(
-                                                children: [
-                                                  ClipRRect(
-                                                    borderRadius: BorderRadius.circular(10),
-                                                    child: Image.asset(
-                                                      data['hospitalImage'] ?? 'assets/hospital.PNG',
-                                                      width: 56,
-                                                      height: 56,
-                                                      fit: BoxFit.cover,
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    child: Column(
-                                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
-                                                        Text(
-                                                          data['hospitalName'] ?? '',
-                                                          style: const TextStyle(
-                                                            fontSize: 17,
-                                                            fontWeight: FontWeight.bold,
-                                                            color: Color(0xFF159BBD),
-                                                          ),
-                                                        ),
-                                                        const SizedBox(height: 4),
-                                                        Row(
-                                                          children: [
-                                                            Icon(Icons.local_hospital, size: 16, color: Color(0xFF159BBD)),
-                                                            const SizedBox(width: 4),
-                                                            Text(
-                                                              data['department'] ?? '',
-                                                              style: const TextStyle(
-                                                                fontSize: 14,
-                                                                color: Color(0xFF159BBD),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        const SizedBox(height: 4),
-                                                        Row(
-                                                          children: [
-                                                            Icon(Icons.calendar_today, size: 15, color: Colors.grey),
-                                                            const SizedBox(width: 4),
-                                                            Text(
-                                                              dateStr,
-                                                              style: const TextStyle(
-                                                                fontSize: 13,
-                                                                color: Colors.black87,
-                                                              ),
-                                                            ),
-                                                            const SizedBox(width: 12),
-                                                            Icon(Icons.access_time, size: 15, color: Colors.grey),
-                                                            const SizedBox(width: 4),
-                                                            Text(
-                                                              data['time'] ?? '',
-                                                              style: const TextStyle(
-                                                                fontSize: 13,
-                                                                color: Colors.black87,
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }).toList(),
-                                        );
-                                      },
                                     ),
                                   ],
                                 ),
@@ -1009,6 +1101,300 @@ class _MainDashboardState extends State<MainDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHospitalImage() {
+    return Stack(
+      children: [
+        // Image de l'hôpital
+        Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+          ),
+          child: _buildImageWidget(),
+        ),
+        // Overlay gradient
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.transparent,
+                Colors.black.withOpacity(0.3),
+              ],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Text(
+                    'Premium Healthcare',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF159BBD),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageWidget() {
+    if (widget.selectedHospitalImage != null && widget.selectedHospitalImage!.isNotEmpty) {
+      // Check if it's a base64 image (starts with data:image)
+      if (widget.selectedHospitalImage!.startsWith('data:image')) {
+        // Base64 image from Firestore
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: Image.memory(
+            base64Decode(widget.selectedHospitalImage!.split(',')[1]),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+          ),
+        );
+      }
+      // Check if it's a network URL
+      else if (widget.selectedHospitalImage!.startsWith('http')) {
+        // Network image
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: Image.network(
+            widget.selectedHospitalImage!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                ),
+              );
+            },
+          ),
+        );
+      } else if (widget.selectedHospitalImage!.startsWith('assets/')) {
+        // Asset image
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: Image.asset(
+            widget.selectedHospitalImage!,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+          ),
+        );
+      } else {
+        // Local file path
+        return ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: Image.file(
+            File(widget.selectedHospitalImage!),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImage();
+            },
+          ),
+        );
+      }
+    } else {
+      return _buildPlaceholderImage();
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF0D5C73).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF159BBD).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_hospital,
+                size: 48,
+                color: Color(0xFF159BBD),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Healthcare Facility',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF159BBD).withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Professional Medical Care',
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFF159BBD).withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHospitalImageForAppointment(String? hospitalImage) {
+    if (hospitalImage != null && hospitalImage.isNotEmpty) {
+      // Check if it's a base64 image (starts with data:image)
+      if (hospitalImage.startsWith('data:image')) {
+        // Base64 image from Firestore
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.memory(
+            base64Decode(hospitalImage.split(',')[1]),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImageForAppointment();
+            },
+          ),
+        );
+      }
+      // Check if it's a network URL
+      else if (hospitalImage.startsWith('http')) {
+        // Network image
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.network(
+            hospitalImage,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImageForAppointment();
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                return child;
+              }
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                ),
+              );
+            },
+          ),
+        );
+      } else if (hospitalImage.startsWith('assets/')) {
+        // Asset image
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset(
+            hospitalImage,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImageForAppointment();
+            },
+          ),
+        );
+      } else {
+        // Local file path
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Image.file(
+            File(hospitalImage),
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) {
+              return _buildPlaceholderImageForAppointment();
+            },
+          ),
+        );
+      }
+    } else {
+      return _buildPlaceholderImageForAppointment();
+    }
+  }
+
+  Widget _buildPlaceholderImageForAppointment() {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF0D5C73).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: const Icon(
+        Icons.local_hospital,
+        color: Color(0xFF159BBD),
+        size: 24,
+      ),
     );
   }
 } 

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
+import 'dart:convert';
 import 'all_reviews.dart';
 import 'book_appointment.dart';
 import 'login.dart';
@@ -11,6 +13,8 @@ class HospitalDetailsPage extends StatelessWidget {
   final double rating;
   final int reviewCount;
   final List<Map<String, String>> reviews;
+  final String aboutText;
+  final Map<String, Map<String, String>> hospitalSchedule;
 
   const HospitalDetailsPage({
     super.key,
@@ -21,6 +25,8 @@ class HospitalDetailsPage extends StatelessWidget {
     required this.rating,
     required this.reviewCount,
     required this.reviews,
+    required this.aboutText,
+    required this.hospitalSchedule,
   });
 
   @override
@@ -37,10 +43,7 @@ class HospitalDetailsPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.asset(
-                    hospitalImage,
-                    fit: BoxFit.cover,
-                  ),
+                  _buildHospitalImage(),
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -159,7 +162,7 @@ class HospitalDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${hospitalName} is a leading healthcare facility committed to providing exceptional medical care and services. Our state-of-the-art facility is equipped with the latest medical technology and staffed by experienced healthcare professionals. We offer a comprehensive range of medical services and maintain the highest standards of patient care and safety.',
+                    aboutText,
                     style: TextStyle(
                       color: Colors.grey[600],
                       fontSize: 14,
@@ -409,6 +412,10 @@ class HospitalDetailsPage extends StatelessWidget {
                                                 builder: (context) => LoginPage(
                                                   selectedHospitalName: hospitalName,
                                                   selectedHospitalImage: hospitalImage,
+                                                  selectedHospitalLocation: address,
+                                                  selectedHospitalFacilities: facilities,
+                                                  selectedHospitalAbout: aboutText,
+                                                  selectedHospitalSchedule: hospitalSchedule,
                                                 ),
                                               ),
                                             );
@@ -458,6 +465,104 @@ class HospitalDetailsPage extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildHospitalImage() {
+    if (hospitalImage.isNotEmpty) {
+      // Check if it's a base64 image (starts with data:image)
+      if (hospitalImage.startsWith('data:image')) {
+        // Base64 image from Firestore
+        return Image.memory(
+          base64Decode(hospitalImage.split(',')[1]),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildPlaceholderImage();
+          },
+        );
+      }
+      // Check if it's a network URL
+      else if (hospitalImage.startsWith('http')) {
+        // Network image
+        return Image.network(
+          hospitalImage,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildPlaceholderImage();
+          },
+        );
+      } else if (hospitalImage.startsWith('assets/')) {
+        // Asset image
+        return Image.asset(
+          hospitalImage,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildPlaceholderImage();
+          },
+        );
+      } else {
+        // Local file path
+        return Image.file(
+          File(hospitalImage),
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildPlaceholderImage();
+          },
+        );
+      }
+    } else {
+      return _buildPlaceholderImage();
+    }
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF0D5C73).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF159BBD).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_hospital,
+                size: 48,
+                color: Color(0xFF159BBD),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Healthcare Facility',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF159BBD).withOpacity(0.8),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Professional Medical Care',
+              style: TextStyle(
+                fontSize: 14,
+                color: const Color(0xFF159BBD).withOpacity(0.6),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

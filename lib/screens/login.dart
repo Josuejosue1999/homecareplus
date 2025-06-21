@@ -8,11 +8,19 @@ import 'package:homecare_app/screens/signup.dart';
 class LoginPage extends StatefulWidget {
   final String? selectedHospitalName;
   final String? selectedHospitalImage;
+  final String? selectedHospitalLocation;
+  final List<String>? selectedHospitalFacilities;
+  final String? selectedHospitalAbout;
+  final Map<String, Map<String, String>>? selectedHospitalSchedule;
 
   const LoginPage({
     Key? key,
     this.selectedHospitalName,
     this.selectedHospitalImage,
+    this.selectedHospitalLocation,
+    this.selectedHospitalFacilities,
+    this.selectedHospitalAbout,
+    this.selectedHospitalSchedule,
   }) : super(key: key);
 
   @override
@@ -55,6 +63,10 @@ class _LoginPageState extends State<LoginPage> {
               builder: (context) => MainDashboard(
                 selectedHospitalName: widget.selectedHospitalName,
                 selectedHospitalImage: widget.selectedHospitalImage,
+                selectedHospitalLocation: widget.selectedHospitalLocation,
+                selectedHospitalFacilities: widget.selectedHospitalFacilities,
+                selectedHospitalAbout: widget.selectedHospitalAbout,
+                selectedHospitalSchedule: widget.selectedHospitalSchedule,
               ),
             ),
       );
