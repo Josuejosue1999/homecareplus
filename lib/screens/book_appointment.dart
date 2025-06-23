@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
-import 'dart:convert';
 import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
+import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
+import '../widgets/professional_bottom_nav.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final String hospitalName;
@@ -177,10 +177,16 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ChatPage()),
+          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
         );
         break;
       case 3:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatPage()),
+        );
+        break;
+      case 4:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
@@ -347,42 +353,25 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Good Morning',
-                          style: const TextStyle(
-                            fontSize: 24,
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                    ),
+                    const Expanded(
+                      child: Text(
+                        'Book Your Appointment',
+                        style: TextStyle(
+                          fontSize: 20,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
-                          ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'User',
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white,
-                      child: IconButton(
-                        icon: const Icon(Icons.person, color: Color(0xFF159BBD)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ProfilePage()),
-                          );
-                        },
+                        textAlign: TextAlign.center,
                       ),
                     ),
+                    const SizedBox(width: 48), // Pour équilibrer avec la flèche
                   ],
                 ),
               ),
@@ -401,26 +390,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Titre de la page aligné à gauche avec flèche retour
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.arrow_back, color: Color(0xFF159BBD)),
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            ),
-                            const Text(
-                              'Book Your Appointment',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Color(0xFF159BBD),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 20),
                         // Hospital Info Card
                         Container(
                           padding: const EdgeInsets.all(20),
@@ -438,26 +407,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                height: 200,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: _buildHospitalImage(),
-                              ),
-                              const SizedBox(height: 10),
-                              Center(
-                                child: Text(
-                                  widget.hospitalName,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF159BBD),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(height: 20),
-                              
                               // Hospital Information Section
                               Container(
                                 padding: const EdgeInsets.all(16),
@@ -471,6 +420,19 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
+                                    // Hospital Name
+                              Center(
+                                child: Text(
+                                  widget.hospitalName,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF159BBD),
+                                  ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    
                                     // Location
                                     Row(
                                       children: [
@@ -923,154 +885,36 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+      bottomNavigationBar: ProfessionalBottomNav(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavItem(
+            icon: Icon(Icons.home, color: Colors.white70),
+            activeIcon: Icon(Icons.home, color: Colors.white),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
+          BottomNavItem(
+            icon: Icon(Icons.calendar_today, color: Colors.white70),
+            activeIcon: Icon(Icons.calendar_today, color: Colors.white),
             label: 'Appointments',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+          BottomNavItem(
+            icon: Icon(Icons.add, color: Colors.white70),
+            activeIcon: Icon(Icons.add, color: Colors.white),
+            label: 'Book',
+          ),
+          BottomNavItem(
+            icon: Icon(Icons.message, color: Colors.white70),
+            activeIcon: Icon(Icons.message, color: Colors.white),
             label: 'Messages',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+          BottomNavItem(
+            icon: Icon(Icons.person, color: Colors.white70),
+            activeIcon: Icon(Icons.person, color: Colors.white),
             label: 'Profile',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: const Color(0xFF159BBD),
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
-      ),
-    );
-  }
-
-  Widget _buildHospitalImage() {
-    if (widget.hospitalImage.isNotEmpty) {
-      // Check if it's a base64 image (starts with data:image)
-      if (widget.hospitalImage.startsWith('data:image')) {
-        // Base64 image from Firestore
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: Image.memory(
-            base64Decode(widget.hospitalImage.split(',')[1]),
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildPlaceholderImage();
-            },
-          ),
-        );
-      }
-      // Check if it's a network URL
-      else if (widget.hospitalImage.startsWith('http')) {
-        // Network image
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: Image.network(
-            widget.hospitalImage,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildPlaceholderImage();
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) {
-                return child;
-              }
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / 
-                        loadingProgress.expectedTotalBytes!
-                      : null,
-                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
-                ),
-              );
-            },
-          ),
-        );
-      } else if (widget.hospitalImage.startsWith('assets/')) {
-        // Asset image
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: Image.asset(
-            widget.hospitalImage,
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildPlaceholderImage();
-            },
-          ),
-        );
-      } else {
-        // Local file path
-        return ClipRRect(
-          borderRadius: BorderRadius.circular(15),
-          child: Image.file(
-            File(widget.hospitalImage),
-            fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildPlaceholderImage();
-            },
-          ),
-        );
-      }
-    } else {
-      return _buildPlaceholderImage();
-    }
-  }
-
-  Widget _buildPlaceholderImage() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(15),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF159BBD).withOpacity(0.1),
-            const Color(0xFF0D5C73).withOpacity(0.05),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF159BBD).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.local_hospital,
-                size: 48,
-                color: Color(0xFF159BBD),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Healthcare Facility',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF159BBD).withOpacity(0.8),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Professional Medical Care',
-              style: TextStyle(
-                fontSize: 14,
-                color: const Color(0xFF159BBD).withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

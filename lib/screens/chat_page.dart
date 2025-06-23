@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
+import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 
 class ChatPage extends StatefulWidget {
@@ -52,7 +53,10 @@ class _ChatPageState extends State<ChatPage> {
         );
         break;
       case 2:
-        // Déjà sur cette page
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+        );
         break;
       case 3:
         Navigator.pushReplacement(
@@ -187,6 +191,11 @@ class _ChatPageState extends State<ChatPage> {
             icon: Icon(Icons.event_note_rounded),
             activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
+          ),
+          BottomNavItem(
+            icon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            activeIcon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            label: 'Book',
           ),
           BottomNavItem(
             icon: Icon(Icons.chat_bubble_outline_rounded),

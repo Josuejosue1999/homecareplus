@@ -5,11 +5,11 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:homecare_app/screens/profile_page.dart';
-import 'package:homecare_app/screens/lab_test_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/hospital_details.dart';
 import 'package:homecare_app/screens/book_appointment.dart';
+import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
@@ -81,12 +81,19 @@ class _MainDashboardState extends State<MainDashboard> {
         );
         break;
       case 2:
+        // Navigation vers la page des hôpitaux
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+        );
+        break;
+      case 3:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ChatPage()),
         );
         break;
-      case 3:
+      case 4:
         Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
@@ -531,12 +538,12 @@ class _MainDashboardState extends State<MainDashboard> {
                                         ),
                                         const SizedBox(width: 8),
                                         _buildActionCard(
-                                          icon: Icons.medical_services,
-                                          title: 'Lab Tests',
+                                          icon: Icons.add,
+                                          title: 'Book',
                                           onTap: () {
                                             Navigator.push(
                                               context,
-                                              MaterialPageRoute(builder: (context) => const LabTestPage()),
+                                              MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
                                             );
                                           },
                                           textSize: 12,
@@ -725,7 +732,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                             return Container(
                                               margin: const EdgeInsets.only(bottom: 12),
                                               padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
+                                      decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
@@ -734,7 +741,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                     const Color(0xFF0D5C73).withOpacity(0.03),
                                                   ],
                                                 ),
-                                                borderRadius: BorderRadius.circular(15),
+                                        borderRadius: BorderRadius.circular(15),
                                                 border: Border.all(
                                                   color: const Color(0xFF159BBD).withOpacity(0.1),
                                                   width: 1,
@@ -756,9 +763,9 @@ class _MainDashboardState extends State<MainDashboard> {
                                                   
                                                   // Informations du rendez-vous
                                                   Expanded(
-                                                    child: Column(
+                                      child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                                      children: [
+                                        children: [
                                                         Text(
                                                           data['hospitalName'] ?? 'Unknown Hospital',
                                                           style: const TextStyle(
@@ -861,7 +868,7 @@ class _MainDashboardState extends State<MainDashboard> {
 
                               const SizedBox(height: 30),
 
-                              // Nearby Hospitals Section
+                              // All Hospitals Section
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
@@ -889,55 +896,121 @@ class _MainDashboardState extends State<MainDashboard> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text(
-                                          'Nearby Hospitals',
+                                          'All Hospitals',
                                           style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold,
                                             color: Color(0xFF159BBD),
                                           ),
                                         ),
-                                        TextButton(
-                                          onPressed: () {
-                                            // TODO: Navigate to all hospitals
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => const ProHospitalsPage(),
+                                              ),
+                                            );
                                           },
-                                          child: const Text(
-                                            'View All',
-                                            style: TextStyle(
-                                              color: Color(0xFF159BBD),
-                                              fontWeight: FontWeight.w600,
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 8,
                                             ),
-                ),
-              ),
-            ],
-          ),
+                                              decoration: BoxDecoration(
+                                              gradient: const LinearGradient(
+                                                colors: [Color(0xFF159BBD), Color(0xFF0D5C73)],
+                                              ),
+                                              borderRadius: BorderRadius.circular(20),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                  color: const Color(0xFF159BBD).withOpacity(0.3),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                            child: const Text(
+                                              'View All',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
                                     const SizedBox(height: 15),
-                                    Container(
-                                      padding: const EdgeInsets.all(15),
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(15),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(0.05),
-                                            blurRadius: 5,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          _buildHospitalItem(
-                                            hospitalName: 'Central Medical Center',
-                                            distance: '2.5 km',
-                                            rating: '4.8',
-                                          ),
-                                          const Divider(height: 20),
-                                          _buildHospitalItem(
-                                            hospitalName: 'City General Hospital',
-                                            distance: '3.8 km',
-                                            rating: '4.6',
-                                          ),
-                                        ],
+                                    SizedBox(
+                                      height: 180,
+                                      child: StreamBuilder<QuerySnapshot>(
+                                        stream: FirebaseFirestore.instance
+                                            .collection('clinics')
+                                            .limit(4)
+                                            .snapshots(),
+                                        builder: (context, snapshot) {
+                                          if (snapshot.connectionState == ConnectionState.waiting) {
+                                            return const Center(
+                                              child: CircularProgressIndicator(
+                                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                                              ),
+                                            );
+                                          }
+
+                                          if (snapshot.hasError) {
+                                            return Center(
+                                              child: Text(
+                                                'Error loading hospitals: ${snapshot.error}',
+                                                style: const TextStyle(color: Colors.red),
+                                              ),
+                                            );
+                                          }
+
+                                          final hospitals = snapshot.data?.docs ?? [];
+
+                                          if (hospitals.isEmpty) {
+                                            return const Center(
+                                              child: Text(
+                                                'No hospitals available',
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 16,
+                                                ),
+                                              ),
+                                            );
+                                          }
+
+                                          return PageView.builder(
+                                            itemCount: (hospitals.length / 2).ceil(),
+                                            itemBuilder: (context, pageIndex) {
+                                              final startIndex = pageIndex * 2;
+                                              final endIndex = (startIndex + 2).clamp(0, hospitals.length);
+                                              final pageHospitals = hospitals.sublist(startIndex, endIndex);
+
+                                              return Row(
+                                                children: [
+                                                  for (int i = 0; i < 2; i++)
+                                                    Expanded(
+                                                      child: i < pageHospitals.length
+                                                          ? Padding(
+                                                              padding: EdgeInsets.only(
+                                                                left: i == 0 ? 0 : 8,
+                                                                right: i == 1 ? 0 : 8,
+                                                              ),
+                                                              child: _buildHospitalCard(
+                                                                hospital: pageHospitals[i],
+                                                                isFirst: i == 0,
+                                                              ),
+                                                            )
+                                                          : const SizedBox(),
+                                                    ),
+                                                ],
+                                              );
+                                            },
+                                          );
+                                        },
                                       ),
                                     ),
                                   ],
@@ -968,6 +1041,11 @@ class _MainDashboardState extends State<MainDashboard> {
             icon: Icon(Icons.event_note_rounded),
             activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
+          ),
+          BottomNavItem(
+            icon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            activeIcon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            label: 'Book',
           ),
           BottomNavItem(
             icon: Icon(Icons.chat_bubble_outline_rounded),
@@ -1033,74 +1111,198 @@ class _MainDashboardState extends State<MainDashboard> {
     );
   }
 
-  Widget _buildHospitalItem({
-    required String hospitalName,
-    required String distance,
-    required String rating,
+  Widget _buildHospitalCard({
+    required QueryDocumentSnapshot hospital,
+    required bool isFirst,
   }) {
-    return Row(
+    final data = hospital.data() as Map<String, dynamic>;
+    final name = data['name'] ?? 'Unknown Hospital';
+    final location = data['location'] ?? data['address'] ?? 'Location not available';
+    final facilities = List<String>.from(data['facilities'] ?? []);
+    final profileImageUrl = data['profileImageUrl'] ?? '';
+
+    return Container(
+      height: 140,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
       children: [
+          // Image section
         Container(
-          padding: const EdgeInsets.all(10),
+            width: 60,
+            height: 140,
           decoration: BoxDecoration(
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(15),
+                bottomLeft: Radius.circular(15),
+              ),
             color: const Color(0xFF159BBD).withOpacity(0.1),
-            borderRadius: BorderRadius.circular(10),
+            ),
+            child: profileImageUrl.isNotEmpty
+                ? ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(15),
+                      bottomLeft: Radius.circular(15),
+                    ),
+                    child: profileImageUrl.startsWith('data:image')
+                        ? Image.memory(
+                            base64Decode(profileImageUrl.split(',')[1]),
+                            fit: BoxFit.cover,
+                            width: 60,
+                            height: 140,
+                          )
+                        : Image.network(
+                            profileImageUrl,
+                            fit: BoxFit.cover,
+                            width: 60,
+                            height: 140,
+                            errorBuilder: (context, error, stackTrace) {
+                              return _buildPlaceholderImage();
+                            },
+                          ),
+                  )
+                : _buildPlaceholderImage(),
           ),
-          child: const Icon(
-            Icons.local_hospital,
-            color: Color(0xFF159BBD),
-            size: 20,
-          ),
-        ),
-        const SizedBox(width: 15),
+          // Info section
         Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                hospitalName,
+                    name,
                 style: const TextStyle(
-                  fontSize: 16,
+                      fontSize: 12,
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF159BBD),
                 ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 4),
+                  const SizedBox(height: 2),
               Row(
                 children: [
                   Icon(
                     Icons.location_on,
-                    size: 14,
+                        size: 10,
                     color: Colors.grey[600],
                   ),
-                  const SizedBox(width: 4),
-                  Text(
-                    distance,
+                      const SizedBox(width: 2),
+                      Expanded(
+                        child: Text(
+                          location,
                     style: TextStyle(
-                      fontSize: 14,
+                            fontSize: 9,
                       color: Colors.grey[600],
                     ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 15),
+                  const SizedBox(height: 4),
+                  if (facilities.isNotEmpty)
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.medical_services,
+                          size: 10,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 2),
+                        Expanded(
+                          child: Text(
+                            facilities.take(2).join(', '),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.grey[600],
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  const Spacer(),
+                  Row(
+                    children: [
                   Icon(
                     Icons.star,
-                    size: 14,
-                    color: Colors.amber[700],
+                        size: 10,
+                        color: Colors.amber,
                   ),
-                  const SizedBox(width: 4),
+                      const SizedBox(width: 2),
                   Text(
-                    rating,
+                        '4.5',
                     style: TextStyle(
-                      fontSize: 14,
+                          fontSize: 9,
                       color: Colors.grey[600],
+                          fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
               ),
             ],
+              ),
           ),
         ),
       ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF0D5C73).withOpacity(0.05),
+          ],
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFF159BBD).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.local_hospital,
+                size: 32,
+                color: Color(0xFF159BBD),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Healthcare',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: const Color(0xFF159BBD).withOpacity(0.8),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1247,61 +1449,6 @@ class _MainDashboardState extends State<MainDashboard> {
     } else {
       return _buildPlaceholderImage();
     }
-  }
-
-  Widget _buildPlaceholderImage() {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
-        ),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            const Color(0xFF159BBD).withOpacity(0.1),
-            const Color(0xFF0D5C73).withOpacity(0.05),
-          ],
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF159BBD).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.local_hospital,
-                size: 48,
-                color: Color(0xFF159BBD),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Healthcare Facility',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF159BBD).withOpacity(0.8),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Professional Medical Care',
-              style: TextStyle(
-                fontSize: 14,
-                color: const Color(0xFF159BBD).withOpacity(0.6),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildHospitalImageForAppointment(String? hospitalImage) {

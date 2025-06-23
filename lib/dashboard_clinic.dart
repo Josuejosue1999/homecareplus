@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'facilities.dart';
 import 'onlineconsult.dart';
 import 'calendar_page.dart';
 import 'chat_page.dart';
-import 'profile_page.dart';
+import 'clinic_profile_page.dart';
 
 class ClinicDashboardPage extends StatelessWidget {
   const ClinicDashboardPage({super.key});
@@ -257,7 +256,7 @@ class ClinicDashboardPage extends StatelessWidget {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatPage()));
                 break;
               case 4:
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfilePage()));
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ClinicProfilePage()));
                 break;
             }
           },

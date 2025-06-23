@@ -340,7 +340,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                                       style: const TextStyle(
                                                         fontSize: 11,
                                                         color: Color(0xFF159BBD),
-                                                      ),
+                                  ),
                                                     ),
                                                   );
                                                 }).toList(),

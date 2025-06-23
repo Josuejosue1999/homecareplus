@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:homecare_app/screens/choose.dart';
 import 'package:homecare_app/screens/login.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -10,18 +9,19 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 
-class ProfilePage extends StatefulWidget {
-  const ProfilePage({Key? key}) : super(key: key);
+class ClinicProfilePage extends StatefulWidget {
+  const ClinicProfilePage({Key? key}) : super(key: key);
 
   @override
-  State<ProfilePage> createState() => _ProfilePageState();
+  State<ClinicProfilePage> createState() => _ClinicProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
-  String userName = '';
-  String userEmail = '';
-  String userPhone = '';
-  String userAddress = '';
+class _ClinicProfilePageState extends State<ClinicProfilePage> {
+  String clinicName = '';
+  String clinicEmail = '';
+  String clinicPhone = '';
+  String clinicAddress = '';
+  String clinicAbout = '';
   String? profileImageUrl;
   bool isLoading = true;
   File? _profileImageFile;
@@ -31,6 +31,7 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _aboutController = TextEditingController();
 
   // État d'édition pour chaque champ
   Map<String, bool> _editing = {
@@ -38,6 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
     'email': false,
     'phone': false,
     'address': false,
+    'about': false,
   };
 
   // Constantes pour les quartiers de Kigali
@@ -60,7 +62,7 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
-    _loadUserData();
+    _loadClinicData();
   }
 
   @override
@@ -69,41 +71,48 @@ class _ProfilePageState extends State<ProfilePage> {
     _emailController.dispose();
     _phoneController.dispose();
     _addressController.dispose();
+    _aboutController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadUserData() async {
+  Future<void> _loadClinicData() async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final userData = await FirebaseFirestore.instance
-            .collection('users')
+        final clinicData = await FirebaseFirestore.instance
+            .collection('clinics')
             .doc(user.uid)
             .get();
 
-        if (userData.exists) {
-          final data = userData.data() ?? {};
+        if (clinicData.exists) {
+          final data = clinicData.data() ?? {};
           setState(() {
-            userName = data['name'] ?? '';
-            userEmail = data['email'] ?? '';
-            userPhone = data['phone'] ?? '';
-            userAddress = data['address'] ?? '';
+            clinicName = data['name'] ?? '';
+            clinicEmail = data['email'] ?? '';
+            clinicPhone = data['phone'] ?? '';
+            clinicAddress = data['address'] ?? '';
+            clinicAbout = data['about'] ?? '';
             profileImageUrl = data['profileImageUrl'];
             isLoading = false;
           });
 
           // Initialiser les controllers
-          _nameController.text = userName;
-          _emailController.text = userEmail;
-          _phoneController.text = userPhone;
-          _addressController.text = userAddress;
+          _nameController.text = clinicName;
+          _emailController.text = clinicEmail;
+          _phoneController.text = clinicPhone;
+          _addressController.text = clinicAddress;
+          _aboutController.text = clinicAbout;
+        } else {
+          setState(() {
+            isLoading = false;
+          });
         }
       }
       
       await _loadSavedProfileImage();
       
     } catch (e) {
-      print('Error loading user data: $e');
+      print('Error loading clinic data: $e');
       setState(() {
         isLoading = false;
       });
@@ -113,7 +122,7 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadSavedProfileImage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final profileImagePath = prefs.getString('user_profile_image_path');
+      final profileImagePath = prefs.getString('clinic_profile_image_path');
 
       if (profileImagePath != null && profileImagePath.isNotEmpty) {
         final profileFile = File(profileImagePath);
@@ -124,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
           });
           await _syncImageToFirestore(profileImagePath);
         } else {
-          await prefs.remove('user_profile_image_path');
+          await prefs.remove('clinic_profile_image_path');
         }
       }
     } catch (e) {
@@ -137,7 +146,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final doc = await FirebaseFirestore.instance
-            .collection('users')
+            .collection('clinics')
             .doc(user.uid)
             .get();
         
@@ -152,7 +161,7 @@ class _ProfilePageState extends State<ProfilePage> {
             final imageData = 'data:image/$extension;base64,$base64Image';
             
             await FirebaseFirestore.instance
-                .collection('users')
+                .collection('clinics')
                 .doc(user.uid)
                 .update({
               'profileImageUrl': imageData,
@@ -193,13 +202,13 @@ class _ProfilePageState extends State<ProfilePage> {
         }
 
         final appDir = await getApplicationDocumentsDirectory();
-        final fileName = 'user_profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final fileName = 'clinic_profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final savedPath = '${appDir.path}/$fileName';
         
         await imageFile.copy(savedPath);
         
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_profile_image_path', savedPath);
+        await prefs.setString('clinic_profile_image_path', savedPath);
 
         setState(() {
           profileImageUrl = savedPath;
@@ -235,7 +244,7 @@ class _ProfilePageState extends State<ProfilePage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         await FirebaseFirestore.instance
-            .collection('users')
+            .collection('clinics')
             .doc(user.uid)
             .update({
           field: value,
@@ -293,6 +302,17 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF8FAFC),
+        body: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: SafeArea(
@@ -311,8 +331,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ],
               ),
-                child: Row(
-                  children: [
+              child: Row(
+                children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
                     child: Container(
@@ -327,12 +347,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         size: 20,
                       ),
                     ),
-                    ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Profile',
-                      style: TextStyle(
-                        fontSize: 24,
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    'Clinic Profile',
+                    style: TextStyle(
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: Color(0xFF1E293B),
                     ),
@@ -367,8 +387,8 @@ class _ProfilePageState extends State<ProfilePage> {
                     _buildProfileHeader(),
                     const SizedBox(height: 32),
 
-                    // Section Informations Personnelles
-                    _buildPersonalInfoSection(),
+                    // Section Informations de la Clinique
+                    _buildClinicInfoSection(),
                     const SizedBox(height: 24),
 
                     // Section Paramètres
@@ -391,7 +411,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-                    color: Colors.white,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -434,7 +454,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 ),
                               ),
                               child: const Icon(
-                                Icons.person,
+                                Icons.local_hospital,
                                 size: 60,
                                 color: Color(0xFF159BBD),
                               ),
@@ -453,7 +473,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                           ),
                           child: const Icon(
-                            Icons.person,
+                            Icons.local_hospital,
                             size: 60,
                             color: Color(0xFF159BBD),
                           ),
@@ -487,13 +507,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-                                ],
-                              ),
-            const SizedBox(height: 20),
+            ],
+          ),
+          const SizedBox(height: 20),
 
-          // Informations Utilisateur
+          // Informations de la Clinique
           Text(
-            userName.isNotEmpty ? userName : 'User Name',
+            clinicName.isNotEmpty ? clinicName : 'Clinic Name',
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.w700,
@@ -502,7 +522,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(height: 4),
           Text(
-            userEmail.isNotEmpty ? userEmail : 'user@example.com',
+            clinicEmail.isNotEmpty ? clinicEmail : 'clinic@example.com',
             style: const TextStyle(
               fontSize: 16,
               color: Color(0xFF64748B),
@@ -514,7 +534,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildPersonalInfoSection() {
+  Widget _buildClinicInfoSection() {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -540,14 +560,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
-                  Icons.person_outline,
+                  Icons.business_outlined,
                   color: Color(0xFF159BBD),
                   size: 20,
                 ),
               ),
               const SizedBox(width: 12),
               const Text(
-                'Personal Information',
+                'Clinic Information',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -557,13 +577,15 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           const SizedBox(height: 24),
-          _buildInfoField('Full Name', _nameController, 'name', Icons.person_outline),
+          _buildInfoField('Clinic Name', _nameController, 'name', Icons.business_outlined),
           const SizedBox(height: 16),
           _buildInfoField('Email Address', _emailController, 'email', Icons.email_outlined),
           const SizedBox(height: 16),
           _buildInfoField('Phone Number', _phoneController, 'phone', Icons.phone_outlined),
           const SizedBox(height: 16),
           _buildAddressField(),
+          const SizedBox(height: 16),
+          _buildAboutField(),
         ],
       ),
     );
@@ -642,13 +664,16 @@ class _ProfilePageState extends State<ProfilePage> {
                         _editing[field] = false;
                         switch (field) {
                           case 'name':
-                            controller.text = userName;
+                            controller.text = clinicName;
                             break;
                           case 'email':
-                            controller.text = userEmail;
+                            controller.text = clinicEmail;
                             break;
                           case 'phone':
-                            controller.text = userPhone;
+                            controller.text = clinicPhone;
+                            break;
+                          case 'about':
+                            controller.text = clinicAbout;
                             break;
                         }
                       });
@@ -659,26 +684,29 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                              ElevatedButton(
+                  ElevatedButton(
                     onPressed: () {
                       _saveField(field, controller.text);
                       switch (field) {
                         case 'name':
-                          userName = controller.text;
+                          clinicName = controller.text;
                           break;
                         case 'email':
-                          userEmail = controller.text;
+                          clinicEmail = controller.text;
                           break;
                         case 'phone':
-                          userPhone = controller.text;
+                          clinicPhone = controller.text;
+                          break;
+                        case 'about':
+                          clinicAbout = controller.text;
                           break;
                       }
                     },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF159BBD),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF159BBD),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  shape: RoundedRectangleBorder(
+                      shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                       elevation: 0,
@@ -700,14 +728,14 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
             child: Text(
               controller.text.isNotEmpty ? controller.text : 'Not specified',
-                                  style: TextStyle(
-                                    fontSize: 16,
+              style: TextStyle(
+                fontSize: 16,
                 color: controller.text.isNotEmpty ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
                 fontWeight: controller.text.isNotEmpty ? FontWeight.w500 : FontWeight.w400,
-                                  ),
+              ),
             ),
-                              ),
-                            ],
+          ),
+      ],
     );
   }
 
@@ -745,10 +773,10 @@ class _ProfilePageState extends State<ProfilePage> {
                     Icons.edit,
                     color: Color(0xFF159BBD),
                     size: 14,
-                        ),
+                  ),
                 ),
               ),
-            ],
+          ],
         ),
         const SizedBox(height: 8),
         if (_editing['address']!)
@@ -816,7 +844,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     onPressed: () {
                       setState(() {
                         _editing['address'] = false;
-                        _addressController.text = userAddress;
+                        _addressController.text = clinicAddress;
                         _selectedSector = '';
                       });
                     },
@@ -853,14 +881,138 @@ class _ProfilePageState extends State<ProfilePage> {
               border: Border.all(color: Colors.grey[200]!),
             ),
             child: Text(
-              userAddress.isNotEmpty ? userAddress : 'Not specified',
+              clinicAddress.isNotEmpty ? clinicAddress : 'Not specified',
               style: TextStyle(
                 fontSize: 16,
-                color: userAddress.isNotEmpty ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
-                fontWeight: userAddress.isNotEmpty ? FontWeight.w500 : FontWeight.w400,
+                color: clinicAddress.isNotEmpty ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
+                fontWeight: clinicAddress.isNotEmpty ? FontWeight.w500 : FontWeight.w400,
+              ),
+            ),
           ),
+      ],
+    );
+  }
+
+  Widget _buildAboutField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.info_outline, color: Color(0xFF64748B), size: 16),
+            const SizedBox(width: 8),
+            const Text(
+              'About Clinic',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const Spacer(),
+            if (!_editing['about']!)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _editing['about'] = true;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(
+                    Icons.edit,
+                    color: Color(0xFF159BBD),
+                    size: 14,
+                  ),
+                ),
+              ),
+          ],
         ),
-      ),
+        const SizedBox(height: 8),
+        if (_editing['about']!)
+          Column(
+            children: [
+              TextFormField(
+                controller: _aboutController,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: 'Describe your clinic...',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFF159BBD), width: 2),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey[300]!),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _editing['about'] = false;
+                        _aboutController.text = clinicAbout;
+                      });
+                    },
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Color(0xFF64748B)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: () {
+                      _saveField('about', _aboutController.text);
+                      clinicAbout = _aboutController.text;
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF159BBD),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Text(
+              clinicAbout.isNotEmpty ? clinicAbout : 'No description available',
+              style: TextStyle(
+                fontSize: 16,
+                color: clinicAbout.isNotEmpty ? const Color(0xFF1E293B) : const Color(0xFF94A3B8),
+                fontWeight: clinicAbout.isNotEmpty ? FontWeight.w500 : FontWeight.w400,
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -876,9 +1028,9 @@ class _ProfilePageState extends State<ProfilePage> {
             color: Colors.black.withOpacity(0.05),
             blurRadius: 20,
             offset: const Offset(0, 4),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -900,7 +1052,7 @@ class _ProfilePageState extends State<ProfilePage> {
               const Text(
                 'Settings',
                 style: TextStyle(
-              fontSize: 18,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: Color(0xFF1E293B),
                 ),
@@ -950,8 +1102,8 @@ class _ProfilePageState extends State<ProfilePage> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.grey[200]!),
         ),
-      child: Row(
-        children: [
+        child: Row(
+          children: [
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
@@ -961,14 +1113,14 @@ class _ProfilePageState extends State<ProfilePage> {
               child: Icon(icon, color: const Color(0xFF159BBD), size: 20),
             ),
             const SizedBox(width: 16),
-          Expanded(
+            Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
-              style: const TextStyle(
-                fontSize: 16,
+                    style: const TextStyle(
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF1E293B),
                     ),
@@ -1012,7 +1164,7 @@ class _ProfilePageState extends State<ProfilePage> {
             color: const Color(0xFF159BBD).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
-        ),
+          ),
         ],
       ),
       child: ElevatedButton(
@@ -1046,4 +1198,4 @@ class _ProfilePageState extends State<ProfilePage> {
       ),
     );
   }
-}
+} 

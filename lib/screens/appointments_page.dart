@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
+import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
@@ -57,10 +58,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ChatPage()),
+          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
         );
         break;
       case 3:
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatPage()),
+        );
+        break;
+      case 4:
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const ProfilePage()),
@@ -519,6 +526,11 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
             icon: Icon(Icons.event_note_rounded),
             activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
+          ),
+          BottomNavItem(
+            icon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            activeIcon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            label: 'Book',
           ),
           BottomNavItem(
             icon: Icon(Icons.chat_bubble_outline_rounded),

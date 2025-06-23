@@ -17,7 +17,6 @@ class _SignupPageState extends State<SignupPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
@@ -40,7 +39,6 @@ class _SignupPageState extends State<SignupPage> {
           'name': _nameController.text.trim(),
         'email': _emailController.text.trim(),
         'phone': _phoneController.text.trim(),
-        'address': _addressController.text.trim(),
         'createdAt': FieldValue.serverTimestamp(),
           'role': 'patient',
         });
@@ -287,50 +285,6 @@ class _SignupPageState extends State<SignupPage> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: TextFormField(
-                        controller: _addressController,
-                        style: const TextStyle(color: Colors.white),
-                        decoration: InputDecoration(
-                          labelText: 'Address',
-                          labelStyle: const TextStyle(color: Colors.white70),
-                          prefixIcon: const Icon(Icons.location_on, color: Colors.white70),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.white),
-                          ),
-                          errorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          focusedErrorBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(color: Colors.red),
-                          ),
-                          filled: true,
-                          fillColor: Colors.white.withOpacity(0.1),
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your address';
-                          }
-                          return null;
-                        },
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TextFormField(
                         controller: _passwordController,
                         obscureText: !_isPasswordVisible,
                         style: const TextStyle(color: Colors.white),
@@ -516,7 +470,6 @@ class _SignupPageState extends State<SignupPage> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
-    _addressController.dispose();
     super.dispose();
   }
 }
