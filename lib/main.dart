@@ -268,7 +268,7 @@ class _ProfessionalWelcomeScreenState extends State<ProfessionalWelcomeScreen>
                               ),
                               const SizedBox(height: 12),
                               const Text(
-                                'Your Health, Our Priority',
+                                'Your Health, Osur Priority',
                                 style: TextStyle(
                                   fontSize: 18,
                                   color: Colors.white70,

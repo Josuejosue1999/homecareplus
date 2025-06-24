@@ -67,21 +67,50 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   }
 
   void _initializeAvailableSlots() {
+    print('=== INITIALIZING AVAILABLE SLOTS ===');
+    print('Hospital schedule: ${widget.hospitalSchedule}');
+    
     // Extraire les jours disponibles
     availableDays = widget.hospitalSchedule.keys.toList();
+    print('Available days: $availableDays');
     
     // Générer les créneaux horaires pour chaque jour
     for (String day in availableDays) {
       final schedule = widget.hospitalSchedule[day];
+      print('Schedule for $day: $schedule');
+      
       if (schedule != null) {
         final startTime = schedule['startTime'] ?? '';
         final endTime = schedule['endTime'] ?? '';
         
+        print('Start time: $startTime, End time: $endTime');
+        
         if (startTime.isNotEmpty && endTime.isNotEmpty) {
           dayTimeSlots[day] = _generateTimeSlots(startTime, endTime);
+          print('Generated ${dayTimeSlots[day]!.length} time slots for $day');
+        } else {
+          // Si pas d'horaires spécifiques, utiliser des horaires par défaut
+          dayTimeSlots[day] = _generateDefaultTimeSlots();
+          print('Using default time slots for $day');
         }
+      } else {
+        // Si pas de planning pour ce jour, utiliser des horaires par défaut
+        dayTimeSlots[day] = _generateDefaultTimeSlots();
+        print('Using default time slots for $day (no schedule)');
       }
     }
+    
+    // Si aucun jour n'est défini, utiliser des jours par défaut
+    if (availableDays.isEmpty) {
+      availableDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+      for (String day in availableDays) {
+        dayTimeSlots[day] = _generateDefaultTimeSlots();
+      }
+      print('Using default days and time slots');
+    }
+    
+    print('Final available days: $availableDays');
+    print('Final day time slots: $dayTimeSlots');
   }
 
   List<String> _generateTimeSlots(String startTime, String endTime) {
@@ -154,6 +183,17 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     }
     
     return dates;
+  }
+
+  List<String> _generateDefaultTimeSlots() {
+    List<String> slots = [];
+    // Horaires par défaut : 8h00 à 18h00 avec des créneaux de 30 minutes
+    for (int hour = 8; hour < 18; hour++) {
+      for (int minute = 0; minute < 60; minute += 30) {
+        slots.add('${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+      }
+    }
+    return slots;
   }
 
   void _onItemTapped(int index) {
@@ -263,13 +303,38 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         throw Exception('User not authenticated');
       }
 
+      // Récupérer le profil utilisateur pour obtenir le vrai nom
+      String patientName = 'Patient Name Not Available';
+      String patientEmail = user.email ?? '';
+      String patientPhone = '';
+      
+      try {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final userData = userDoc.data()!;
+          patientName = userData['name'] ?? userData['fullName'] ?? user.displayName ?? 'Patient Name Not Available';
+          patientEmail = userData['email'] ?? user.email ?? '';
+          patientPhone = userData['phone'] ?? userData['phoneNumber'] ?? '';
+        } else {
+          // Si pas de document utilisateur, essayer avec displayName
+          patientName = user.displayName ?? 'Patient Name Not Available';
+        }
+      } catch (e) {
+        print('Error fetching user profile: $e');
+        patientName = user.displayName ?? 'Patient Name Not Available';
+      }
+
       // Créer l'objet Appointment
       final appointment = Appointment(
         id: '', // Sera généré par Firestore
         patientId: user.uid,
-        patientName: user.displayName ?? 'Unknown',
-        patientEmail: user.email ?? '',
-        patientPhone: '', // Peut être ajouté plus tard
+        patientName: patientName,
+        patientEmail: patientEmail,
+        patientPhone: patientPhone,
         hospitalName: widget.hospitalName,
         hospitalImage: widget.hospitalImage,
         hospitalLocation: widget.hospitalLocation,
@@ -281,42 +346,133 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         createdAt: DateTime.now(),
       );
 
-      // Sauvegarder dans Firebase
-      await AppointmentService.createAppointment(appointment);
+      // Sauvegarder dans Firebase avec vérification du nom du patient
+      await AppointmentService.createAppointmentWithPatientCheck(appointment);
 
       // Fermer le dialogue de progression
       if (context.mounted) {
         Navigator.of(context).pop();
       }
 
-      // Afficher un message de succès
+      // Afficher une popup de confirmation
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Appointment booked successfully!'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 3),
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.check_circle,
+                      color: Colors.green,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'Success!',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Your appointment has been booked successfully!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
           ),
-        );
-      }
-
-      // Rediriger vers la page des rendez-vous au lieu de la page d'accueil
-      if (context.mounted) {
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Hospital: ${widget.hospitalName}',
+                          style: const TextStyle(fontWeight: FontWeight.w500),
+                        ),
+                        const SizedBox(height: 4),
+                        Text('Department: $selectedDepartment'),
+                        const SizedBox(height: 4),
+                        Text('Date: ${DateFormat('MMM dd, yyyy').format(selectedDate!)}'),
+                        const SizedBox(height: 4),
+                        Text('Time: $selectedTime'),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'You will receive a confirmation email shortly.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(); // Fermer la popup
+                      // Rediriger vers la page d'accueil
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const AppointmentsPage(),
+                          builder: (context) => const MainDashboard(),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF159BBD),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'OK',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
           ),
+              ],
+            );
+          },
         );
       }
 
     } catch (e) {
-      // Fermer le dialogue de progression
+      // Fermer le dialogue de progression en cas d'erreur
       if (context.mounted) {
         Navigator.of(context).pop();
       }
 
-      // Afficher un message d'erreur
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -611,7 +767,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                       ],
                                     ),
                                     const SizedBox(height: 12),
-                                    if (availableDays.isEmpty)
+                                    if (availableDays.isEmpty || _getAvailableDates().isEmpty)
                                       Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
@@ -625,7 +781,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                             const SizedBox(width: 8),
                                             Expanded(
                                               child: Text(
-                                                'No schedule available. Please contact the hospital for availability.',
+                                                'Loading available dates...',
                                                 style: TextStyle(
                                                   fontSize: 12,
                                                   color: Colors.orange[700],

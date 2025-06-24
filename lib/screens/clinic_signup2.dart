@@ -110,7 +110,7 @@ class _ClinicSignup2PageState extends State<ClinicSignup2Page> {
                     ),
                     const SizedBox(height: 40),
                     const Text(
-                      'Create Clinic Account',
+                      'Create Health Center Account',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -126,14 +126,14 @@ class _ClinicSignup2PageState extends State<ClinicSignup2Page> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Sign up your clinic',
+                      'Sign up your health center',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white70,
                       ),
                     ),
                     const SizedBox(height: 40),
-                    _buildTextField(controller: _nameController, label: 'Clinic Name'),
+                    _buildTextField(controller: _nameController, label: 'Health Center Name'),
                     const SizedBox(height: 20),
                     _buildTextField(controller: _emailController, label: 'Email Address'),
                     const SizedBox(height: 20),

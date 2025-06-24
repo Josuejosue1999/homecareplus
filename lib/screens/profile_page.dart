@@ -417,47 +417,33 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 child: ClipOval(
-                  child: profileImageUrl != null
-                      ? Image.file(
-                          File(profileImageUrl!),
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    const Color(0xFF159BBD).withOpacity(0.1),
-                                    const Color(0xFF0D5C73).withOpacity(0.1),
-                                  ],
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.person,
-                                size: 60,
-                                color: Color(0xFF159BBD),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                const Color(0xFF159BBD).withOpacity(0.1),
-                                const Color(0xFF0D5C73).withOpacity(0.1),
-                              ],
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Color(0xFF159BBD),
-                          ),
-                        ),
+                  child: profileImageUrl != null && profileImageUrl!.isNotEmpty
+                      ? profileImageUrl!.startsWith('data:image/')
+                          ? Image.memory(
+                              base64Decode(profileImageUrl!.split(',')[1]),
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return _buildDefaultProfileImage();
+                              },
+                            )
+                          : profileImageUrl!.startsWith('http')
+                              ? Image.network(
+                                  profileImageUrl!,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _buildDefaultProfileImage();
+                                  },
+                                )
+                              : File(profileImageUrl!).existsSync()
+                                  ? Image.file(
+                                      File(profileImageUrl!),
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) {
+                                        return _buildDefaultProfileImage();
+                                      },
+                                    )
+                                  : _buildDefaultProfileImage()
+                      : _buildDefaultProfileImage(),
                 ),
               ),
               Positioned(
@@ -1043,6 +1029,26 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDefaultProfileImage() {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF0D5C73).withOpacity(0.1),
+          ],
+        ),
+      ),
+      child: const Icon(
+        Icons.person,
+        size: 60,
+        color: Color(0xFF159BBD),
       ),
     );
   }

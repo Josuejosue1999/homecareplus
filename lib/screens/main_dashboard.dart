@@ -10,9 +10,12 @@ import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/hospital_details.dart';
 import 'package:homecare_app/screens/book_appointment.dart';
 import 'package:homecare_app/screens/pro_hospitals_page.dart';
+import 'package:homecare_app/screens/notification_page.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
+import 'package:homecare_app/widgets/notification_badge.dart';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
+import '../services/notification_service.dart';
 
 class MainDashboard extends StatefulWidget {
   final String? selectedHospitalName;
@@ -65,8 +68,8 @@ class _MainDashboardState extends State<MainDashboard> {
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
-      if (index == 0) {
-        showHospitalBooking = false;
+      if (index == 0 && widget.selectedHospitalName != null) {
+        showHospitalBooking = true;
       }
     });
 
@@ -145,7 +148,7 @@ class _MainDashboardState extends State<MainDashboard> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.close, color: Color(0xFF159BBD)),
-                    onPressed: () {
+                    onPressed: widget.selectedHospitalName != null ? null : () {
                       setState(() {
                         showHospitalBooking = false;
                       });
@@ -458,18 +461,15 @@ class _MainDashboardState extends State<MainDashboard> {
                         ),
                       ],
                     ),
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white,
-                      child: IconButton(
-                        icon: const Icon(Icons.person, color: Color(0xFF159BBD)),
-                        onPressed: () {
-                          Navigator.push(
+                    NotificationBadge(
+                      onPressed: () async {
+                        await Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const ProfilePage()),
+                          MaterialPageRoute(builder: (context) => const NotificationPage()),
                           );
+                        setState(() {}); // Rafraîchir le badge après retour
                         },
-                      ),
+                      size: 50,
                     ),
                   ],
                 ),
@@ -845,7 +845,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                       ),
                                                     ),
                                                     child: Text(
-                                                      status == 'confirmed' ? 'CONF' : 'PEND',
+                                                      status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
                                                       style: TextStyle(
                                                         fontSize: 10,
                                                         fontWeight: FontWeight.bold,

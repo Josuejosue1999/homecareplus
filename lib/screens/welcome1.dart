@@ -36,7 +36,7 @@ class _Welcome1PageState extends State<Welcome1Page>
   void navigateToMainPage() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => SplashScreenWithAnimation()),
+      MaterialPageRoute(builder: (context) => const HomeCareApp()),
     );
   }
 

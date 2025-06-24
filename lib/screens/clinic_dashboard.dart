@@ -24,7 +24,6 @@ import 'package:homecare_app/screens/chat.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:flutter/foundation.dart';
-import 'clinic_notification_page.dart';
 import 'package:homecare_app/models/appointment.dart';
 
 class ClinicDashboardPage extends StatefulWidget {
@@ -113,9 +112,6 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
       });
 
       print('Loading appointments for clinic: $clinicName');
-      
-      // Corriger rapidement les noms des patients si nécessaire
-      await AppointmentService.quickFixPatientNames();
       
       // Utiliser la méthode sécurisée pour récupérer les rendez-vous à venir
       final upcomingStream = AppointmentService.getClinicUpcomingAppointments(clinicName);
@@ -354,49 +350,43 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                greeting,
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.white70,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                clinicName,
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
+                        Text(
+                          greeting,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          clinicName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
                           ),
                         ),
                       ],
                     ),
-                    IconButton(
+                    NotificationBadge(
                       onPressed: () async {
                         final user = FirebaseAuth.instance.currentUser;
                         if (user == null) return;
                         await Navigator.push(
-                          context,
+                            context,
                           MaterialPageRoute(
                             builder: (context) => ClinicNotificationPage(clinicId: user.uid),
                           ),
-                        );
+                          );
                         setState(() {});
-                      },
-                      icon: const Icon(
-                        Icons.notifications,
-                        color: Colors.white,
-                        size: 24,
-                      ),
+                        },
+                      streamCount: FirebaseAuth.instance.currentUser == null
+                        ? null
+                        : NotificationService.getUnreadClinicNotificationCount(FirebaseAuth.instance.currentUser!.uid),
+                      size: 50,
                     ),
                   ],
                 ),
@@ -699,15 +689,49 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                               ),
                                               textAlign: TextAlign.center,
                                             ),
+                                            const SizedBox(height: 20),
+                                            Container(
+                                              padding: const EdgeInsets.all(16),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF159BBD).withOpacity(0.05),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Icon(
+                                                    Icons.info_outline,
+                                                    color: const Color(0xFF159BBD),
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Expanded(
+                                                    child: Text(
+                                                      'New appointments will appear here once patients book with your health center.',
+                                                      style: const TextStyle(
+                                                        color: Color(0xFF159BBD),
+                                                        fontWeight: FontWeight.w500,
+                                                        fontSize: 14,
+                                                      ),
+                                                      textAlign: TextAlign.center,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
                                           ],
                                         ),
                                       )
                                     : Column(
-                            children: [
+                                        children: [
                                           // Afficher les 3 premiers rendez-vous
                                           ...upcomingAppointments.take(3).map((appointment) {
                                             return Column(
-                                  children: [
+                                              children: [
                                                 InkWell(
                                                   onTap: () async {
                                                     final result = await Navigator.push(
@@ -734,35 +758,35 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                           // Indicateur s'il y a plus de 3 rendez-vous
                                           if (upcomingAppointments.length > 3) ...[
                                             const SizedBox(height: 16),
-                              Container(
+                                            Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                decoration: BoxDecoration(
+                                              decoration: BoxDecoration(
                                                 color: const Color(0xFF159BBD).withOpacity(0.05),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
                                                   color: const Color(0xFF159BBD).withOpacity(0.1),
                                                   width: 1,
                                                 ),
                                               ),
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
+                                                children: [
+                                                  Icon(
                                                     Icons.more_horiz,
-                                          color: const Color(0xFF159BBD),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
+                                                    color: const Color(0xFF159BBD),
+                                                    size: 20,
+                                                  ),
+                                                  const SizedBox(width: 8),
                                                   Text(
                                                     '${upcomingAppointments.length - 3} more appointment${upcomingAppointments.length - 3 > 1 ? 's' : ''}',
                                                     style: const TextStyle(
-                                            color: Color(0xFF159BBD),
+                                                      color: Color(0xFF159BBD),
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 14,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
                                             ),
                                           ],
                                         ],

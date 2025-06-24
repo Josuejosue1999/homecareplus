@@ -46,13 +46,13 @@ class Appointment {
       hospitalImage: data['hospitalImage'] ?? '',
       hospitalLocation: data['hospitalLocation'] ?? '',
       department: data['department'] ?? '',
-      appointmentDate: (data['appointmentDate'] as Timestamp).toDate(),
+      appointmentDate: (data['appointmentDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       appointmentTime: data['appointmentTime'] ?? '',
       symptoms: data['symptoms'] ?? '',
       status: data['status'] ?? 'pending',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
+      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: data['updatedAt'] != null 
-          ? (data['updatedAt'] as Timestamp).toDate() 
+          ? (data['updatedAt'] as Timestamp?)?.toDate() 
           : null,
     );
   }

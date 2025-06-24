@@ -49,7 +49,7 @@ class _Login2PageState extends State<Login2Page> {
       } on FirebaseAuthException catch (e) {
         String message = 'An error occurred';
         if (e.code == 'user-not-found') {
-          message = 'No clinic found with this email';
+          message = 'No health center found with this email';
         } else if (e.code == 'wrong-password') {
           message = 'Wrong password provided';
         } else if (e.code == 'invalid-email') {
@@ -106,7 +106,7 @@ class _Login2PageState extends State<Login2Page> {
                     ),
                     const SizedBox(height: 40),
                     const Text(
-                      'Clinic Login',
+                      'Health Center Login',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.bold,
@@ -122,7 +122,7 @@ class _Login2PageState extends State<Login2Page> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Sign in as a clinic',
+                      'Sign in as a health center',
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white70,
@@ -139,7 +139,7 @@ class _Login2PageState extends State<Login2Page> {
                         keyboardType: TextInputType.emailAddress,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
-                          labelText: 'Clinic Email',
+                          labelText: 'Health Center Email',
                           labelStyle: const TextStyle(color: Colors.white70),
                           prefixIcon: const Icon(Icons.email, color: Colors.white70),
                           border: OutlineInputBorder(
