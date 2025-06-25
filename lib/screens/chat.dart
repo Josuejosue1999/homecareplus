@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/bottom_navigation.dart';
+import '../widgets/professional_bottom_nav.dart';
 
 class Chat extends StatelessWidget {
   const Chat({super.key});
@@ -89,9 +89,33 @@ class Chat extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigation(
-        currentIndex: 3,
-        context: context,
+      bottomNavigationBar: ProfessionalBottomNav(
+        currentIndex: 2,
+        onTap: (index) {
+          // Navigation logic
+        },
+        items: [
+          BottomNavItem(
+            icon: ProfessionalIcons.home,
+            activeIcon: ProfessionalIcons.homeActive,
+            label: 'Home',
+          ),
+          BottomNavItem(
+            icon: ProfessionalIcons.appointments,
+            activeIcon: ProfessionalIcons.appointmentsActive,
+            label: 'Appointments',
+          ),
+          BottomNavItem(
+            icon: ProfessionalIcons.messages,
+            activeIcon: ProfessionalIcons.messagesActive,
+            label: 'Chat',
+          ),
+          BottomNavItem(
+            icon: ProfessionalIcons.profile,
+            activeIcon: ProfessionalIcons.profileActive,
+            label: 'Profile',
+          ),
+        ],
       ),
     );
   }

@@ -222,8 +222,8 @@ class _AppointmentDetailPageState extends State<AppointmentDetailPage> {
                           ),
                         ),
                         child: Text(
-                          widget.appointment.symptoms.isNotEmpty 
-                              ? widget.appointment.symptoms 
+                          widget.appointment.reasonOfBooking.isNotEmpty 
+                              ? widget.appointment.reasonOfBooking
                               : 'No symptoms described',
                           style: const TextStyle(
                             fontSize: 16,

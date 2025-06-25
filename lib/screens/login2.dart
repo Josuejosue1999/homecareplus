@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'clinic_signup2.dart';
 import 'clinic_dashboard.dart';
 import 'choose.dart';
+import 'package:homecare_app/services/appointment_service.dart';
 
 class Login2Page extends StatefulWidget {
   const Login2Page({Key? key}) : super(key: key);
@@ -37,6 +38,30 @@ class _Login2PageState extends State<Login2Page> {
           password: _passwordController.text.trim(),
         );
         if (userCredential.user != null) {
+          // Vérifier le type d'utilisateur
+          final userType = await AppointmentService.getUserType(userCredential.user!.uid);
+          
+          if (userType != 'clinic') {
+            // L'utilisateur n'est pas une clinique
+            await FirebaseAuth.instance.signOut();
+            if (!mounted) return;
+            
+            String errorMessage = 'Access denied';
+            if (userType == 'patient') {
+              errorMessage = 'This account is registered as a Patient. Please use the Patient login.';
+            } else {
+              errorMessage = 'Health Center account not found. Please check your credentials or sign up first.';
+            }
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+
           if (!mounted) return;
           // Rediriger vers un dashboard clinique (à personnaliser)
           Navigator.pushReplacement(

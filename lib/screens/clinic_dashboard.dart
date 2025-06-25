@@ -1,30 +1,24 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:homecare_app/screens/login.dart';
+import '../services/appointment_service.dart';
+import '../services/notification_service.dart';
+import 'clinic_appointments_page.dart';
+import 'chat.dart';
+import 'clinic_profile_page.dart';
+import 'clinic_notification_page.dart';
+import 'login2.dart';
+import 'appointment_detail_page.dart';
+import '../widgets/professional_bottom_nav.dart';
+import '../widgets/notification_badge.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:google_places_flutter/google_places_flutter.dart';
-import 'package:google_places_flutter/model/prediction.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:homecare_app/widgets/professional_bottom_nav.dart';
-import 'package:homecare_app/widgets/notification_badge.dart';
-import 'package:homecare_app/services/notification_service.dart';
-import 'package:homecare_app/services/appointment_service.dart';
-import 'package:homecare_app/screens/clinic_notification_page.dart';
-import 'package:homecare_app/screens/appointment_detail_page.dart';
-import 'package:homecare_app/screens/clinic_appointments_page.dart';
-import 'package:homecare_app/screens/clinic_profile_page.dart';
-import 'package:homecare_app/screens/chat.dart';
-import 'package:homecare_app/screens/appointments_page.dart';
-import 'package:homecare_app/screens/chat_page.dart';
-import 'package:flutter/foundation.dart';
-import 'package:homecare_app/models/appointment.dart';
+import 'package:flutter/services.dart';
+import '../models/appointment.dart';
 
 class ClinicDashboardPage extends StatefulWidget {
   const ClinicDashboardPage({Key? key}) : super(key: key);
@@ -60,7 +54,10 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
       if (user == null) {
         print('No authenticated user found, redirecting to login');
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/login');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Login2Page()),
+          );
         }
         return;
       }
@@ -225,7 +222,12 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
       case 2: // Chat
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ChatPage()),
+          MaterialPageRoute(
+            builder: (context) => Scaffold(
+              appBar: AppBar(title: const Text('Chat')),
+              body: const Center(child: Text('Chat coming soon!')),
+            ),
+          ),
         );
         break;
       case 3: // Profile
@@ -371,8 +373,8 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                         ),
                       ],
                     ),
-                    NotificationBadge(
-                      onPressed: () async {
+                    GestureDetector(
+                      onTap: () async {
                         final user = FirebaseAuth.instance.currentUser;
                         if (user == null) return;
                         await Navigator.push(
@@ -383,10 +385,57 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                           );
                         setState(() {});
                         },
-                      streamCount: FirebaseAuth.instance.currentUser == null
-                        ? null
-                        : NotificationService.getUnreadClinicNotificationCount(FirebaseAuth.instance.currentUser!.uid),
-                      size: 50,
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            child: const Icon(
+                              Icons.notifications,
+                              color: Colors.white,
+                              size: 24,
+                            ),
+                          ),
+                          StreamBuilder<int>(
+                            stream: NotificationService.getUnreadClinicNotificationCount(FirebaseAuth.instance.currentUser?.uid ?? ''),
+                            builder: (context, snapshot) {
+                              final count = snapshot.data ?? 0;
+                              if (count == 0) {
+                                return const SizedBox.shrink();
+                              }
+                              return Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  constraints: const BoxConstraints(
+                                    minWidth: 20,
+                                    minHeight: 20,
+                                  ),
+                                  child: Text(
+                                    count > 99 ? '99+' : count.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -460,7 +509,10 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => const ChatPage(),
+                                    builder: (context) => Scaffold(
+                                      appBar: AppBar(title: const Text('Chat')),
+                                      body: const Center(child: Text('Chat coming soon!')),
+                                    ),
                                   ),
                                 );
                               },
@@ -577,17 +629,17 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                 Container(
                                   padding: const EdgeInsets.all(40),
                                   child: const Center(
-                                    child: Column(
-                                      children: [
+        child: Column(
+          children: [
                                         CircularProgressIndicator(
                                           color: Color(0xFF159BBD),
                                         ),
                                         SizedBox(height: 16),
-                                        Text(
+            Text(
                                           'Loading health center information...',
-                                          style: TextStyle(
+              style: TextStyle(
                                             fontSize: 18,
-                                            fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w600,
                                             color: const Color(0xFF666666),
                                           ),
                                         ),
@@ -598,13 +650,13 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                             fontSize: 14,
                                             color: const Color(0xFF999999),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
+            ),
+          ],
+        ),
+      ),
                                 ),
                               ] else if (appointmentError != null) ...[
-                                Container(
+        Container(
                                   padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
                                     color: Colors.red[50],
@@ -619,19 +671,19 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                         color: Colors.red[400],
                                       ),
                                       const SizedBox(height: 12),
-                                      Text(
+              Text(
                                         'Error Loading Appointments',
                                         style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
                                           color: Colors.red[700],
-                                        ),
+                ),
             ),
             const SizedBox(height: 8),
             Text(
                                         'Please try again later',
               style: TextStyle(
-                                          fontSize: 14,
+                  fontSize: 14,
                                           color: Colors.red[600],
               ),
             ),
@@ -642,11 +694,11 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                 upcomingAppointments.isEmpty
                                     ? Container(
                                         padding: const EdgeInsets.all(24),
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
                                             begin: Alignment.topLeft,
                                             end: Alignment.bottomRight,
-                                            colors: [
+            colors: [
                                               Colors.grey[50]!,
                                               Colors.grey[100]!,
                                             ],
@@ -657,12 +709,12 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                             width: 1,
                                           ),
                                         ),
-                                        child: Column(
-                                          children: [
-                                            Container(
+          child: Column(
+      children: [
+        Container(
                                               padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF159BBD).withOpacity(0.1),
+          decoration: BoxDecoration(
+            color: const Color(0xFF159BBD).withOpacity(0.1),
                                                 borderRadius: BorderRadius.circular(50),
                                               ),
                                               child: Icon(
@@ -672,66 +724,66 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                               ),
                                             ),
                                             const SizedBox(height: 16),
-                                            Text(
+              Text(
                                               'No Upcoming Appointments',
                                               style: TextStyle(
                                                 fontSize: 18,
-                                                fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.bold,
                                                 color: Colors.grey[800],
-                                              ),
-                                            ),
+                ),
+              ),
                                             const SizedBox(height: 8),
-                                            Text(
+              Text(
                                               'You don\'t have any appointments scheduled for the next 7 days.',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey[600],
-                                              ),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
                                               textAlign: TextAlign.center,
                                             ),
                                             const SizedBox(height: 20),
-                                            Container(
+                                    Container(
                                               padding: const EdgeInsets.all(16),
-                                              decoration: BoxDecoration(
+                                      decoration: BoxDecoration(
                                                 color: const Color(0xFF159BBD).withOpacity(0.05),
                                                 borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
+                                        border: Border.all(
                                                   color: const Color(0xFF159BBD).withOpacity(0.1),
                                                   width: 1,
                                                 ),
                                               ),
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
+            children: [
                                                   Icon(
                                                     Icons.info_outline,
-                                                    color: const Color(0xFF159BBD),
-                                                    size: 20,
-                                                  ),
+                                            color: const Color(0xFF159BBD),
+                                            size: 20,
+                                          ),
                                                   const SizedBox(width: 8),
                                                   Expanded(
                                                     child: Text(
                                                       'New appointments will appear here once patients book with your health center.',
                                                       style: const TextStyle(
-                                                        color: Color(0xFF159BBD),
+                      color: Color(0xFF159BBD),
                                                         fontWeight: FontWeight.w500,
                                                         fontSize: 14,
                                                       ),
                                                       textAlign: TextAlign.center,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                                           ],
                                         ),
                                       )
                                     : Column(
-                                        children: [
+            children: [
                                           // Afficher les 3 premiers rendez-vous
                                           ...upcomingAppointments.take(3).map((appointment) {
                                             return Column(
-                                              children: [
+                  children: [
                                                 InkWell(
                                                   onTap: () async {
                                                     final result = await Navigator.push(
@@ -758,12 +810,12 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                           // Indicateur s'il y a plus de 3 rendez-vous
                                           if (upcomingAppointments.length > 3) ...[
                                             const SizedBox(height: 16),
-                                            Container(
+                                    Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                              decoration: BoxDecoration(
+                                      decoration: BoxDecoration(
                                                 color: const Color(0xFF159BBD).withOpacity(0.05),
                                                 borderRadius: BorderRadius.circular(12),
-                                                border: Border.all(
+                                        border: Border.all(
                                                   color: const Color(0xFF159BBD).withOpacity(0.1),
                                                   width: 1,
                                                 ),
@@ -773,9 +825,9 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                                 children: [
                                                   Icon(
                                                     Icons.more_horiz,
-                                                    color: const Color(0xFF159BBD),
-                                                    size: 20,
-                                                  ),
+                                            color: const Color(0xFF159BBD),
+                                            size: 20,
+                                          ),
                                                   const SizedBox(width: 8),
                                                   Text(
                                                     '${upcomingAppointments.length - 3} more appointment${upcomingAppointments.length - 3 > 1 ? 's' : ''}',
@@ -783,10 +835,45 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                                       color: Color(0xFF159BBD),
                                                       fontWeight: FontWeight.w600,
                                                       fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                                          ],
+                                          
+                                          // Si moins de 3 rendez-vous, afficher un message d'encouragement
+                                          if (upcomingAppointments.length < 3 && upcomingAppointments.isNotEmpty) ...[
+                                            const SizedBox(height: 16),
+                              Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                                color: Colors.green.withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                                  color: Colors.green.withOpacity(0.1),
+                                                  width: 1,
+                                                ),
                                               ),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                                    Icons.check_circle_outline,
+                                                    color: Colors.green[600],
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                                  Text(
+                                                    '${upcomingAppointments.length} appointment${upcomingAppointments.length > 1 ? 's' : ''} scheduled',
+                                          style: TextStyle(
+                                                      color: Colors.green[600],
+                                                      fontWeight: FontWeight.w600,
+                                                      fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                             ),
                                           ],
                                         ],

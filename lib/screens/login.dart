@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/choose.dart';
 import 'package:homecare_app/screens/signup.dart';
+import 'package:homecare_app/services/appointment_service.dart';
 
 class LoginPage extends StatefulWidget {
   final String? selectedHospitalName;
@@ -54,9 +55,35 @@ class _LoginPageState extends State<LoginPage> {
       );
 
         if (userCredential.user != null) {
+          // Vérifier le type d'utilisateur
+          final userType = await AppointmentService.getUserType(userCredential.user!.uid);
+          
+          if (userType != 'patient') {
+            // L'utilisateur n'est pas un patient
+            await FirebaseAuth.instance.signOut();
+            if (!mounted) return;
+            
+            String errorMessage = 'Access denied';
+            if (userType == 'clinic') {
+              errorMessage = 'This account is registered as a Health Center. Please use the Health Center login.';
+            } else {
+              errorMessage = 'Account not found. Please check your credentials or sign up first.';
+            }
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: Colors.red,
+              ),
+            );
+            return;
+          }
+
           if (!mounted) return;
           
-          // Navigate to MainDashboard
+          // Vérifier si l'utilisateur vient d'une sélection d'hôpital ou d'une connexion normale
+          if (widget.selectedHospitalName != null) {
+            // L'utilisateur vient d'une sélection d'hôpital, rediriger vers le dashboard avec les paramètres
       Navigator.pushReplacement(
         context,
             MaterialPageRoute(
@@ -70,6 +97,15 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
       );
+          } else {
+            // L'utilisateur se connecte normalement, rediriger vers le dashboard normal
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MainDashboard(),
+              ),
+            );
+          }
         }
       } on FirebaseAuthException catch (e) {
         String message = 'An error occurred';

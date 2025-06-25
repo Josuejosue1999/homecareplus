@@ -112,8 +112,11 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _loadSavedProfileImage() async {
     try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      
       final prefs = await SharedPreferences.getInstance();
-      final profileImagePath = prefs.getString('user_profile_image_path');
+      final profileImagePath = prefs.getString('user_profile_image_path_${user.uid}');
 
       if (profileImagePath != null && profileImagePath.isNotEmpty) {
         final profileFile = File(profileImagePath);
@@ -124,7 +127,7 @@ class _ProfilePageState extends State<ProfilePage> {
           });
           await _syncImageToFirestore(profileImagePath);
         } else {
-          await prefs.remove('user_profile_image_path');
+          await prefs.remove('user_profile_image_path_${user.uid}');
         }
       }
     } catch (e) {
@@ -199,7 +202,7 @@ class _ProfilePageState extends State<ProfilePage> {
         await imageFile.copy(savedPath);
         
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('user_profile_image_path', savedPath);
+        await prefs.setString('user_profile_image_path_${FirebaseAuth.instance.currentUser?.uid}', savedPath);
 
         setState(() {
           profileImageUrl = savedPath;

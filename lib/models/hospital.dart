@@ -26,12 +26,18 @@ class Hospital {
   });
 
   factory Hospital.fromFirestore(Map<String, dynamic> data, String id) {
+    // Récupérer l'adresse depuis 'address' en priorité, puis 'location' comme fallback
+    String? address = data['address'];
+    if (address == null || address.isEmpty) {
+      address = data['location'];
+    }
+    
     return Hospital(
       id: id,
       name: data['name'] ?? '',
       email: data['email'] ?? '',
       about: data['about'] ?? 'This healthcare facility is committed to providing exceptional medical care and services. Our state-of-the-art facility is equipped with the latest medical technology and staffed by experienced healthcare professionals.',
-      location: data['location'] ?? 'Location not available',
+      location: address ?? 'Location not available',
       facilities: List<String>.from(data['facilities'] ?? []),
       profileImageUrl: data['profileImageUrl'],
       certificateUrl: data['certificateUrl'],
@@ -60,6 +66,7 @@ class Hospital {
       'name': name,
       'email': email,
       'about': about,
+      'address': location,
       'location': location,
       'facilities': facilities,
       'profileImageUrl': profileImageUrl,

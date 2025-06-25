@@ -266,7 +266,7 @@ class NotificationService {
     try {
       final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
       
-      final oldNotifications = await _firestore
+      final oldNotifications = await FirebaseFirestore.instance
           .collection('notifications')
           .where('createdAt', isLessThan: Timestamp.fromDate(thirtyDaysAgo))
           .get();
@@ -422,21 +422,59 @@ class NotificationService {
   // Marquer toutes les notifications de clinique comme lues
   static Future<void> markAllClinicNotificationsAsRead(String clinicId) async {
     try {
-      final snapshot = await FirebaseFirestore.instance
-          .collection('clinic_notifications')
-          .where('clinicId', isEqualTo: clinicId)
-          .where('isRead', isEqualTo: false)
-          .get();
+      print('=== MARKING ALL CLINIC NOTIFICATIONS AS READ ===');
+      print('Clinic ID: $clinicId');
       
-      final batch = FirebaseFirestore.instance.batch();
-      for (final doc in snapshot.docs) {
-        batch.update(doc.reference, {'isRead': true});
+      final notifications = await getClinicNotifications(clinicId).first;
+      final prefs = await SharedPreferences.getInstance();
+      final readNotifications = prefs.getStringList('${_readNotificationsKey}_clinic_$clinicId') ?? [];
+      
+      for (final notification in notifications) {
+        if (!readNotifications.contains(notification.id)) {
+          readNotifications.add(notification.id);
+        }
       }
       
-      await batch.commit();
-      print('✓ Marked ${snapshot.docs.length} clinic notifications as read');
+      await prefs.setStringList('${_readNotificationsKey}_clinic_$clinicId', readNotifications);
+      print('✓ Marked all clinic notifications as read');
     } catch (e) {
       print('Error marking all clinic notifications as read: $e');
+    }
+  }
+
+  // Supprimer une notification de clinique
+  static Future<void> deleteClinicNotification(String notificationId) async {
+    try {
+      print('=== DELETING CLINIC NOTIFICATION ===');
+      print('Notification ID: $notificationId');
+      
+      await FirebaseFirestore.instance
+          .collection('clinic_notifications')
+          .doc(notificationId)
+          .delete();
+      
+      print('✓ Clinic notification deleted successfully');
+    } catch (e) {
+      print('Error deleting clinic notification: $e');
+      throw e;
+    }
+  }
+
+  // Supprimer une notification de patient
+  static Future<void> deleteNotification(String notificationId) async {
+    try {
+      print('=== DELETING PATIENT NOTIFICATION ===');
+      print('Notification ID: $notificationId');
+      
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .delete();
+      
+      print('✓ Patient notification deleted successfully');
+    } catch (e) {
+      print('Error deleting patient notification: $e');
+      throw e;
     }
   }
 }
@@ -476,11 +514,11 @@ class AppointmentNotification {
     this.appointmentDate,
     this.appointmentTime,
     required this.createdAt,
-    this.isRead = false,
+    required this.isRead,
     this.clinicId,
   });
 
-  // Méthode pour créer une notification à partir d'un document Firestore
+  // Méthode pour créer une notification depuis Firestore
   factory AppointmentNotification.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
     
@@ -493,31 +531,32 @@ class AppointmentNotification {
       appointmentId: data['appointmentId'],
       hospitalName: data['hospitalName'],
       department: data['department'],
-      appointmentDate: data['appointmentDate'] != null 
-          ? (data['appointmentDate'] as Timestamp).toDate() 
-          : null,
+      appointmentDate: data['appointmentDate']?.toDate(),
       appointmentTime: data['appointmentTime'],
-      createdAt: data['createdAt'] != null 
-          ? (data['createdAt'] as Timestamp).toDate() 
-          : DateTime.now(),
+      createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
       isRead: data['isRead'] ?? false,
       clinicId: data['clinicId'],
     );
   }
 
-  // Méthode utilitaire pour parser le type de notification
+  // Méthode helper pour parser le type de notification
   static NotificationType _parseNotificationType(String type) {
-    switch (type.toLowerCase()) {
+    switch (type) {
+      case 'new_appointment':
+        return NotificationType.newAppointment;
       case 'appointment_confirmed':
         return NotificationType.appointmentConfirmed;
       case 'appointment_declined':
         return NotificationType.appointmentDeclined;
-      case 'new_appointment':
-        return NotificationType.newAppointment;
+      case 'appointment_cancelled':
+        return NotificationType.appointmentDeclined;
       default:
         return NotificationType.newAppointment;
     }
   }
+
+  // Getter pour le body (compatibilité)
+  String get body => message;
 
   Map<String, dynamic> toMap() {
     return {

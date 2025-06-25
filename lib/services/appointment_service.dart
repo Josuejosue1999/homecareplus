@@ -55,7 +55,7 @@ class AppointmentService {
         department: appointment.department,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.appointmentTime,
-        symptoms: appointment.symptoms,
+        reasonOfBooking: appointment.reasonOfBooking,
         status: appointment.status,
         createdAt: appointment.createdAt,
       );
@@ -456,7 +456,7 @@ class AppointmentService {
     }
   }
 
-  // Récupérer les rendez-vous à venir d'une clinique (prochains 7 jours) - version sécurisée avec fallback
+  // Récupérer les rendez-vous à venir d'une clinique (prochains 7 jours) - version simplifiée sans index
   static Stream<List<Appointment>> getClinicUpcomingAppointments(String clinicName) {
     try {
       final user = _auth.currentUser;
@@ -477,80 +477,79 @@ class AppointmentService {
       return _firestore
           .collection('clinics')
           .doc(user.uid)
-          .snapshots()
+          .get()
+          .asStream()
           .asyncMap((clinicDoc) async {
-        String exactClinicName = clinicName;
-        
-        if (clinicDoc.exists) {
-          final clinicData = clinicDoc.data()!;
-          final firebaseClinicName = clinicData['name'] ?? '';
-          if (firebaseClinicName.isNotEmpty) {
-            exactClinicName = firebaseClinicName;
-            print('Using exact clinic name from Firebase: "$exactClinicName"');
-          }
-        }
+            String exactClinicName = clinicName;
+            if (clinicDoc.exists) {
+              final clinicData = clinicDoc.data()!;
+              exactClinicName = clinicData['name'] ?? clinicName;
+              print('Using exact clinic name from Firebase: "$exactClinicName"');
+            }
 
-        try {
-          // Essayer d'abord la requête complexe avec index
-          final snapshot = await _firestore
-              .collection('appointments')
-              .where('hospitalName', isEqualTo: exactClinicName)
-              .where('appointmentDate', isGreaterThanOrEqualTo: now)
-              .where('appointmentDate', isLessThanOrEqualTo: nextWeek)
-              .where('status', whereIn: ['pending', 'confirmed'])
-              .orderBy('appointmentDate', descending: false)
-              .orderBy('appointmentTime', descending: false)
-              .get();
-              
-          print('Found ${snapshot.docs.length} upcoming appointments for clinic "$exactClinicName"');
-          
-          final appointments = snapshot.docs.map((doc) {
-            return Appointment.fromFirestore(doc.data(), doc.id);
-          }).toList();
-          
-          // Trier par date et heure
-          appointments.sort((a, b) {
-            final dateComparison = a.appointmentDate.compareTo(b.appointmentDate);
-            if (dateComparison != 0) return dateComparison;
-            return a.appointmentTime.compareTo(b.appointmentTime);
+            // Requête simple sans index - récupérer tous les rendez-vous
+            final snapshot = await _firestore
+                .collection('appointments')
+                .get();
+            
+            final allAppointments = snapshot.docs.map((doc) {
+              try {
+                final data = doc.data();
+                return Appointment(
+                  id: doc.id,
+                  patientId: data['patientId'] ?? '',
+                  patientName: data['patientName'] ?? '',
+                  patientEmail: data['patientEmail'] ?? '',
+                  patientPhone: data['patientPhone'] ?? '',
+                  hospitalName: data['hospitalName'] ?? '',
+                  hospitalImage: data['hospitalImage'] ?? '',
+                  hospitalLocation: data['hospitalLocation'] ?? '',
+                  department: data['department'] ?? '',
+                  appointmentDate: data['appointmentDate']?.toDate() ?? DateTime.now(),
+                  appointmentTime: data['appointmentTime'] ?? '',
+                  reasonOfBooking: data['reasonOfBooking'] ?? data['symptoms'] ?? '',
+                  status: data['status'] ?? 'pending',
+                  createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+                  updatedAt: data['updatedAt']?.toDate(),
+                );
+              } catch (e) {
+                print('Error parsing appointment ${doc.id}: $e');
+                return null;
+              }
+            }).where((appointment) => appointment != null).cast<Appointment>().toList();
+
+            // Filtrer les rendez-vous de cette clinique à venir (prochains 7 jours) avec statut pending ou confirmed
+            final upcomingAppointments = allAppointments.where((appointment) {
+              final isThisClinic = appointment.hospitalName == exactClinicName;
+              final isUpcoming = appointment.appointmentDate.isAfter(now) && 
+                               appointment.appointmentDate.isBefore(nextWeek);
+              final hasValidStatus = appointment.status == 'pending' || 
+                                   appointment.status == 'confirmed';
+              return isThisClinic && isUpcoming && hasValidStatus;
+            }).toList();
+
+            // Trier par date et heure
+            upcomingAppointments.sort((a, b) {
+              final dateComparison = a.appointmentDate.compareTo(b.appointmentDate);
+              if (dateComparison != 0) return dateComparison;
+              return a.appointmentTime.compareTo(b.appointmentTime);
+            });
+
+            // Limiter à 3 rendez-vous maximum
+            final limitedAppointments = upcomingAppointments.take(3).toList();
+
+            print('Found ${allAppointments.length} total appointments');
+            print('Found ${upcomingAppointments.length} upcoming appointments for clinic "$exactClinicName"');
+            print('Returning ${limitedAppointments.length} limited appointments');
+
+            return limitedAppointments;
+          })
+          .handleError((error) {
+            print('Error fetching clinic data: $error');
+            return <Appointment>[];
           });
-          
-          return appointments;
-        } catch (e) {
-          print('Complex query failed, using fallback method: $e');
-          
-          // Fallback: requête simple puis filtrage côté client
-          final allAppointments = await _firestore
-              .collection('appointments')
-              .where('hospitalName', isEqualTo: exactClinicName)
-              .get();
-              
-          final appointments = allAppointments.docs.map((doc) {
-            return Appointment.fromFirestore(doc.data(), doc.id);
-          }).toList();
-          
-          // Filtrer côté client
-          final filteredAppointments = appointments.where((appointment) {
-            final isUpcoming = appointment.appointmentDate.isAfter(now) && 
-                             appointment.appointmentDate.isBefore(nextWeek);
-            final isPendingOrConfirmed = appointment.status == 'pending' || 
-                                        appointment.status == 'confirmed';
-            return isUpcoming && isPendingOrConfirmed;
-          }).toList();
-          
-          // Trier par date et heure
-          filteredAppointments.sort((a, b) {
-            final dateComparison = a.appointmentDate.compareTo(b.appointmentDate);
-            if (dateComparison != 0) return dateComparison;
-            return a.appointmentTime.compareTo(b.appointmentTime);
-          });
-          
-          print('Fallback: Found ${filteredAppointments.length} upcoming appointments for clinic "$exactClinicName"');
-          return filteredAppointments;
-        }
-      });
     } catch (e) {
-      print('Error fetching clinic upcoming appointments: $e');
+      print('Error in getClinicUpcomingAppointments: $e');
       return Stream.value([]);
     }
   }
@@ -616,35 +615,86 @@ class AppointmentService {
     }
   }
 
-  // Récupérer les rendez-vous à venir (prochains 7 jours)
+  // Récupérer les rendez-vous à venir (prochains 7 jours) - version simplifiée sans index
   static Stream<List<Appointment>> getUpcomingAppointments() {
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        throw Exception('User not authenticated');
+        print('No authenticated user found');
+        return Stream.value([]);
       }
 
       final now = DateTime.now();
       final nextWeek = now.add(const Duration(days: 7));
 
+      print('=== GETTING PATIENT UPCOMING APPOINTMENTS ===');
+      print('User ID: ${user.uid}');
+      print('Date range: ${now.toIso8601String()} to ${nextWeek.toIso8601String()}');
+
+      // Requête simple sans index - récupérer tous les rendez-vous du patient
       return _firestore
           .collection('appointments')
           .where('patientId', isEqualTo: user.uid)
-          .where('appointmentDate', isGreaterThanOrEqualTo: now)
-          .where('appointmentDate', isLessThanOrEqualTo: nextWeek)
-          .where('status', whereIn: ['pending', 'confirmed'])
-          .orderBy('appointmentDate', descending: false)
-          .orderBy('appointmentTime', descending: false)
           .snapshots()
           .map((snapshot) {
-        print('Fetched ${snapshot.docs.length} upcoming appointments from Firebase');
-        return snapshot.docs.map((doc) {
-          return Appointment.fromFirestore(doc.data(), doc.id);
-        }).toList();
-      });
+            final allAppointments = snapshot.docs.map((doc) {
+              try {
+                final data = doc.data();
+                return Appointment(
+                  id: doc.id,
+                  patientId: data['patientId'] ?? '',
+                  patientName: data['patientName'] ?? '',
+                  patientEmail: data['patientEmail'] ?? '',
+                  patientPhone: data['patientPhone'] ?? '',
+                  hospitalName: data['hospitalName'] ?? '',
+                  hospitalImage: data['hospitalImage'] ?? '',
+                  hospitalLocation: data['hospitalLocation'] ?? '',
+                  department: data['department'] ?? '',
+                  appointmentDate: data['appointmentDate']?.toDate() ?? DateTime.now(),
+                  appointmentTime: data['appointmentTime'] ?? '',
+                  reasonOfBooking: data['reasonOfBooking'] ?? data['symptoms'] ?? '',
+                  status: data['status'] ?? 'pending',
+                  createdAt: data['createdAt']?.toDate() ?? DateTime.now(),
+                  updatedAt: data['updatedAt']?.toDate(),
+                );
+              } catch (e) {
+                print('Error parsing appointment ${doc.id}: $e');
+                return null;
+              }
+            }).where((appointment) => appointment != null).cast<Appointment>().toList();
+
+            // Filtrer les rendez-vous à venir (prochains 7 jours) avec statut pending ou confirmed
+            final upcomingAppointments = allAppointments.where((appointment) {
+              final isUpcoming = appointment.appointmentDate.isAfter(now) && 
+                               appointment.appointmentDate.isBefore(nextWeek);
+              final hasValidStatus = appointment.status == 'pending' || 
+                                   appointment.status == 'confirmed';
+              return isUpcoming && hasValidStatus;
+            }).toList();
+
+            // Trier par date et heure
+            upcomingAppointments.sort((a, b) {
+              final dateComparison = a.appointmentDate.compareTo(b.appointmentDate);
+              if (dateComparison != 0) return dateComparison;
+              return a.appointmentTime.compareTo(b.appointmentTime);
+            });
+
+            // Limiter à 2 rendez-vous maximum
+            final limitedAppointments = upcomingAppointments.take(2).toList();
+
+            print('Found ${allAppointments.length} total appointments');
+            print('Found ${upcomingAppointments.length} upcoming appointments');
+            print('Returning ${limitedAppointments.length} limited appointments');
+
+            return limitedAppointments;
+          })
+          .handleError((error) {
+            print('Error in getUpcomingAppointments: $error');
+            return <Appointment>[];
+          });
     } catch (e) {
-      print('Error fetching upcoming appointments: $e');
-      throw e;
+      print('Error in getUpcomingAppointments: $e');
+      return Stream.value([]);
     }
   }
 
@@ -866,7 +916,7 @@ class AppointmentService {
               department: doc.data()['department'] ?? 'General',
               appointmentDate: (doc.data()['appointmentDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
               appointmentTime: doc.data()['appointmentTime'] ?? '',
-              symptoms: doc.data()['symptoms'] ?? '',
+              reasonOfBooking: doc.data()['reasonOfBooking'] ?? doc.data()['symptoms'] ?? '',
               status: doc.data()['status'] ?? 'pending',
               createdAt: (doc.data()['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
             );
@@ -1089,7 +1139,7 @@ class AppointmentService {
         department: appointment.department,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.appointmentTime,
-        symptoms: appointment.symptoms,
+        reasonOfBooking: appointment.reasonOfBooking,
         status: appointment.status,
         createdAt: appointment.createdAt,
       );
@@ -1212,6 +1262,99 @@ class AppointmentService {
       
     } catch (e) {
       print('Error syncing clinic names: $e');
+    }
+  }
+
+  // Vérifier le type d'utilisateur (patient ou clinique)
+  static Future<String?> getUserType(String userId) async {
+    try {
+      print('=== CHECKING USER TYPE ===');
+      print('User ID: $userId');
+      
+      // Vérifier d'abord si l'utilisateur est une clinique
+      final clinicDoc = await _firestore
+          .collection('clinics')
+          .doc(userId)
+          .get();
+      
+      if (clinicDoc.exists) {
+        print('✓ User is a CLINIC');
+        return 'clinic';
+      }
+      
+      // Vérifier si l'utilisateur est un patient dans la collection 'patients'
+      final patientDoc = await _firestore
+          .collection('patients')
+          .doc(userId)
+          .get();
+      
+      if (patientDoc.exists) {
+        print('✓ User is a PATIENT (from patients collection)');
+        return 'patient';
+      }
+      
+      // Vérifier si l'utilisateur est un patient dans la collection 'users'
+      final userDoc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .get();
+      
+      if (userDoc.exists) {
+        final userData = userDoc.data()!;
+        final role = userData['role'] ?? '';
+        
+        if (role == 'patient') {
+          print('✓ User is a PATIENT (from users collection)');
+          return 'patient';
+        } else if (role == 'clinic') {
+          print('✓ User is a CLINIC (from users collection)');
+          return 'clinic';
+        }
+      }
+      
+      // Si aucune collection n'existe, vérifier les rendez-vous pour déterminer le type
+      final appointmentsQuery = await _firestore
+          .collection('appointments')
+          .where('patientId', isEqualTo: userId)
+          .limit(1)
+          .get();
+      
+      if (appointmentsQuery.docs.isNotEmpty) {
+        print('✓ User is a PATIENT (found in appointments)');
+        return 'patient';
+      }
+      
+      // Vérifier si l'utilisateur a des rendez-vous en tant que clinique
+      final clinicAppointmentsQuery = await _firestore
+          .collection('appointments')
+          .where('hospitalName', isNotEqualTo: '')
+          .get();
+      
+      // Chercher dans les résultats si l'utilisateur correspond à une clinique
+      for (final doc in clinicAppointmentsQuery.docs) {
+        final data = doc.data();
+        final hospitalName = data['hospitalName'] ?? '';
+        
+        // Vérifier si l'utilisateur correspond à cette clinique
+        final clinicQuery = await _firestore
+            .collection('clinics')
+            .where('name', isEqualTo: hospitalName)
+            .get();
+        
+        if (clinicQuery.docs.isNotEmpty) {
+          final clinicId = clinicQuery.docs.first.id;
+          if (clinicId == userId) {
+            print('✓ User is a CLINIC (found in appointments)');
+            return 'clinic';
+          }
+        }
+      }
+      
+      print('⚠ User type UNKNOWN');
+      return null;
+    } catch (e) {
+      print('Error checking user type: $e');
+      return null;
     }
   }
 } 

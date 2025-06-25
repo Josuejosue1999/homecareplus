@@ -56,6 +56,58 @@ class _NotificationPageState extends State<NotificationPage> {
     await _loadNotifications();
   }
 
+  Future<void> _deleteNotification(AppointmentNotification notification) async {
+    try {
+      // Afficher une boîte de dialogue de confirmation
+      final shouldDelete = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Supprimer la notification'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer cette notification ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Supprimer'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldDelete == true) {
+        await NotificationService.deleteNotification(notification.id);
+        
+        // Rafraîchir la liste des notifications
+        await _refreshNotifications();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Notification supprimée'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error deleting notification: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -428,6 +480,24 @@ class _NotificationPageState extends State<NotificationPage> {
                     color: notification.isRead 
                         ? Colors.grey[600]
                         : notification.typeColor,
+                  ),
+                ),
+              ),
+              
+              // Bouton de suppression
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _deleteNotification(notification),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    size: 16,
+                    color: Colors.red[600],
                   ),
                 ),
               ),

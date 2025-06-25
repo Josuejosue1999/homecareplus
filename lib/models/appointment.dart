@@ -12,7 +12,7 @@ class Appointment {
   final String department;
   final DateTime appointmentDate;
   final String appointmentTime;
-  final String symptoms;
+  final String reasonOfBooking;
   final String status; // 'pending', 'confirmed', 'completed', 'cancelled'
   final DateTime createdAt;
   final DateTime? updatedAt;
@@ -29,7 +29,7 @@ class Appointment {
     required this.department,
     required this.appointmentDate,
     required this.appointmentTime,
-    required this.symptoms,
+    required this.reasonOfBooking,
     required this.status,
     required this.createdAt,
     this.updatedAt,
@@ -48,7 +48,7 @@ class Appointment {
       department: data['department'] ?? '',
       appointmentDate: (data['appointmentDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
       appointmentTime: data['appointmentTime'] ?? '',
-      symptoms: data['symptoms'] ?? '',
+      reasonOfBooking: data['reasonOfBooking'] ?? data['symptoms'] ?? '',
       status: data['status'] ?? 'pending',
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: data['updatedAt'] != null 
@@ -69,7 +69,7 @@ class Appointment {
       'department': department,
       'appointmentDate': Timestamp.fromDate(appointmentDate),
       'appointmentTime': appointmentTime,
-      'symptoms': symptoms,
+      'reasonOfBooking': reasonOfBooking,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': updatedAt != null ? Timestamp.fromDate(updatedAt!) : null,
@@ -88,7 +88,7 @@ class Appointment {
     String? department,
     DateTime? appointmentDate,
     String? appointmentTime,
-    String? symptoms,
+    String? reasonOfBooking,
     String? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -105,7 +105,7 @@ class Appointment {
       department: department ?? this.department,
       appointmentDate: appointmentDate ?? this.appointmentDate,
       appointmentTime: appointmentTime ?? this.appointmentTime,
-      symptoms: symptoms ?? this.symptoms,
+      reasonOfBooking: reasonOfBooking ?? this.reasonOfBooking,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

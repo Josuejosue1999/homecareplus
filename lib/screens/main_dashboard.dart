@@ -615,6 +615,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                     ),
                                     const SizedBox(height: 15),
                                     StreamBuilder<QuerySnapshot>(
+                                      key: ValueKey('appointments_${FirebaseAuth.instance.currentUser?.uid ?? ""}'),
                                       stream: FirebaseFirestore.instance
                                           .collection('appointments')
                                           .where('patientId', isEqualTo: FirebaseAuth.instance.currentUser?.uid ?? '')
@@ -701,13 +702,34 @@ class _MainDashboardState extends State<MainDashboard> {
                                         
                                         // Filtrer et trier les rendez-vous
                                         final now = DateTime.now();
+                                        print('=== FILTERING APPOINTMENTS ===');
+                                        print('Current time: $now');
+                                        print('Total appointments: ${appointments.length}');
+                                        
                                         final upcomingAppointments = appointments.where((doc) {
                                           final data = doc.data() as Map<String, dynamic>;
                                           final appointmentDate = data['appointmentDate'] is Timestamp 
                                               ? (data['appointmentDate'] as Timestamp).toDate()
                                               : DateTime.now();
-                                          return appointmentDate.isAfter(now);
+                                          final status = data['status'] ?? 'pending';
+                                          final patientId = data['patientId'] ?? '';
+                                          final currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+                                          
+                                          // Filtrer par date ET statut ET patient
+                                          final isUpcoming = appointmentDate.isAfter(now);
+                                          final isValidStatus = status == 'pending' || status == 'confirmed';
+                                          final isCurrentPatient = patientId == currentUserId;
+                                          
+                                          print('Appointment: ${doc.id}');
+                                          print('  - Date: $appointmentDate (isUpcoming: $isUpcoming)');
+                                          print('  - Status: $status (isValidStatus: $isValidStatus)');
+                                          print('  - Patient ID: $patientId vs Current: $currentUserId (isCurrentPatient: $isCurrentPatient)');
+                                          print('  - Include: ${isUpcoming && isValidStatus && isCurrentPatient}');
+                                          
+                                          return isUpcoming && isValidStatus && isCurrentPatient;
                                         }).toList();
+                                        
+                                        print('Filtered appointments: ${upcomingAppointments.length}');
                                         
                                         upcomingAppointments.sort((a, b) {
                                           final aDate = (a.data() as Map<String, dynamic>)['appointmentDate'] is Timestamp 
@@ -720,7 +742,158 @@ class _MainDashboardState extends State<MainDashboard> {
                                         });
                                         
                                         final displayAppointments = upcomingAppointments.take(2).toList();
+                                        print('Display appointments: ${displayAppointments.length}');
                                         
+                                        // Ensure we show at least 2 appointments if available
+                                        final minDisplayCount = 2;
+                                        final actualDisplayCount = displayAppointments.length;
+                                        
+                                        if (actualDisplayCount < minDisplayCount && upcomingAppointments.length >= minDisplayCount) {
+                                          // If we have more appointments but filtered less than minimum, show more
+                                          final additionalAppointments = upcomingAppointments.take(minDisplayCount).toList();
+                                          print('Showing minimum ${minDisplayCount} appointments: ${additionalAppointments.length}');
+                                          
+                                          return Column(
+                                            children: additionalAppointments.map((doc) {
+                                              final data = doc.data() as Map<String, dynamic>;
+                                              final appointmentDate = data['appointmentDate'] is Timestamp 
+                                                  ? (data['appointmentDate'] as Timestamp).toDate()
+                                                  : DateTime.now();
+                                              final status = data['status'] ?? 'pending';
+                                              
+                                              return Container(
+                                                margin: const EdgeInsets.only(bottom: 12),
+                                                padding: const EdgeInsets.all(16),
+                                                decoration: BoxDecoration(
+                                                  gradient: LinearGradient(
+                                                    begin: Alignment.topLeft,
+                                                    end: Alignment.bottomRight,
+                                                    colors: [
+                                                      const Color(0xFF159BBD).withOpacity(0.05),
+                                                      const Color(0xFF0D5C73).withOpacity(0.03),
+                                                    ],
+                                                  ),
+                                                  borderRadius: BorderRadius.circular(15),
+                                                  border: Border.all(
+                                                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                    width: 1,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  children: [
+                                                    // Image de l'hôpital
+                                                    Container(
+                                                      width: 50,
+                                                      height: 50,
+                                                      decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(10),
+                                                        color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                      ),
+                                                      child: _buildHospitalImageForAppointment(data['hospitalImage']),
+                                                    ),
+                                                    const SizedBox(width: 12),
+                                                    
+                                                    // Informations du rendez-vous
+                                                    Expanded(
+                                                      child: Column(
+                                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                                        children: [
+                                                          Text(
+                                                            data['hospitalName'] ?? 'Unknown Hospital',
+                                                            style: const TextStyle(
+                                                              fontSize: 14,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: Color(0xFF159BBD),
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          const SizedBox(height: 2),
+                                                          Text(
+                                                            data['department'] ?? 'General',
+                                                            style: TextStyle(
+                                                              fontSize: 12,
+                                                              color: Colors.grey[600],
+                                                              fontWeight: FontWeight.w500,
+                                                            ),
+                                                            maxLines: 1,
+                                                            overflow: TextOverflow.ellipsis,
+                                                          ),
+                                                          const SizedBox(height: 6),
+                                                          Row(
+                                                            children: [
+                                                              Icon(
+                                                                Icons.calendar_today,
+                                                                size: 14,
+                                                                color: Colors.grey[600],
+                                                              ),
+                                                              const SizedBox(width: 4),
+                                                              Expanded(
+                                                                child: Text(
+                                                                  DateFormat('MMM dd').format(appointmentDate),
+                                                                  style: TextStyle(
+                                                                    fontSize: 11,
+                                                                    color: Colors.grey[600],
+                                                                  ),
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                              ),
+                                                              const SizedBox(width: 8),
+                                                              Icon(
+                                                                Icons.access_time,
+                                                                size: 14,
+                                                                color: Colors.grey[600],
+                                                              ),
+                                                              const SizedBox(width: 4),
+                                                              Expanded(
+                                                                child: Text(
+                                                                  data['appointmentTime'] ?? 'TBD',
+                                                                  style: TextStyle(
+                                                                    fontSize: 11,
+                                                                    color: Colors.grey[600],
+                                                                  ),
+                                                                  overflow: TextOverflow.ellipsis,
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    
+                                                    // Statut du rendez-vous
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                      decoration: BoxDecoration(
+                                                        color: status == 'confirmed' 
+                                                            ? Colors.green.withOpacity(0.1)
+                                                            : Colors.orange.withOpacity(0.1),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                        border: Border.all(
+                                                          color: status == 'confirmed' 
+                                                              ? Colors.green.withOpacity(0.3)
+                                                              : Colors.orange.withOpacity(0.3),
+                                                          width: 1,
+                                                        ),
+                                                      ),
+                                                      child: Text(
+                                                        status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
+                                                        style: TextStyle(
+                                                          fontSize: 10,
+                                                          fontWeight: FontWeight.bold,
+                                                          color: status == 'confirmed' 
+                                                              ? Colors.green[700]
+                                                              : Colors.orange[700],
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          );
+                                        } else {
+                                          // Use the original display logic
                                         return Column(
                                           children: displayAppointments.map((doc) {
                                             final data = doc.data() as Map<String, dynamic>;
@@ -845,7 +1018,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                       ),
                                                     ),
                                                     child: Text(
-                                                      status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
+                                                        status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
                                                       style: TextStyle(
                                                         fontSize: 10,
                                                         fontWeight: FontWeight.bold,
@@ -860,6 +1033,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                             );
                                           }).toList(),
                                         );
+                                        }
                                       },
                                     ),
                                   ],

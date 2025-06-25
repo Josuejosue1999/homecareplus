@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:homecare_app/screens/login.dart';
+import 'package:homecare_app/screens/login2.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -22,9 +22,11 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
   String clinicPhone = '';
   String clinicAddress = '';
   String clinicAbout = '';
+  List<String> clinicFacilities = [];
   String? profileImageUrl;
   bool isLoading = true;
   File? _profileImageFile;
+  String? _currentUserId; // Pour suivre l'utilisateur actuel
 
   // Controllers pour les champs éditables
   final TextEditingController _nameController = TextEditingController();
@@ -40,6 +42,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     'phone': false,
     'address': false,
     'about': false,
+    'facilities': false,
   };
 
   // Constantes pour les quartiers de Kigali
@@ -59,10 +62,34 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
 
   String _selectedSector = '';
 
+  // Liste des facilities disponibles
+  final List<String> availableFacilities = [
+    'General Medicine',
+    'Cardiology',
+    'Neurology',
+    'Pediatrics',
+    'Gynecology',
+    'Dermatology',
+    'Orthopedics',
+    'ENT',
+    'Dental Care',
+    'Laboratory Services',
+    'Radiology',
+    'Emergency Care',
+    'Surgery',
+    'Physical Therapy',
+    'Mental Health',
+    'Nutrition Services',
+    'Vaccination',
+    'Family Planning',
+  ];
+
   @override
   void initState() {
     super.initState();
     _loadClinicData();
+    // Tester automatiquement l'adresse de Test hospital
+    _testTestHospitalAddress();
   }
 
   @override
@@ -79,6 +106,12 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // Vérifier si l'utilisateur a changé
+        if (_currentUserId != null && _currentUserId != user.uid) {
+          // L'utilisateur a changé, nettoyer les données locales
+          await _clearLocalProfileData();
+        }
+        
         final clinicData = await FirebaseFirestore.instance
             .collection('clinics')
             .doc(user.uid)
@@ -86,30 +119,60 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
 
         if (clinicData.exists) {
           final data = clinicData.data() ?? {};
+          final address = data['address'] ?? '';
+          
+          print('=== LOADING CLINIC DATA ===');
+          print('Raw address from Firebase: "$address"');
+          
+          // Extraire le secteur de l'adresse si elle contient une virgule
+          String streetAddress = address;
+          String sector = '';
+          
+          if (address.contains(',')) {
+            final parts = address.split(',');
+            if (parts.length >= 2) {
+              streetAddress = parts[0].trim();
+              sector = parts[1].trim();
+            }
+          }
+          
+          print('Extracted street address: "$streetAddress"');
+          print('Extracted sector: "$sector"');
+          
           setState(() {
             clinicName = data['name'] ?? '';
             clinicEmail = data['email'] ?? '';
             clinicPhone = data['phone'] ?? '';
-            clinicAddress = data['address'] ?? '';
+            clinicAddress = address;
             clinicAbout = data['about'] ?? '';
+            clinicFacilities = List<String>.from(data['facilities'] ?? []);
             profileImageUrl = data['profileImageUrl'];
+            _currentUserId = user.uid;
             isLoading = false;
+            
+            // Initialiser les contrôleurs avec les données chargées
+            _nameController.text = clinicName;
+            _emailController.text = clinicEmail;
+            _phoneController.text = clinicPhone;
+            _addressController.text = streetAddress;
+            _aboutController.text = clinicAbout;
+            _selectedSector = sector;
           });
-
-          // Initialiser les controllers
-          _nameController.text = clinicName;
-          _emailController.text = clinicEmail;
-          _phoneController.text = clinicPhone;
-          _addressController.text = clinicAddress;
-          _aboutController.text = clinicAbout;
+          
+          print('✓ Clinic data loaded successfully');
+          print('Final clinicAddress: "$clinicAddress"');
+          print('Final _addressController.text: "${_addressController.text}"');
+          print('Final _selectedSector: "$_selectedSector"');
         } else {
+          print('❌ No clinic data found for user: ${user.uid}');
           setState(() {
             isLoading = false;
           });
         }
       }
       
-      await _loadSavedProfileImage();
+      // Charger l'image de profil depuis Firebase uniquement
+      await _loadProfileImageFromFirestore();
       
     } catch (e) {
       print('Error loading clinic data: $e');
@@ -119,25 +182,60 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     }
   }
 
-  Future<void> _loadSavedProfileImage() async {
+  Future<void> _clearLocalProfileData() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final profileImagePath = prefs.getString('clinic_profile_image_path');
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
 
+      final prefs = await SharedPreferences.getInstance();
+      final profileImagePath = prefs.getString('clinic_profile_image_path_${user.uid}');
+      
+      // Supprimer l'ancienne image locale si elle existe
       if (profileImagePath != null && profileImagePath.isNotEmpty) {
         final profileFile = File(profileImagePath);
         if (await profileFile.exists()) {
-          setState(() {
-            profileImageUrl = profileImagePath;
-            _profileImageFile = null;
-          });
-          await _syncImageToFirestore(profileImagePath);
-        } else {
-          await prefs.remove('clinic_profile_image_path');
+          await profileFile.delete();
+        }
+      }
+      
+      // Nettoyer les préférences pour cet utilisateur
+      await prefs.remove('clinic_profile_image_path_${user.uid}');
+      
+      // Nettoyer aussi l'ancienne clé générique pour compatibilité
+      await prefs.remove('clinic_profile_image_path');
+      
+      // Réinitialiser l'état local
+      setState(() {
+        profileImageUrl = null;
+        _profileImageFile = null;
+      });
+    } catch (e) {
+      print('Error clearing local profile data: $e');
+    }
+  }
+
+  Future<void> _loadProfileImageFromFirestore() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final clinicData = await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .get();
+        
+        if (clinicData.exists) {
+          final data = clinicData.data() ?? {};
+          final firestoreImageUrl = data['profileImageUrl'];
+          
+          if (firestoreImageUrl != null && firestoreImageUrl.isNotEmpty) {
+            setState(() {
+              profileImageUrl = firestoreImageUrl;
+            });
+          }
         }
       }
     } catch (e) {
-      print('Error loading saved profile image: $e');
+      print('Error loading profile image from Firestore: $e');
     }
   }
 
@@ -201,14 +299,17 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
           return;
         }
 
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) return;
+
         final appDir = await getApplicationDocumentsDirectory();
-        final fileName = 'clinic_profile_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        final fileName = 'clinic_profile_${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
         final savedPath = '${appDir.path}/$fileName';
         
         await imageFile.copy(savedPath);
         
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('clinic_profile_image_path', savedPath);
+        await prefs.setString('clinic_profile_image_path_${user.uid}', savedPath);
 
         setState(() {
           profileImageUrl = savedPath;
@@ -282,21 +383,192 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
         ? '${_addressController.text}, $_selectedSector'
         : _addressController.text;
 
-    await _saveField('address', fullAddress);
+    print('=== SAVING CLINIC ADDRESS ===');
+    print('Street Address: "${_addressController.text}"');
+    print('Selected Sector: "$_selectedSector"');
+    print('Full Address: "$fullAddress"');
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        print('User ID: ${user.uid}');
+        
+        await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .update({
+          'address': fullAddress,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+
+        print('✓ Address saved to Firebase successfully');
+
+        // Vérifier immédiatement si l'adresse a été sauvegardée
+        await _verifyAddressSaved(user.uid, fullAddress);
+
+        // Mettre à jour l'état local
+        setState(() {
+          clinicAddress = fullAddress;
+          _editing['address'] = false;
+        });
+
+        print('✓ Local state updated');
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Address updated successfully!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } else {
+        print('❌ No authenticated user found');
+      }
+    } catch (e) {
+      print('❌ Error saving address: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error saving address. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _verifyAddressSaved(String userId, String expectedAddress) async {
+    try {
+      print('=== VERIFYING ADDRESS SAVED ===');
+      
+      final clinicDoc = await FirebaseFirestore.instance
+          .collection('clinics')
+          .doc(userId)
+          .get();
+
+      if (clinicDoc.exists) {
+        final data = clinicDoc.data()!;
+        final savedAddress = data['address'] ?? '';
+        
+        print('Expected address: "$expectedAddress"');
+        print('Saved address in Firebase: "$savedAddress"');
+        
+        if (savedAddress == expectedAddress) {
+          print('✅ Address verification successful!');
+        } else {
+          print('❌ Address verification failed!');
+          print('Expected: "$expectedAddress"');
+          print('Found: "$savedAddress"');
+        }
+      } else {
+        print('❌ Clinic document not found for verification');
+      }
+    } catch (e) {
+      print('❌ Error verifying address: $e');
+    }
+  }
+
+  // Méthode de test pour vérifier l'adresse de "Test hospital"
+  Future<void> _testTestHospitalAddress() async {
+    try {
+      print('=== TESTING TEST HOSPITAL ADDRESS ===');
+      
+      // Rechercher l'hôpital "Test hospital" dans Firebase
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('clinics')
+          .where('name', isEqualTo: 'Test hospital')
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        final testHospitalDoc = querySnapshot.docs.first;
+        final data = testHospitalDoc.data();
+        
+        print('✅ Found Test hospital in Firebase');
+        print('Document ID: ${testHospitalDoc.id}');
+        print('Hospital Name: ${data['name'] ?? 'N/A'}');
+        print('Hospital Address: "${data['address'] ?? 'N/A'}"');
+        print('Hospital Email: ${data['email'] ?? 'N/A'}');
+        print('Hospital Phone: ${data['phone'] ?? 'N/A'}');
+        print('Last Updated: ${data['lastUpdated'] ?? 'N/A'}');
+        
+        if (data['address'] != null && data['address'].toString().isNotEmpty) {
+          print('✅ Test hospital address is saved in Firebase!');
+        } else {
+          print('❌ Test hospital address is NOT saved in Firebase!');
+        }
+      } else {
+        print('❌ Test hospital not found in Firebase');
+        
+        // Lister tous les hôpitaux pour debug
+        print('=== LISTING ALL HOSPITALS ===');
+        final allClinics = await FirebaseFirestore.instance
+            .collection('clinics')
+            .get();
+            
+        for (var doc in allClinics.docs) {
+          final data = doc.data();
+          print('Hospital: ${data['name'] ?? 'N/A'} - Address: "${data['address'] ?? 'N/A'}"');
+        }
+      }
+    } catch (e) {
+      print('❌ Error testing Test hospital address: $e');
+    }
   }
 
   Future<void> _signOut() async {
     try {
+      // Nettoyer les données locales avant la déconnexion
+      await _clearLocalProfileData();
+      
       await FirebaseAuth.instance.signOut();
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          MaterialPageRoute(builder: (context) => const Login2Page()),
           (route) => false,
         );
       }
     } catch (e) {
       print('Error signing out: $e');
+    }
+  }
+
+  Future<void> _saveFacilities() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .update({
+          'facilities': clinicFacilities,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+
+        setState(() {
+          _editing['facilities'] = false;
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Facilities updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error saving facilities: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating facilities: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -572,6 +844,8 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
           _buildAddressField(),
           const SizedBox(height: 16),
           _buildAboutField(),
+          const SizedBox(height: 16),
+          _buildFacilitiesField(),
         ],
       ),
     );
@@ -830,8 +1104,20 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
                     onPressed: () {
                       setState(() {
                         _editing['address'] = false;
-                        _addressController.text = clinicAddress;
-                        _selectedSector = '';
+                        // Restaurer les valeurs originales
+                        if (clinicAddress.contains(',')) {
+                          final parts = clinicAddress.split(',');
+                          if (parts.length >= 2) {
+                            _addressController.text = parts[0].trim();
+                            _selectedSector = parts[1].trim();
+                          } else {
+                            _addressController.text = clinicAddress;
+                            _selectedSector = '';
+                          }
+                        } else {
+                          _addressController.text = clinicAddress;
+                          _selectedSector = '';
+                        }
                       });
                     },
                     child: const Text(
@@ -1003,6 +1289,181 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     );
   }
 
+  Widget _buildFacilitiesField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.medical_services_outlined, color: Color(0xFF64748B), size: 16),
+            const SizedBox(width: 8),
+            const Text(
+              'Facilities & Services',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const Spacer(),
+            if (!_editing['facilities']!)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _editing['facilities'] = true;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(
+                    Icons.edit,
+                    color: Color(0xFF159BBD),
+                    size: 14,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_editing['facilities']!)
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Select available facilities:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1E293B),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: availableFacilities.map((facility) {
+                        final isSelected = clinicFacilities.contains(facility);
+                        return FilterChip(
+                          label: Text(facility),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                if (!clinicFacilities.contains(facility)) {
+                                  clinicFacilities.add(facility);
+                                }
+                              } else {
+                                clinicFacilities.remove(facility);
+                              }
+                            });
+                          },
+                          selectedColor: const Color(0xFF159BBD).withOpacity(0.2),
+                          checkmarkColor: const Color(0xFF159BBD),
+                          backgroundColor: Colors.white,
+                          side: BorderSide(
+                            color: isSelected ? const Color(0xFF159BBD) : Colors.grey[300]!,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _editing['facilities'] = false;
+                        // Restaurer les facilities originales depuis Firebase
+                        _loadClinicData();
+                      });
+                    },
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: Color(0xFF64748B)),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    onPressed: _saveFacilities,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF159BBD),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text('Save'),
+                  ),
+                ],
+              ),
+            ],
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: clinicFacilities.isNotEmpty
+                ? Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: clinicFacilities.map((facility) {
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF159BBD).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFF159BBD).withOpacity(0.3),
+                          ),
+                        ),
+                        child: Text(
+                          facility,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF159BBD),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  )
+                : const Text(
+                    'No facilities specified',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+          ),
+      ],
+    );
+  }
+
   Widget _buildSettingsSection() {
     return Container(
       padding: const EdgeInsets.all(24),
@@ -1072,6 +1533,13 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
             'Help & Support',
             'Get help and contact support',
             () {},
+          ),
+          const SizedBox(height: 16),
+          _buildSettingItem(
+            Icons.location_on_outlined,
+            'Test Hospital Address',
+            'Check if Test hospital address is saved in Firebase',
+            _testTestHospitalAddress,
           ),
         ],
       ),

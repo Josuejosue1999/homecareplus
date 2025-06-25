@@ -46,6 +46,58 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
     await NotificationService.markAllClinicNotificationsAsRead(widget.clinicId);
   }
 
+  Future<void> _deleteNotification(AppointmentNotification notification) async {
+    try {
+      // Afficher une boîte de dialogue de confirmation
+      final shouldDelete = await showDialog<bool>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Supprimer la notification'),
+            content: const Text('Êtes-vous sûr de vouloir supprimer cette notification ?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(false),
+                child: const Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Supprimer'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (shouldDelete == true) {
+        await NotificationService.deleteClinicNotification(notification.id);
+        
+        // Rafraîchir la liste des notifications
+        await _refreshNotifications();
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Notification supprimée'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error deleting notification: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur lors de la suppression: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -242,21 +294,23 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: notification.isRead 
+              ? Colors.white
+              : const Color(0xFF159BBD).withOpacity(0.02),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: notification.isRead 
                   ? Colors.black.withOpacity(0.02)
-                  : Colors.black.withOpacity(0.06),
+                  : Colors.black.withOpacity(0.08),
               spreadRadius: 0,
-              blurRadius: notification.isRead ? 2 : 6,
-              offset: const Offset(0, 1),
+              blurRadius: notification.isRead ? 2 : 8,
+              offset: const Offset(0, 2),
             ),
           ],
           border: notification.isRead 
               ? Border.all(color: Colors.grey.withOpacity(0.1), width: 0.5)
-              : Border.all(color: const Color(0xFF159BBD).withOpacity(0.3), width: 1),
+              : Border.all(color: const Color(0xFF159BBD).withOpacity(0.4), width: 1.5),
         ),
         child: Padding(
           padding: const EdgeInsets.all(12),
@@ -266,31 +320,49 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
               // Indicateur de lecture et icône
               Column(
                 children: [
+                  // Indicateur de lecture (point bleu pour non lu)
                   Container(
-                    width: 6,
-                    height: 6,
+                    width: 8,
+                    height: 8,
                     decoration: BoxDecoration(
                       color: notification.isRead 
                           ? Colors.transparent
                           : const Color(0xFF159BBD),
                       shape: BoxShape.circle,
+                      boxShadow: notification.isRead 
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: const Color(0xFF159BBD).withOpacity(0.3),
+                                blurRadius: 4,
+                                spreadRadius: 1,
+                              ),
+                            ],
                     ),
                   ),
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
                       color: notification.isRead 
                           ? Colors.grey.withOpacity(0.1)
-                          : const Color(0xFF159BBD).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
+                          : const Color(0xFF159BBD).withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(8),
+                      border: notification.isRead 
+                          ? null
+                          : Border.all(
+                              color: const Color(0xFF159BBD).withOpacity(0.2),
+                              width: 1,
+                            ),
                     ),
                     child: Icon(
-                      Icons.notifications,
+                      notification.isRead 
+                          ? Icons.notifications_none
+                          : Icons.notifications_active,
                       color: notification.isRead 
                           ? Colors.grey[600]
                           : const Color(0xFF159BBD),
-                      size: 16,
+                      size: 18,
                     ),
                   ),
                 ],
@@ -309,7 +381,7 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
                           child: Text(
                             notification.title,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: 15,
                               fontWeight: notification.isRead 
                                   ? FontWeight.w500
                                   : FontWeight.bold,
@@ -319,6 +391,26 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
                             ),
                           ),
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: notification.isRead 
+                                ? Colors.grey.withOpacity(0.1)
+                                : const Color(0xFF159BBD).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            notification.isRead ? 'LU' : 'NON LU',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: notification.isRead 
+                                  ? Colors.grey[600]
+                                  : const Color(0xFF159BBD),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         Text(
                           DateFormat('MMM dd, yyyy • HH:mm').format(notification.createdAt),
                           style: TextStyle(
@@ -412,6 +504,24 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
                     color: notification.isRead 
                         ? Colors.grey[600]
                         : const Color(0xFF159BBD),
+                  ),
+                ),
+              ),
+              
+              // Bouton de suppression
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => _deleteNotification(notification),
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    size: 16,
+                    color: Colors.red[600],
                   ),
                 ),
               ),

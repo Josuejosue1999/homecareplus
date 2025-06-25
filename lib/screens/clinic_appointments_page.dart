@@ -436,7 +436,7 @@ class _ClinicAppointmentsPageState extends State<ClinicAppointmentsPage>
                           appointmentDate: appointmentDate ?? DateTime.now(),
                           appointmentTime: data['appointmentTime'] ?? '',
                           status: data['status'] ?? 'pending',
-                          symptoms: data['symptoms'] ?? '',
+                          reasonOfBooking: data['reasonOfBooking'] ?? data['symptoms'] ?? '',
                           createdAt: data['createdAt'] != null 
                               ? (data['createdAt'] as Timestamp).toDate() 
                               : DateTime.now(),

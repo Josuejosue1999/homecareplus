@@ -42,11 +42,11 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   String patientName = '';
   String patientPhone = '';
   String patientEmail = '';
-  String symptoms = '';
+  String reasonOfBooking = '';
   String notes = '';
 
   // Controllers pour les champs de texte
-  late TextEditingController _symptomsController;
+  late TextEditingController _reasonOfBookingController;
 
   // Variables pour la gestion des horaires
   List<String> availableDays = [];
@@ -56,13 +56,13 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   @override
   void initState() {
     super.initState();
-    _symptomsController = TextEditingController(text: symptoms);
+    _reasonOfBookingController = TextEditingController(text: reasonOfBooking);
     _initializeAvailableSlots();
   }
 
   @override
   void dispose() {
-    _symptomsController.dispose();
+    _reasonOfBookingController.dispose();
     super.dispose();
   }
 
@@ -267,10 +267,10 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       return;
     }
 
-    if (symptoms.trim().isEmpty) {
+    if (reasonOfBooking.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please describe your symptoms'),
+          content: Text('Please describe your reason for booking'),
           backgroundColor: Colors.red,
         ),
       );
@@ -341,7 +341,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         department: selectedDepartment!,
         appointmentDate: selectedDate!,
         appointmentTime: selectedTime!,
-        symptoms: symptoms.trim(),
+        reasonOfBooking: reasonOfBooking.trim(),
         status: 'pending',
         createdAt: DateTime.now(),
       );
@@ -972,7 +972,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                               const SizedBox(height: 20),
                               // Reason for Booking
                               Text(
-                                'Symptoms',
+                                'Reason for Booking',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
@@ -981,14 +981,14 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                               ),
                               const SizedBox(height: 8),
                               TextField(
-                                controller: _symptomsController,
+                                controller: _reasonOfBookingController,
                                 onChanged: (value) {
                                   setState(() {
-                                    symptoms = value;
+                                    reasonOfBooking = value;
                                   });
                                 },
                                 decoration: InputDecoration(
-                                  hintText: 'Enter your symptoms',
+                                  hintText: 'Enter your reason for booking',
                                   prefixIcon: const Icon(Icons.medical_services_outlined, color: Color(0xFF159BBD)),
                                   border: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
