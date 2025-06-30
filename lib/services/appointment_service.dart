@@ -20,6 +20,8 @@ class AppointmentService {
       
       // Chercher une correspondance exacte
       String finalHospitalName = appointment.hospitalName;
+      String? clinicId = null;
+      
       for (final clinicName in clinicNames) {
         if (clinicName.toLowerCase().trim() == appointment.hospitalName.toLowerCase().trim()) {
           finalHospitalName = clinicName;
@@ -40,9 +42,13 @@ class AppointmentService {
         }
       }
       
+      // Trouver l'ID de la clinique par son nom
+      clinicId = await _getClinicIdByName(finalHospitalName);
+      print('Found clinic ID: $clinicId for clinic: $finalHospitalName');
+      
       print('Final hospital name: "$finalHospitalName"');
       
-      // Créer une copie du rendez-vous avec le nom corrigé
+      // Créer une copie du rendez-vous avec le nom corrigé et l'ID de la clinique
       final correctedAppointment = Appointment(
         id: appointment.id,
         patientId: appointment.patientId,
@@ -58,6 +64,7 @@ class AppointmentService {
         reasonOfBooking: appointment.reasonOfBooking,
         status: appointment.status,
         createdAt: appointment.createdAt,
+        clinicId: clinicId,
       );
 
       final docRef = await _firestore
@@ -69,9 +76,6 @@ class AppointmentService {
       
       // Créer une notification pour la clinique
       try {
-        // Trouver l'ID de la clinique par son nom
-        final clinicId = await _getClinicIdByName(finalHospitalName);
-        
         if (clinicId != null) {
           await NotificationService.createClinicNotification(
             clinicId: clinicId,
@@ -467,7 +471,7 @@ class AppointmentService {
 
       final now = DateTime.now();
       final nextWeek = now.add(const Duration(days: 7));
-      
+
       print('=== GETTING CLINIC UPCOMING APPOINTMENTS ===');
       print('Clinic name: "$clinicName"');
       print('User ID: ${user.uid}');
@@ -489,7 +493,7 @@ class AppointmentService {
 
             // Requête simple sans index - récupérer tous les rendez-vous
             final snapshot = await _firestore
-                .collection('appointments')
+          .collection('appointments')
                 .get();
             
             final allAppointments = snapshot.docs.map((doc) {
@@ -594,8 +598,8 @@ class AppointmentService {
             .where('hospitalName', isEqualTo: exactClinicName)
             .where('appointmentDate', isGreaterThanOrEqualTo: today)
             .where('appointmentDate', isLessThan: tomorrow)
-            .orderBy('appointmentDate', descending: false)
-            .orderBy('appointmentTime', descending: false)
+          .orderBy('appointmentDate', descending: false)
+          .orderBy('appointmentTime', descending: false)
             .get();
             
         print('Found ${snapshot.docs.length} today appointments for clinic "$exactClinicName"');
@@ -670,7 +674,7 @@ class AppointmentService {
               final hasValidStatus = appointment.status == 'pending' || 
                                    appointment.status == 'confirmed';
               return isUpcoming && hasValidStatus;
-            }).toList();
+        }).toList();
 
             // Trier par date et heure
             upcomingAppointments.sort((a, b) {
@@ -691,7 +695,7 @@ class AppointmentService {
           .handleError((error) {
             print('Error in getUpcomingAppointments: $error');
             return <Appointment>[];
-          });
+      });
     } catch (e) {
       print('Error in getUpcomingAppointments: $e');
       return Stream.value([]);
@@ -791,7 +795,7 @@ class AppointmentService {
             );
             print('✓ Clinic notification created');
           }
-        } catch (e) {
+    } catch (e) {
           print('Error creating notifications: $e');
         }
       }
@@ -1356,5 +1360,267 @@ class AppointmentService {
       print('Error checking user type: $e');
       return null;
     }
+  }
+
+  // Récupérer la durée des rendez-vous configurée par une clinique
+  static Future<int> getClinicMeetingDuration(String clinicName) async {
+    try {
+      print('=== GETTING CLINIC MEETING DURATION ===');
+      print('Clinic name: "$clinicName"');
+      
+      // Récupérer tous les noms de cliniques existants
+      final clinicNames = await getAllClinicNames();
+      print('Available clinic names: $clinicNames');
+      
+      // Chercher une correspondance exacte
+      String finalClinicName = clinicName;
+      for (final name in clinicNames) {
+        if (name.toLowerCase().trim() == clinicName.toLowerCase().trim()) {
+          finalClinicName = name;
+          print('Exact match found: using "$name"');
+          break;
+        }
+      }
+      
+      // Si aucune correspondance exacte, essayer une correspondance partielle
+      if (finalClinicName == clinicName) {
+        for (final name in clinicNames) {
+          if (name.toLowerCase().contains(clinicName.toLowerCase()) ||
+              clinicName.toLowerCase().contains(name.toLowerCase())) {
+            finalClinicName = name;
+            print('Partial match found: using "$name"');
+            break;
+          }
+        }
+      }
+      
+      print('Final clinic name: "$finalClinicName"');
+      
+      // Récupérer la durée configurée par la clinique
+      final clinicDocs = await _firestore
+          .collection('clinics')
+          .where('name', isEqualTo: finalClinicName)
+          .get();
+      
+      if (clinicDocs.docs.isNotEmpty) {
+        final data = clinicDocs.docs.first.data();
+        final duration = data['meetingDuration'] ?? 30; // Default 30 minutes
+        print('✓ Found clinic meeting duration: $duration minutes');
+        return duration;
+      }
+      
+      // Si pas de correspondance exacte, chercher une correspondance partielle
+      final allClinicDocs = await _firestore.collection('clinics').get();
+      
+      for (final doc in allClinicDocs.docs) {
+        final data = doc.data();
+        final name = data['name'] ?? '';
+        
+        if (name.toLowerCase().contains(clinicName.toLowerCase()) ||
+            clinicName.toLowerCase().contains(name.toLowerCase())) {
+          final duration = data['meetingDuration'] ?? 30; // Default 30 minutes
+          print('✓ Found clinic meeting duration (partial match): $duration minutes');
+          return duration;
+        }
+      }
+      
+      print('⚠ No clinic found, using default duration: 30 minutes');
+      return 30; // Default duration
+    } catch (e) {
+      print('Error getting clinic meeting duration: $e');
+      return 30; // Default duration on error
+    }
+  }
+
+  // Récupérer l'horaire d'une clinique
+  static Future<ClinicSchedule?> getClinicSchedule(String clinicId) async {
+    try {
+      print('=== GETTING CLINIC SCHEDULE ===');
+      print('Clinic ID: $clinicId');
+      
+      final scheduleDocs = await _firestore
+          .collection('clinic_schedules')
+          .where('clinicId', isEqualTo: clinicId)
+          .get();
+      
+      if (scheduleDocs.docs.isNotEmpty) {
+        final doc = scheduleDocs.docs.first;
+        final schedule = ClinicSchedule.fromFirestore(doc.data(), doc.id);
+        print('✓ Found clinic schedule for clinic: $clinicId');
+        return schedule;
+      }
+      
+      print('⚠ No schedule found for clinic: $clinicId');
+      return null;
+    } catch (e) {
+      print('Error getting clinic schedule: $e');
+      return null;
+    }
+  }
+
+  // Créer ou mettre à jour l'horaire d'une clinique
+  static Future<void> saveClinicSchedule(ClinicSchedule schedule) async {
+    try {
+      print('=== SAVING CLINIC SCHEDULE ===');
+      print('Clinic ID: ${schedule.clinicId}');
+      
+      // Vérifier si un horaire existe déjà
+      final existingDocs = await _firestore
+          .collection('clinic_schedules')
+          .where('clinicId', isEqualTo: schedule.clinicId)
+          .get();
+      
+      if (existingDocs.docs.isNotEmpty) {
+        // Mettre à jour l'horaire existant
+        await _firestore
+            .collection('clinic_schedules')
+            .doc(existingDocs.docs.first.id)
+            .update(schedule.toFirestore());
+        print('✓ Updated existing clinic schedule');
+      } else {
+        // Créer un nouvel horaire
+        await _firestore
+            .collection('clinic_schedules')
+            .add(schedule.toFirestore());
+        print('✓ Created new clinic schedule');
+      }
+    } catch (e) {
+      print('Error saving clinic schedule: $e');
+      throw e;
+    }
+  }
+
+  // Générer les créneaux horaires disponibles pour une date donnée
+  static Future<List<String>> getAvailableTimeSlots(String clinicId, DateTime date) async {
+    try {
+      print('=== GETTING AVAILABLE TIME SLOTS ===');
+      print('Clinic ID: $clinicId');
+      print('Date: ${date.toIso8601String()}');
+      
+      // Récupérer l'horaire de la clinique
+      final schedule = await getClinicSchedule(clinicId);
+      if (schedule == null) {
+        print('⚠ No schedule found, using default slots');
+        return _generateDefaultTimeSlots();
+      }
+      
+      // Obtenir le jour de la semaine
+      final dayName = _getDayName(date.weekday);
+      final daySchedule = schedule.weeklySchedule[dayName];
+      
+      if (daySchedule == null || !daySchedule.isWorkingDay) {
+        print('⚠ Not a working day: $dayName');
+        return [];
+      }
+      
+      // Générer les créneaux pour ce jour
+      final slots = daySchedule.generateTimeSlots(schedule.defaultSlotDuration);
+      print('✓ Generated ${slots.length} time slots for $dayName');
+      
+      // Filtrer les créneaux déjà réservés
+      final bookedSlots = await _getBookedTimeSlots(clinicId, date);
+      final availableSlots = slots.where((slot) => !bookedSlots.contains(slot)).toList();
+      
+      print('✓ Found ${availableSlots.length} available slots out of ${slots.length} total slots');
+      return availableSlots;
+    } catch (e) {
+      print('Error getting available time slots: $e');
+      return _generateDefaultTimeSlots();
+    }
+  }
+
+  // Obtenir les créneaux déjà réservés pour une date
+  static Future<List<String>> _getBookedTimeSlots(String clinicId, DateTime date) async {
+    try {
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      
+      final appointments = await _firestore
+          .collection('appointments')
+          .where('clinicId', isEqualTo: clinicId)
+          .where('appointmentDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('appointmentDate', isLessThan: Timestamp.fromDate(endOfDay))
+          .where('status', whereIn: ['pending', 'confirmed'])
+          .get();
+      
+      final List<String> bookedSlots = [];
+      for (final doc in appointments.docs) {
+        final data = doc.data();
+        final time = data['appointmentTime'] ?? '';
+        if (time.isNotEmpty) {
+          bookedSlots.add(time);
+        }
+      }
+      
+      return bookedSlots;
+    } catch (e) {
+      print('Error getting booked time slots: $e');
+      return [];
+    }
+  }
+
+  // Générer des créneaux par défaut (8h00-18h00, 30 minutes)
+  static List<String> _generateDefaultTimeSlots() {
+    List<String> slots = [];
+    for (int hour = 8; hour < 18; hour++) {
+      for (int minute = 0; minute < 60; minute += 30) {
+        slots.add('${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
+      }
+    }
+    return slots;
+  }
+
+  // Obtenir le nom du jour en anglais
+  static String _getDayName(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return 'Monday';
+      case DateTime.tuesday:
+        return 'Tuesday';
+      case DateTime.wednesday:
+        return 'Wednesday';
+      case DateTime.thursday:
+        return 'Thursday';
+      case DateTime.friday:
+        return 'Friday';
+      case DateTime.saturday:
+        return 'Saturday';
+      case DateTime.sunday:
+        return 'Sunday';
+      default:
+        return 'Monday';
+    }
+  }
+
+  // Formater l'heure pour l'affichage (ex: 10:00 -> 10h00)
+  static String formatTimeForDisplay(String time) {
+    try {
+      final parts = time.split(':');
+      if (parts.length == 2) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return '${hour}h${minute.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      print('Error formatting time: $e');
+    }
+    return time;
+  }
+
+  // Formater l'heure pour l'affichage avec période (ex: 10:00 -> 10:00 AM)
+  static String formatTimeWithPeriod(String time) {
+    try {
+      final parts = time.split(':');
+      if (parts.length == 2) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
+      }
+    } catch (e) {
+      print('Error formatting time with period: $e');
+    }
+    return time;
   }
 } 

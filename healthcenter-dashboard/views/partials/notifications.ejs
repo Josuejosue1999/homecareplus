@@ -1,0 +1,81 @@
+<!-- Notifications importantes -->
+<div class="notifications-section">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-bell me-2"></i>
+            Notifications
+        </h2>
+        <div class="section-actions">
+            <button class="btn btn-outline-secondary btn-sm" onclick="markAllAsRead()">
+                <i class="fas fa-check-double me-1"></i>
+                Tout marquer comme lu
+            </button>
+        </div>
+    </div>
+
+    <div class="notifications-list">
+        <div class="notification-item unread" data-notification-id="1">
+            <div class="notification-icon bg-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="notification-content">
+                <h5 class="notification-title">Rendez-vous urgent</h5>
+                <p class="notification-message">Patient en attente depuis 15 minutes - Jean Martin</p>
+                <span class="notification-time">Il y a 2 minutes</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewNotification('1')">
+                    Voir
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item" data-notification-id="2">
+            <div class="notification-icon bg-info">
+                <i class="fas fa-calendar-check"></i>
+            </div>
+            <div class="notification-content">
+                <h5 class="notification-title">Rendez-vous confirmé</h5>
+                <p class="notification-message">Marie Dupont a confirmé son rendez-vous de 09:00</p>
+                <span class="notification-time">Il y a 10 minutes</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewNotification('2')">
+                    Voir
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item" data-notification-id="3">
+            <div class="notification-icon bg-success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="notification-content">
+                <h5 class="notification-title">Patient reçu</h5>
+                <p class="notification-message">Sophie Bernard est arrivée pour son examen</p>
+                <span class="notification-time">Il y a 25 minutes</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewNotification('3')">
+                    Voir
+                </button>
+            </div>
+        </div>
+
+        <div class="notification-item" data-notification-id="4">
+            <div class="notification-icon bg-primary">
+                <i class="fas fa-file-medical"></i>
+            </div>
+            <div class="notification-content">
+                <h5 class="notification-title">Résultats disponibles</h5>
+                <p class="notification-message">Les résultats de laboratoire de Pierre Dubois sont disponibles</p>
+                <span class="notification-time">Il y a 1 heure</span>
+            </div>
+            <div class="notification-actions">
+                <button class="btn btn-sm btn-outline-primary" onclick="viewNotification('4')">
+                    Voir
+                </button>
+            </div>
+        </div>
+    </div>
+</div> 

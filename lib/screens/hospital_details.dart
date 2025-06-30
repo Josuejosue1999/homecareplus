@@ -29,6 +29,39 @@ class HospitalDetailsPage extends StatelessWidget {
     required this.hospitalSchedule,
   });
 
+  // Méthode pour déterminer si c'est un nouvel hôpital
+  bool get isNewHospital {
+    return address == 'Address to be updated' || 
+           address == 'Location to be updated' ||
+           address.isEmpty ||
+           aboutText.isEmpty ||
+           aboutText.contains('healthcare facility committed to providing exceptional medical care');
+  }
+
+  // Méthode pour obtenir l'adresse formatée
+  String get formattedAddress {
+    if (isNewHospital) {
+      return '📍 Location information not available';
+    }
+    return address;
+  }
+
+  // Méthode pour obtenir le texte "About" amélioré
+  String get enhancedAboutText {
+    if (isNewHospital) {
+      return 'Information about this healthcare facility will be updated soon.';
+    }
+    return aboutText;
+  }
+
+  // Méthode pour obtenir les installations par défaut
+  List<String> get enhancedFacilities {
+    if (isNewHospital) {
+      return ['Information not available'];
+    }
+    return facilities;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,6 +89,34 @@ class HospitalDetailsPage extends StatelessWidget {
                       ),
                     ),
                   ),
+                  // Badge pour nouvel hôpital
+                  if (isNewHospital)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.orange,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.new_releases, color: Colors.white, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              'NEW',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -108,7 +169,7 @@ class HospitalDetailsPage extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              rating.toString(),
+                              isNewHospital ? 'N/A' : rating.toString(),
                               style: const TextStyle(
                                 color: Color(0xFF159BBD),
                                 fontWeight: FontWeight.bold,
@@ -116,7 +177,7 @@ class HospitalDetailsPage extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              '($reviewCount)',
+                              isNewHospital ? '(New)' : '($reviewCount)',
                               style: const TextStyle(
                                 color: Colors.grey,
                                 fontSize: 12,
@@ -140,10 +201,11 @@ class HospitalDetailsPage extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          address,
-                          style: const TextStyle(
+                          formattedAddress,
+                          style: TextStyle(
                             fontSize: 16,
-                            color: Colors.grey,
+                            color: isNewHospital ? Colors.orange[700] : Colors.grey,
+                            fontStyle: isNewHospital ? FontStyle.italic : FontStyle.normal,
                           ),
                         ),
                       ),
@@ -161,12 +223,20 @@ class HospitalDetailsPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    aboutText,
-                    style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: 14,
-                      height: 1.5,
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isNewHospital ? Colors.orange[50] : Colors.grey[50],
+                      borderRadius: BorderRadius.circular(12),
+                      border: isNewHospital ? Border.all(color: Colors.orange[200]!) : null,
+                    ),
+                    child: Text(
+                      enhancedAboutText,
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: 14,
+                        height: 1.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -184,7 +254,7 @@ class HospitalDetailsPage extends StatelessWidget {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: facilities.map((facility) {
+                    children: enhancedFacilities.map((facility) {
                       return Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(
@@ -203,142 +273,170 @@ class HospitalDetailsPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
-                  // Patient Reviews Section
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Patient Reviews',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[800],
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AllReviewsPage(
-                                hospitalName: hospitalName,
-                                reviews: reviews,
-                              ),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'View More',
+                  // Patient Reviews Section - Masqué pour les nouveaux hôpitaux
+                  if (!isNewHospital) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Patient Reviews',
                           style: TextStyle(
-                            color: const Color(0xFF159BBD),
-                            fontWeight: FontWeight.w500,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[800],
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  // Show only first 3 reviews
-                  ...reviews.take(3).map((review) => Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.1),
-                          spreadRadius: 1,
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            CircleAvatar(
-                              backgroundColor: Colors.grey[200],
-                              child: Text(
-                                review['name']?[0].toUpperCase() ?? 'A',
-                                style: TextStyle(
-                                  color: Colors.grey[800],
-                                  fontWeight: FontWeight.bold,
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AllReviewsPage(
+                                  hospitalName: hospitalName,
+                                  reviews: reviews,
                                 ),
                               ),
+                            );
+                          },
+                          child: Text(
+                            'View More',
+                            style: TextStyle(
+                              color: const Color(0xFF159BBD),
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    review['name'] ?? 'Anonymous',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  Row(
-                                    children: [
-                                      Icon(Icons.star, color: Colors.amber, size: 16),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        review['rating'] ?? '0.0',
-                                        style: TextStyle(
-                                          color: Colors.grey[600],
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Text(
-                              review['date'] ?? 'Recently',
-                              style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          review['comment'] ?? 'No comment provided',
-                          style: TextStyle(
-                            color: Colors.grey[700],
-                            fontSize: 13,
                           ),
                         ),
                       ],
                     ),
-                  )).toList(),
-                  if (reviews.length > 3)
-                    Center(
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AllReviewsPage(
-                                hospitalName: hospitalName,
-                                reviews: reviews,
+                    const SizedBox(height: 12),
+                    // Show only first 3 reviews
+                    ...reviews.take(3).map((review) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.1),
+                            spreadRadius: 1,
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.grey[200],
+                                child: Text(
+                                  review['name']?[0].toUpperCase() ?? 'A',
+                                  style: TextStyle(
+                                    color: Colors.grey[800],
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      review['name'] ?? 'Anonymous',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Icon(Icons.star, color: Colors.amber, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          review['rating'] ?? '0.0',
+                                          style: TextStyle(
+                                            color: Colors.grey[600],
+                                            fontSize: 12,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                review['date'] ?? 'Recently',
+                                style: TextStyle(
+                                  color: Colors.grey[500],
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            review['comment'] ?? 'No comment provided',
+                            style: TextStyle(
+                              color: Colors.grey[700],
+                              fontSize: 13,
                             ),
-                          );
-                        },
-                        child: Text(
-                          'View All ${reviews.length} Reviews',
-                          style: const TextStyle(
-                            color: Color(0xFF159BBD),
-                            fontWeight: FontWeight.w500,
+                          ),
+                        ],
+                      ),
+                    )).toList(),
+                    if (reviews.length > 3)
+                      Center(
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AllReviewsPage(
+                                  hospitalName: hospitalName,
+                                  reviews: reviews,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'View All ${reviews.length} Reviews',
+                            style: const TextStyle(
+                              color: Color(0xFF159BBD),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ),
+                  ] else ...[
+                    // Message pour les nouveaux hôpitaux
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.blue[50],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.blue[200]!),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'This is a newly registered healthcare facility. Patient reviews will be available once they start serving the community.',
+                              style: TextStyle(
+                                color: Colors.blue[700],
+                                fontSize: 14,
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
+                  ],
 
                   // Book Appointment Button
                   Container(
@@ -538,24 +636,25 @@ class HospitalDetailsPage extends StatelessWidget {
                 color: const Color(0xFF159BBD).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.local_hospital,
+              child: Icon(
+                isNewHospital ? Icons.medical_services : Icons.local_hospital,
                 size: 48,
-                color: Color(0xFF159BBD),
+                color: const Color(0xFF159BBD),
               ),
             ),
             const SizedBox(height: 16),
             Text(
-              'Healthcare Facility',
+              hospitalName,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF159BBD).withOpacity(0.8),
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Professional Medical Care',
+              isNewHospital ? 'New Healthcare Facility' : 'Professional Medical Care',
               style: TextStyle(
                 fontSize: 14,
                 color: const Color(0xFF159BBD).withOpacity(0.6),

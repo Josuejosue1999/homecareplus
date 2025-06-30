@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'welcome2.dart'; // page suivante
-import '../main.dart'; // splash screen initiale
+import 'choose.dart'; // page de choix
 
 class Welcome1Page extends StatefulWidget {
   const Welcome1Page({Key? key}) : super(key: key);
@@ -36,7 +36,7 @@ class _Welcome1PageState extends State<Welcome1Page>
   void navigateToMainPage() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const HomeCareApp()),
+      MaterialPageRoute(builder: (context) => const ChoosePage()),
     );
   }
 

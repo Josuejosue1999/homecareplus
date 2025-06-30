@@ -8,6 +8,10 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import '../services/appointment_service.dart';
+import '../services/location_service.dart';
+import '../services/hospital_service.dart';
+import '../models/appointment.dart';
 
 class ClinicProfilePage extends StatefulWidget {
   const ClinicProfilePage({Key? key}) : super(key: key);
@@ -23,10 +27,17 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
   String clinicAddress = '';
   String clinicAbout = '';
   List<String> clinicFacilities = [];
+  int meetingDuration = 30; // Default appointment duration in minutes
   String? profileImageUrl;
   bool isLoading = true;
   File? _profileImageFile;
   String? _currentUserId; // Pour suivre l'utilisateur actuel
+
+  // Coordonnées géographiques
+  double? _latitude;
+  double? _longitude;
+  bool _isLocationLoading = false;
+  String _locationStatus = 'Not set';
 
   // Controllers pour les champs éditables
   final TextEditingController _nameController = TextEditingController();
@@ -34,6 +45,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   final TextEditingController _aboutController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
 
   // État d'édition pour chaque champ
   Map<String, bool> _editing = {
@@ -43,6 +55,9 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     'address': false,
     'about': false,
     'facilities': false,
+    'duration': false,
+    'schedule': false,
+    'location': false,
   };
 
   // Constantes pour les quartiers de Kigali
@@ -99,6 +114,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     _phoneController.dispose();
     _addressController.dispose();
     _aboutController.dispose();
+    _durationController.dispose();
     super.dispose();
   }
 
@@ -146,16 +162,25 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
             clinicAddress = address;
             clinicAbout = data['about'] ?? '';
             clinicFacilities = List<String>.from(data['facilities'] ?? []);
+            meetingDuration = data['meetingDuration'] ?? 30; // Default 30 minutes
             profileImageUrl = data['profileImageUrl'];
-            _currentUserId = user.uid;
-            isLoading = false;
             
+            // Charger les coordonnées géographiques
+            _latitude = data['latitude']?.toDouble();
+            _longitude = data['longitude']?.toDouble();
+            _locationStatus = _latitude != null && _longitude != null 
+                ? 'Set (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})'
+                : 'Not set';
+            
+            isLoading = false;
+
             // Initialiser les contrôleurs avec les données chargées
-            _nameController.text = clinicName;
-            _emailController.text = clinicEmail;
-            _phoneController.text = clinicPhone;
+          _nameController.text = clinicName;
+          _emailController.text = clinicEmail;
+          _phoneController.text = clinicPhone;
             _addressController.text = streetAddress;
-            _aboutController.text = clinicAbout;
+          _aboutController.text = clinicAbout;
+            _durationController.text = meetingDuration.toString();
             _selectedSector = sector;
           });
           
@@ -163,6 +188,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
           print('Final clinicAddress: "$clinicAddress"');
           print('Final _addressController.text: "${_addressController.text}"');
           print('Final _selectedSector: "$_selectedSector"');
+          print('Coordinates: $_latitude, $_longitude');
         } else {
           print('❌ No clinic data found for user: ${user.uid}');
           setState(() {
@@ -189,7 +215,7 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
 
       final prefs = await SharedPreferences.getInstance();
       final profileImagePath = prefs.getString('clinic_profile_image_path_${user.uid}');
-      
+
       // Supprimer l'ancienne image locale si elle existe
       if (profileImagePath != null && profileImagePath.isNotEmpty) {
         final profileFile = File(profileImagePath);
@@ -205,10 +231,10 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
       await prefs.remove('clinic_profile_image_path');
       
       // Réinitialiser l'état local
-      setState(() {
+          setState(() {
         profileImageUrl = null;
-        _profileImageFile = null;
-      });
+            _profileImageFile = null;
+          });
     } catch (e) {
       print('Error clearing local profile data: $e');
     }
@@ -572,6 +598,171 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
     }
   }
 
+  Future<void> _saveDuration() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .update({
+          'meetingDuration': meetingDuration,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+
+        setState(() {
+          _editing['duration'] = false;
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Meeting duration updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error saving meeting duration: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating meeting duration: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _saveSchedule() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // Pour l'instant, on sauvegarde juste la durée des rendez-vous
+        await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .update({
+          'meetingDuration': meetingDuration,
+          'lastUpdated': FieldValue.serverTimestamp(),
+        });
+
+        setState(() {
+          _editing['schedule'] = false;
+        });
+
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Working schedule updated successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error saving schedule: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating schedule: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Méthode pour détecter automatiquement la localisation
+  Future<void> _detectCurrentLocation() async {
+    setState(() {
+      _isLocationLoading = true;
+    });
+
+    try {
+      print('=== DETECTING CURRENT LOCATION ===');
+      
+      final userLocation = await LocationService.getCurrentLocation();
+      
+      if (userLocation != null) {
+        setState(() {
+          _latitude = userLocation.latitude;
+          _longitude = userLocation.longitude;
+          _locationStatus = 'Detected (${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)})';
+          _isLocationLoading = false;
+        });
+        
+        // Sauvegarder les coordonnées dans Firebase
+        await _saveCoordinates();
+        
+        print('✓ Location detected and saved successfully');
+      } else {
+        setState(() {
+          _locationStatus = 'Detection failed';
+          _isLocationLoading = false;
+        });
+        print('❌ Location detection failed');
+      }
+    } catch (e) {
+      print('Error detecting location: $e');
+      setState(() {
+        _locationStatus = 'Error: $e';
+        _isLocationLoading = false;
+      });
+    }
+  }
+
+  // Méthode pour sauvegarder les coordonnées
+  Future<void> _saveCoordinates() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null && _latitude != null && _longitude != null) {
+        final success = await HospitalService.updateHospitalCoordinates(
+          user.uid,
+          _latitude!,
+          _longitude!,
+        );
+        
+        if (success) {
+          print('✓ Coordinates saved to Firebase');
+        } else {
+          print('❌ Failed to save coordinates to Firebase');
+        }
+      }
+    } catch (e) {
+      print('Error saving coordinates: $e');
+    }
+  }
+
+  // Méthode pour effacer les coordonnées
+  Future<void> _clearCoordinates() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance
+            .collection('clinics')
+            .doc(user.uid)
+            .update({
+          'latitude': FieldValue.delete(),
+          'longitude': FieldValue.delete(),
+          'coordinatesUpdatedAt': FieldValue.delete(),
+        });
+        
+        setState(() {
+          _latitude = null;
+          _longitude = null;
+          _locationStatus = 'Not set';
+        });
+        
+        print('✓ Coordinates cleared successfully');
+      }
+    } catch (e) {
+      print('Error clearing coordinates: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -846,6 +1037,10 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
           _buildAboutField(),
           const SizedBox(height: 16),
           _buildFacilitiesField(),
+          const SizedBox(height: 16),
+          _buildLocationField(),
+          const SizedBox(height: 16),
+          _buildDurationField(),
         ],
       ),
     );
@@ -1111,8 +1306,8 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
                             _addressController.text = parts[0].trim();
                             _selectedSector = parts[1].trim();
                           } else {
-                            _addressController.text = clinicAddress;
-                            _selectedSector = '';
+                        _addressController.text = clinicAddress;
+                        _selectedSector = '';
                           }
                         } else {
                           _addressController.text = clinicAddress;
@@ -1459,6 +1654,364 @@ class _ClinicProfilePageState extends State<ClinicProfilePage> {
                       fontWeight: FontWeight.w400,
                     ),
                   ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildLocationField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.my_location, color: Color(0xFF64748B), size: 16),
+            const SizedBox(width: 8),
+            const Text(
+              'Location Coordinates',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const Spacer(),
+            if (!_editing['location']!)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _editing['location'] = true;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(
+                    Icons.edit,
+                    color: Color(0xFF159BBD),
+                    size: 14,
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_editing['location']!)
+          Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.location_on,
+                          color: _latitude != null && _longitude != null 
+                              ? Colors.green[600] 
+                              : Colors.grey[600],
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _locationStatus,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: _latitude != null && _longitude != null 
+                                  ? Colors.green[600] 
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLocationLoading ? null : _detectCurrentLocation,
+                            icon: _isLocationLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(Icons.my_location, size: 16),
+                            label: Text(_isLocationLoading ? 'Detecting...' : 'Detect Location'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF159BBD),
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        if (_latitude != null && _longitude != null)
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: _clearCoordinates,
+                              icon: const Icon(Icons.clear, size: 16),
+                              label: const Text('Clear'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red[600],
+                                side: BorderSide(color: Colors.red[300]!),
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (_latitude != null && _longitude != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.green[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green[200]!),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.check_circle, color: Colors.green[600], size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Coordinates Set',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Latitude: ${_latitude!.toStringAsFixed(6)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green[700],
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                            Text(
+                              'Longitude: ${_longitude!.toStringAsFixed(6)}',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.green[700],
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _editing['location'] = false;
+                      });
+                    },
+                    child: const Text(
+                      'Close',
+                      style: TextStyle(color: Color(0xFF64748B)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.grey[200]!),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _latitude != null && _longitude != null 
+                      ? Icons.location_on 
+                      : Icons.location_off,
+                  color: _latitude != null && _longitude != null 
+                      ? Colors.green[600] 
+                      : Colors.grey[600],
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _latitude != null && _longitude != null 
+                            ? 'Location Set' 
+                            : 'Location Not Set',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: _latitude != null && _longitude != null 
+                              ? Colors.green[600] 
+                              : Colors.grey[600],
+                        ),
+                      ),
+                      if (_latitude != null && _longitude != null) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          '${_latitude!.toStringAsFixed(4)}, ${_longitude!.toStringAsFixed(4)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildDurationField() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(Icons.access_time, color: Color(0xFF64748B), size: 16),
+            const SizedBox(width: 8),
+            const Text(
+              'Default Meeting Duration',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF64748B),
+              ),
+            ),
+            const Spacer(),
+            if (!_editing['duration']!)
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _editing['duration'] = true;
+                  });
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(
+                    Icons.edit,
+                    size: 14,
+                    color: Color(0xFF159BBD),
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_editing['duration']!)
+          Row(
+            children: [
+              Expanded(
+                child: DropdownButtonFormField<int>(
+                  value: meetingDuration,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                  items: [15, 30, 45, 60, 90, 120].map((duration) {
+                    return DropdownMenuItem(
+                      value: duration,
+                      child: Text('$duration minutes'),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    setState(() {
+                      meetingDuration = value ?? 30;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _saveDuration,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF159BBD),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('Save'),
+              ),
+              const SizedBox(width: 8),
+              OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _editing['duration'] = false;
+                    meetingDuration = 30; // Reset to default
+                  });
+                },
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('Cancel'),
+              ),
+            ],
+          )
+        else
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey[50],
+              borderRadius: BorderRadius.circular(4),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Text(
+              '$meetingDuration minutes',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF2C3E50),
+              ),
+            ),
           ),
       ],
     );

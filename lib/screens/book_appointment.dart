@@ -44,6 +44,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   String patientEmail = '';
   String reasonOfBooking = '';
   String notes = '';
+  int meetingDuration = 30; // Default duration, will be updated from clinic settings
 
   // Controllers pour les champs de texte
   late TextEditingController _reasonOfBookingController;
@@ -52,12 +53,14 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   List<String> availableDays = [];
   List<String> availableTimeSlots = [];
   Map<String, List<String>> dayTimeSlots = {};
+  bool isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _reasonOfBookingController = TextEditingController(text: reasonOfBooking);
     _initializeAvailableSlots();
+    _loadClinicMeetingDuration();
   }
 
   @override
@@ -125,7 +128,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         DateTime current = start;
         while (current.isBefore(end)) {
           slots.add(_formatTime(current));
-          current = current.add(const Duration(minutes: 30)); // Créneaux de 30 minutes
+          current = current.add(Duration(minutes: meetingDuration));
         }
       }
     } catch (e) {
@@ -153,7 +156,23 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}';
   }
 
+  // Formater l'heure pour l'affichage (ex: 10:00 -> 10h00)
   String _formatTimeForDisplay(String time) {
+    try {
+      final parts = time.split(':');
+      if (parts.length == 2) {
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+        return '${hour}h${minute.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      print('Error formatting time: $e');
+    }
+    return time;
+  }
+
+  // Formater l'heure pour l'affichage avec période (ex: 10:00 -> 10:00 AM)
+  String _formatTimeWithPeriod(String time) {
     try {
       final parts = time.split(':');
       if (parts.length == 2) {
@@ -164,7 +183,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
       }
     } catch (e) {
-      print('Error formatting time: $e');
+      print('Error formatting time with period: $e');
     }
     return time;
   }
@@ -187,13 +206,93 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
 
   List<String> _generateDefaultTimeSlots() {
     List<String> slots = [];
-    // Horaires par défaut : 8h00 à 18h00 avec des créneaux de 30 minutes
+    // Horaires par défaut : 8h00 à 18h00 avec des créneaux selon la durée configurée
     for (int hour = 8; hour < 18; hour++) {
-      for (int minute = 0; minute < 60; minute += 30) {
+      for (int minute = 0; minute < 60; minute += meetingDuration) {
         slots.add('${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}');
       }
     }
     return slots;
+  }
+
+  Future<void> _loadClinicMeetingDuration() async {
+    try {
+      final duration = await AppointmentService.getClinicMeetingDuration(widget.hospitalName);
+      setState(() {
+        meetingDuration = duration;
+      });
+      print('✓ Loaded clinic meeting duration: $duration minutes');
+    } catch (e) {
+      print('Error loading clinic meeting duration: $e');
+      // Keep default 30 minutes
+    }
+  }
+
+  // Générer les créneaux horaires disponibles pour la date sélectionnée
+  Future<void> _generateTimeSlotsForDate(DateTime date) async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      // Récupérer l'ID de la clinique
+      final clinicId = await _getClinicId(widget.hospitalName);
+      if (clinicId != null) {
+        // Utiliser le nouveau système d'horaires
+        final slots = await AppointmentService.getAvailableTimeSlots(clinicId, date);
+        setState(() {
+          dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
+          isLoading = false;
+        });
+        print('✓ Generated ${slots.length} time slots for ${DateFormat('yyyy-MM-dd').format(date)}');
+      } else {
+        // Fallback vers l'ancien système
+        final slots = _generateDefaultTimeSlots();
+        setState(() {
+          dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
+          isLoading = false;
+        });
+        print('⚠ Using fallback time slots: ${slots.length} slots');
+      }
+    } catch (e) {
+      print('Error generating time slots: $e');
+      // Fallback vers l'ancien système
+      final slots = _generateDefaultTimeSlots();
+      setState(() {
+        dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
+        isLoading = false;
+      });
+    }
+  }
+
+  // Récupérer l'ID de la clinique par son nom
+  Future<String?> _getClinicId(String clinicName) async {
+    try {
+      final clinicDocs = await FirebaseFirestore.instance
+          .collection('clinics')
+          .where('name', isEqualTo: clinicName)
+          .get();
+      
+      if (clinicDocs.docs.isNotEmpty) {
+        return clinicDocs.docs.first.id;
+      }
+      
+      // Essayer une correspondance partielle
+      final allClinicDocs = await FirebaseFirestore.instance.collection('clinics').get();
+      for (final doc in allClinicDocs.docs) {
+        final data = doc.data();
+        final name = data['name'] ?? '';
+        if (name.toLowerCase().contains(clinicName.toLowerCase()) ||
+            clinicName.toLowerCase().contains(name.toLowerCase())) {
+          return doc.id;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error getting clinic ID: $e');
+      return null;
+    }
   }
 
   void _onItemTapped(int index) {
@@ -342,6 +441,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         appointmentDate: selectedDate!,
         appointmentTime: selectedTime!,
         reasonOfBooking: reasonOfBooking.trim(),
+        meetingDuration: meetingDuration, // Use clinic's configured duration
         status: 'pending',
         createdAt: DateTime.now(),
       );
@@ -418,7 +518,11 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                         const SizedBox(height: 4),
                         Text('Date: ${DateFormat('MMM dd, yyyy').format(selectedDate!)}'),
                         const SizedBox(height: 4),
-                        Text('Time: $selectedTime'),
+                        Text('Time: ${_formatTimeWithPeriod(selectedTime!)}'),
+                        const SizedBox(height: 4),
+                        Text('Duration: $meetingDuration minutes'),
+                        const SizedBox(height: 4),
+                        Text('Reason: ${reasonOfBooking.trim()}'),
                       ],
                     ),
                   ),
@@ -483,6 +587,17 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         );
       }
     }
+  }
+
+  // Mettre à jour la sélection de date et générer les créneaux
+  void _onDateSelected(DateTime date) {
+    setState(() {
+      selectedDate = date;
+      selectedTime = null; // Reset time selection
+    });
+    
+    // Générer les créneaux pour la nouvelle date
+    _generateTimeSlotsForDate(date);
   }
 
   @override
@@ -807,10 +922,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                             
                                             return GestureDetector(
                                               onTap: () {
-                                                setState(() {
-                                                  selectedDate = date;
-                                                  selectedTime = null; // Reset time when date changes
-                                                });
+                                                _onDateSelected(date);
                                               },
                                               child: Container(
                                                 width: 80,
@@ -883,7 +995,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                         children: [
                                           const Icon(Icons.access_time, color: Color(0xFF159BBD)),
                                           const SizedBox(width: 8),
-                                      Text(
+                                          Text(
                                             'Available Times',
                                             style: TextStyle(
                                               fontSize: 14,
@@ -891,81 +1003,55 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                               color: Colors.grey[700],
                                             ),
                                           ),
+                                          const Spacer(),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF159BBD).withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(12),
+                                            ),
+                                            child: Text(
+                                              '$meetingDuration min',
+                                              style: const TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Color(0xFF159BBD),
+                                              ),
+                                            ),
+                                          ),
                                         ],
                                       ),
                                       const SizedBox(height: 12),
-                                      Builder(
-                                        builder: (context) {
-                                          final dayName = DateFormat('EEEE').format(selectedDate!);
-                                          final timeSlots = dayTimeSlots[dayName] ?? [];
-                                          
-                                          if (timeSlots.isEmpty) {
-                                            return Container(
-                                              padding: const EdgeInsets.all(12),
-                                              decoration: BoxDecoration(
-                                                color: Colors.orange[50],
-                                                borderRadius: BorderRadius.circular(8),
-                                                border: Border.all(color: Colors.orange[200]!),
+                                      
+                                      if (isLoading)
+                                        const Center(
+                                          child: Padding(
+                                            padding: EdgeInsets.all(20),
+                                            child: CircularProgressIndicator(
+                                              color: Color(0xFF159BBD),
+                                            ),
+                                          ),
+                                        )
+                                      else if (selectedDate != null)
+                                        _buildTimeSlotsGrid()
+                                      else
+                                        Container(
+                                          padding: const EdgeInsets.all(20),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[50],
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(color: Colors.grey[200]!),
+                                          ),
+                                          child: const Center(
+                                            child: Text(
+                                              'Please select a date to see available times',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 14,
                                               ),
-                                              child: Row(
-                                                children: [
-                                                  Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
-                                                  const SizedBox(width: 8),
-                                                  Expanded(
-                                                    child: Text(
-                                                      'No time slots available for this day.',
-                                                      style: TextStyle(
-                                                        fontSize: 12,
-                                                        color: Colors.orange[700],
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            );
-                                          }
-                                          
-                                          return Wrap(
-                                            spacing: 8,
-                                            runSpacing: 8,
-                                            children: timeSlots.map((time) {
-                                              final isSelected = selectedTime == time;
-                                              return GestureDetector(
-                                                onTap: () {
-                                                  setState(() {
-                                                    selectedTime = time;
-                                                  });
-                                                },
-                                                child: Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                                  decoration: BoxDecoration(
-                                                    color: isSelected ? const Color(0xFF159BBD) : Colors.white,
-                                                    borderRadius: BorderRadius.circular(20),
-                                                    border: Border.all(
-                                                      color: isSelected ? const Color(0xFF159BBD) : Colors.grey[300]!,
-                                                    ),
-                                                    boxShadow: isSelected ? [
-                                                      BoxShadow(
-                                                        color: const Color(0xFF159BBD).withOpacity(0.3),
-                                                        blurRadius: 4,
-                                                        offset: const Offset(0, 1),
-                                                      ),
-                                                    ] : null,
-                                                  ),
-                                                  child: Text(
-                                                    _formatTimeForDisplay(time),
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: isSelected ? Colors.white : Colors.grey[700],
-                                                    ),
-                                                  ),
-                                                ),
-                                              );
-                                            }).toList(),
-                                          );
-                                        },
-                                      ),
+                                            ),
+                                          ),
+                                        ),
                                     ],
                                 ),
                               ),
@@ -1072,6 +1158,77 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildTimeSlotsGrid() {
+    final dayName = DateFormat('EEEE').format(selectedDate!);
+    final timeSlots = dayTimeSlots[dayName] ?? [];
+    
+    if (timeSlots.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.orange[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.orange[200]!),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'No time slots available for this day.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.orange[700],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: timeSlots.map((time) {
+        final isSelected = selectedTime == time;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedTime = time;
+            });
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: isSelected ? const Color(0xFF159BBD) : Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isSelected ? const Color(0xFF159BBD) : Colors.grey[300]!,
+              ),
+              boxShadow: isSelected ? [
+                BoxShadow(
+                  color: const Color(0xFF159BBD).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ] : null,
+            ),
+            child: Text(
+              _formatTimeForDisplay(time),
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSelected ? Colors.white : Colors.grey[700],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 } 

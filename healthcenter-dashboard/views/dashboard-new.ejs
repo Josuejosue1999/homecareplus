@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Health Center</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/dashboard-styles.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-hospital-alt"></i>
+                    <span>HomeCare Plus</span>
+                </div>
+            </div>
+            
+            <div class="sidebar-user">
+                <div class="user-avatar">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="user-info">
+                    <h6><%= user.clinicName || 'Admin' %></h6>
+                    <span>Administrator</span>
+                </div>
+            </div>
+            
+            <ul class="sidebar-nav">
+                <li class="nav-item active">
+                    <a href="#dashboard" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#appointments" class="nav-link">
+                        <i class="fas fa-calendar-check"></i>
+                        <span>Appointments</span>
+                        <span class="badge bg-danger ms-auto">3</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#messages" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Messages</span>
+                        <span class="badge bg-warning ms-auto">5</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#settings" class="nav-link" id="settings-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#profile" class="nav-link" id="profile-link">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Profile</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <a href="/logout" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </a>
+            </div>
+        </nav>
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="header-title">
+                        <h1 class="mb-1"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h1>
+                        <p class="text-muted mb-0" style="font-size:1.1rem;font-weight:500;">Welcome back, <span style="color:var(--primary-color);font-weight:700"><%= user.clinicName || 'Admin' %></span>! Here is your professional overview for today.</p>
+                    </div>
+                </div>
+                <div class="header-right d-flex align-items-center gap-3">
+                    <div class="d-flex flex-column align-items-end me-3">
+                        <span class="fw-bold" style="color:var(--primary-color)">Today: <%= new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'short', day:'numeric'}) %></span>
+                        <span class="text-secondary" style="font-size:0.95rem;">Stay productive!</span>
+                    </div>
+                    <div class="header-actions d-flex align-items-center gap-2">
+                        <div class="notifications me-2">
+                            <i class="fas fa-bell"></i>
+                            <span class="badge">3</span>
+                        </div>
+                        <div class="user-menu d-flex align-items-center gap-2">
+                            <img src="<%= user.profileImageUrl || '/assets/hospital.PNG' %>" alt="User" class="user-avatar-small" id="headerUserAvatar">
+                            <span class="fw-bold"><%= user.clinicName || 'Admin' %></span>
+                            <i class="fas fa-chevron-down ms-2"></i>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-6 col-md-6 mb-4">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>24</h3>
+                                <p>Today's Appointments</p>
+                                <span class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> 12%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-6 col-md-6 mb-4">
+                        <div class="stat-card">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-user-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3>18</h3>
+                                <p>Confirmed Appointments</p>
+                                <span class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i> 8%
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Main Content Row -->
+                <div class="row">
+                    <!-- Appointments List -->
+                    <div class="col-12">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calendar-alt text-primary me-2"></i>
+                                        Upcoming Appointments
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Manage and view your clinic appointments</p>
+                                </div>
+                                <div class="header-actions">
+                                    <button class="btn btn-outline-primary btn-sm me-2" onclick="dashboardAppointments.refresh()">
+                                        <i class="fas fa-refresh me-1"></i> Refresh
+                                    </button>
+                                    <button class="btn btn-primary btn-sm" onclick="navigateToAppointments()">
+                                        <i class="fas fa-list me-1"></i> View All
+                                    </button>
+                            </div>
+                                        </div>
+                            <div class="card-body p-0">
+                                <div class="appointments-container" id="appointmentsList">
+                                    <!-- Appointments will be loaded dynamically -->
+                                    <div class="loading-state">
+                                        <div class="spinner-container">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        </div>
+                                        <p class="loading-text">Loading appointments...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                                        </div>
+                                    </div>
+                                    
+            <!-- Settings Content (Hidden by default) -->
+            <div class="settings-content" id="settings-content" style="display: none;">
+                <!-- Settings Header -->
+                <div class="settings-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="header-content">
+                                <h2 class="mb-2">
+                                    <i class="fas fa-cog text-primary me-3"></i>
+                                    Clinic Settings
+                                </h2>
+                                <p class="text-muted mb-0">Manage your clinic information, preferences, and account settings</p>
+                                        </div>
+                                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="header-actions">
+                                <button class="btn btn-primary" onclick="settingsPage.saveAllSettings()">
+                                    <i class="fas fa-save me-2"></i>Save All Changes
+                                            </button>
+                            </div>
+                        </div>
+                                        </div>
+                                    </div>
+                                    
+                <!-- Settings Statistics -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-settings">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-user-check"></i>
+                                        </div>
+                            <div class="stat-content">
+                                <h3 id="profileCompletion">85%</h3>
+                                <p>Profile Complete</p>
+                                        </div>
+                                        </div>
+                                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-settings">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-stethoscope"></i>
+                                </div>
+                            <div class="stat-content">
+                                <h3 id="activeServices">5</h3>
+                                <p>Active Services</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-settings">
+                            <div class="stat-icon bg-warning">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="workingDays">6</h3>
+                                <p>Working Days</p>
+                                </div>
+                            </div>
+                        </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-settings">
+                            <div class="stat-icon bg-info">
+                                <i class="fas fa-shield-alt"></i>
+                    </div>
+                            <div class="stat-content">
+                                <h3 id="securityLevel">High</h3>
+                                <p>Security Level</p>
+                </div>
+            </div>
+                    </div>
+                    </div>
+                    
+                <!-- Settings Management -->
+                    <div class="row">
+                        <div class="col-12">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-sliders-h text-primary me-2"></i>
+                                        Settings Configuration
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Configure your clinic settings and preferences</p>
+                                </div>
+                                <div class="header-actions d-flex gap-2">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-sm active" data-settings-tab="profile">
+                                            <i class="fas fa-user me-1"></i>Profile
+                                            </button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" data-settings-tab="contact">
+                                            <i class="fas fa-phone me-1"></i>Contact
+                                            </button>
+                                        <button type="button" class="btn btn-outline-warning btn-sm" data-settings-tab="services">
+                                            <i class="fas fa-stethoscope me-1"></i>Services
+                                            </button>
+                                        <button type="button" class="btn btn-outline-info btn-sm" data-settings-tab="schedule">
+                                            <i class="fas fa-calendar-alt me-1"></i>Schedule
+                                            </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-settings-tab="documents">
+                                            <i class="fas fa-file-upload me-1"></i>Documents
+                                            </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-settings-tab="security">
+                                            <i class="fas fa-shield-alt me-1"></i>Security
+                                            </button>
+                                </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="settings-container">
+                                    <!-- Profile Settings Tab -->
+                                    <div class="settings-tab active" id="profile-tab">
+                                        <div class="settings-tab-content">
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="profile-image-section text-center">
+                                                        <div class="profile-image-container">
+                                                            <img id="profileImage" src="/assets/hospital.PNG" alt="Clinic Profile" class="profile-image">
+                                                            <div class="profile-image-overlay">
+                                                                <button class="btn btn-light btn-sm" onclick="settingsPage.changeProfileImage()">
+                                                                    <i class="fas fa-camera"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+                                                        <p class="text-muted mt-2">Click to change profile image</p>
+                                                        <div class="profile-status mt-3">
+                                                            <span class="badge bg-success">Active</span>
+                                                            <span class="badge bg-primary ms-2">Verified</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-8">
+                                                    <form id="profileForm" class="settings-form">
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label for="clinicName">
+                                                                        <i class="fas fa-hospital text-primary me-2"></i>
+                                                                        Clinic Name
+                                                                    </label>
+                                                                    <input type="text" class="form-control" id="clinicName" name="clinicName" value="<%= user.clinicName || user.name || 'Clinic Name' %>">
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="form-group">
+                                                                    <label for="clinicEmail">
+                                                                        <i class="fas fa-envelope text-primary me-2"></i>
+                                                                        Email Address
+                                                                    </label>
+                                                                    <input type="email" class="form-control" id="clinicEmail" name="clinicEmail" value="<%= user.email %>" readonly>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="clinicAbout">
+                                                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                                                About Clinic
+                                                            </label>
+                                                            <textarea class="form-control" id="clinicAbout" name="clinicAbout" rows="4" placeholder="Describe your clinic's mission and services..."><%= user.about || '' %></textarea>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="meetingDuration">
+                                                                <i class="fas fa-clock text-primary me-2"></i>
+                                                                Appointment Duration (minutes)
+                                                            </label>
+                                                            <select class="form-control" id="meetingDuration" name="meetingDuration">
+                                                                <option value="15">15 minutes</option>
+                                                                <option value="30" selected>30 minutes</option>
+                                                                <option value="45">45 minutes</option>
+                                                                <option value="60">1 hour</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-actions">
+                                                        <button type="submit" class="btn btn-primary">
+                                                                <i class="fas fa-save me-2"></i>Save Profile
+                                                        </button>
+                                                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.resetProfileForm()">
+                                                                <i class="fas fa-undo me-2"></i>Reset
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <!-- Contact Settings Tab -->
+                                    <div class="settings-tab" id="contact-tab">
+                                        <div class="settings-tab-content">
+                                            <form id="contactForm" class="settings-form">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="clinicPhone">
+                                                                <i class="fas fa-phone text-primary me-2"></i>
+                                                                Phone Number
+                                                            </label>
+                                                            <input type="tel" class="form-control" id="clinicPhone" name="clinicPhone" placeholder="+250 123 456 789">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="clinicAddress">
+                                                                <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                                                Street Address
+                                                            </label>
+                                                            <input type="text" class="form-control" id="clinicAddress" name="clinicAddress" placeholder="Enter street address">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="clinicSector">
+                                                                <i class="fas fa-location-dot text-primary me-2"></i>
+                                                                Sector
+                                                            </label>
+                                                            <select class="form-control" id="clinicSector" name="clinicSector">
+                                                                <option value="">Select Sector</option>
+                                                                <option value="KK (Kacyiru)">KK (Kacyiru)</option>
+                                                                <option value="KG (Gasabo)">KG (Gasabo)</option>
+                                                                <option value="KN (Nyarugenge)">KN (Nyarugenge)</option>
+                                                                <option value="KM (Muhima)">KM (Muhima)</option>
+                                                                <option value="KP (Kicukiro)">KP (Kicukiro)</option>
+                                                                <option value="KR (Remera)">KR (Remera)</option>
+                                                                <option value="KY (Nyamirambo)">KY (Nyamirambo)</option>
+                                                                <option value="KC (Kiyovu)">KC (Kiyovu)</option>
+                                                                <option value="KI (Kimihurura)">KI (Kimihurura)</option>
+                                                                <option value="KG (Gisozi)">KG (Gisozi)</option>
+                                                                <option value="KJ (Gikondo)">KJ (Gikondo)</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label for="clinicLocation">
+                                                                <i class="fas fa-map text-primary me-2"></i>
+                                                                Location Coordinates
+                                                            </label>
+                                                            <div class="input-group">
+                                                                <input type="text" class="form-control" id="clinicLatitude" name="clinicLatitude" placeholder="Latitude" readonly>
+                                                                <input type="text" class="form-control" id="clinicLongitude" name="clinicLongitude" placeholder="Longitude" readonly>
+                                                                <button type="button" class="btn btn-outline-secondary" onclick="settingsPage.getCurrentLocation()">
+                                                                    <i class="fas fa-map-marker-alt"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-actions">
+                                                <button type="submit" class="btn btn-primary">
+                                                        <i class="fas fa-save me-2"></i>Save Contact Info
+                                                </button>
+                                                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.resetContactForm()">
+                                                        <i class="fas fa-undo me-2"></i>Reset
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        </div>
+
+                                    <!-- Services Settings Tab -->
+                                    <div class="settings-tab" id="services-tab">
+                                        <div class="settings-tab-content">
+                                            <div class="form-group">
+                                                <label>
+                                                    <i class="fas fa-stethoscope text-primary me-2"></i>
+                                                    Available Services
+                                                </label>
+                                                <div class="services-grid">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="General Medicine" id="service1">
+                                                        <label class="form-check-label" for="service1">General Medicine</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Cardiology" id="service2">
+                                                        <label class="form-check-label" for="service2">Cardiology</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Neurology" id="service3">
+                                                        <label class="form-check-label" for="service3">Neurology</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Pediatrics" id="service4">
+                                                        <label class="form-check-label" for="service4">Pediatrics</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Gynecology" id="service5">
+                                                        <label class="form-check-label" for="service5">Gynecology</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Dermatology" id="service6">
+                                                        <label class="form-check-label" for="service6">Dermatology</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Orthopedics" id="service7">
+                                                        <label class="form-check-label" for="service7">Orthopedics</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="ENT" id="service8">
+                                                        <label class="form-check-label" for="service8">ENT</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Dental Care" id="service9">
+                                                        <label class="form-check-label" for="service9">Dental Care</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Laboratory Services" id="service10">
+                                                        <label class="form-check-label" for="service10">Laboratory Services</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Radiology" id="service11">
+                                                        <label class="form-check-label" for="service11">Radiology</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Emergency Care" id="service12">
+                                                        <label class="form-check-label" for="service12">Emergency Care</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Surgery" id="service13">
+                                                        <label class="form-check-label" for="service13">Surgery</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Physical Therapy" id="service14">
+                                                        <label class="form-check-label" for="service14">Physical Therapy</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Mental Health" id="service15">
+                                                        <label class="form-check-label" for="service15">Mental Health</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Nutrition Services" id="service16">
+                                                        <label class="form-check-label" for="service16">Nutrition Services</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Vaccination" id="service17">
+                                                        <label class="form-check-label" for="service17">Vaccination</label>
+                                                    </div>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" value="Family Planning" id="service18">
+                                                        <label class="form-check-label" for="service18">Family Planning</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="form-actions">
+                                                <button type="button" class="btn btn-primary" onclick="settingsPage.saveServices()">
+                                                    <i class="fas fa-save me-2"></i>Save Services
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.resetServices()">
+                                                    <i class="fas fa-undo me-2"></i>Reset
+                                            </button>
+                                            </div>
+                                        </div>
+                                        </div>
+
+                                    <!-- Schedule Settings Tab -->
+                                    <div class="settings-tab" id="schedule-tab">
+                                        <div class="settings-tab-content">
+                                            <div class="schedule-container">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <h5><i class="fas fa-clock text-primary me-2"></i>Working Hours</h5>
+                                                        <div class="schedule-item">
+                                                            <label>Monday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="time" class="form-control" id="mondayStart" value="08:00">
+                                                                <span>to</span>
+                                                                <input type="time" class="form-control" id="mondayEnd" value="17:00">
+                                                            </div>
+                                                        </div>
+                                                        <div class="schedule-item">
+                                                            <label>Tuesday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="time" class="form-control" id="tuesdayStart" value="08:00">
+                                                                <span>to</span>
+                                                                <input type="time" class="form-control" id="tuesdayEnd" value="17:00">
+                                                            </div>
+                                                        </div>
+                                                        <div class="schedule-item">
+                                                            <label>Wednesday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="time" class="form-control" id="wednesdayStart" value="08:00">
+                                                                <span>to</span>
+                                                                <input type="time" class="form-control" id="wednesdayEnd" value="17:00">
+                                                            </div>
+                                                        </div>
+                                                        <div class="schedule-item">
+                                                            <label>Thursday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="time" class="form-control" id="thursdayStart" value="08:00">
+                                                                <span>to</span>
+                                                                <input type="time" class="form-control" id="thursdayEnd" value="17:00">
+                                                            </div>
+                                                        </div>
+                                                        <div class="schedule-item">
+                                                            <label>Friday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="time" class="form-control" id="fridayStart" value="08:00">
+                                                                <span>to</span>
+                                                                <input type="time" class="form-control" id="fridayEnd" value="17:00">
+                                                            </div>
+                                                        </div>
+                                                        <div class="schedule-item">
+                                                            <label>Saturday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="time" class="form-control" id="saturdayStart" value="09:00">
+                                                                <span>to</span>
+                                                                <input type="time" class="form-control" id="saturdayEnd" value="15:00">
+                                                            </div>
+                                                        </div>
+                                                        <div class="schedule-item">
+                                                            <label>Sunday</label>
+                                                            <div class="time-inputs">
+                                                                <input type="text" class="form-control" value="Closed" readonly>
+                                                                <span>to</span>
+                                                                <input type="text" class="form-control" value="Closed" readonly>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <h5><i class="fas fa-coffee text-primary me-2"></i>Break Time</h5>
+                                                        <div class="form-group">
+                                                            <label for="breakStart">Lunch Break Start</label>
+                                                            <input type="time" class="form-control" id="breakStart" value="12:00">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="breakEnd">Lunch Break End</label>
+                                                            <input type="time" class="form-control" id="breakEnd" value="13:00">
+                                                        </div>
+                                                        <h5><i class="fas fa-calendar-check text-primary me-2"></i>Appointment Settings</h5>
+                                                        <div class="form-group">
+                                                            <label for="appointmentInterval">Time between appointments (minutes)</label>
+                                                            <select class="form-control" id="appointmentInterval">
+                                                                <option value="15">15 minutes</option>
+                                                                <option value="30" selected>30 minutes</option>
+                                                                <option value="45">45 minutes</option>
+                                                                <option value="60">1 hour</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="maxAppointments">Maximum appointments per day</label>
+                                                            <input type="number" class="form-control" id="maxAppointments" value="20" min="1" max="50">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="form-actions">
+                                                    <button type="button" class="btn btn-primary" onclick="settingsPage.saveSchedule()">
+                                                        <i class="fas fa-save me-2"></i>Save Schedule
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.resetSchedule()">
+                                                        <i class="fas fa-undo me-2"></i>Reset
+                                                </button>
+                                                </div>
+                                            </div>
+                                            </div>
+                                        </div>
+
+                                    <!-- Documents Settings Tab -->
+                                    <div class="settings-tab" id="documents-tab">
+                                        <div class="settings-tab-content">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="document-upload-section">
+                                                        <h5><i class="fas fa-certificate text-primary me-2"></i>Medical License Certificate</h5>
+                                                        <div class="upload-area" id="certificateUploadArea">
+                                                            <div class="upload-content">
+                                                                <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
+                                                                <p class="text-muted">Drag and drop your medical license certificate here</p>
+                                                                <p class="text-muted">or</p>
+                                                                <button type="button" class="btn btn-outline-primary" onclick="settingsPage.uploadCertificate()">
+                                                                    <i class="fas fa-upload me-2"></i>Choose File
+                                                                </button>
+                                                                <input type="file" id="certificateInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="uploaded-file mt-3" id="certificateFileInfo" style="display: none;">
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle me-2"></i>
+                                                                <strong>Certificate uploaded:</strong>
+                                                                <span id="certificateFileName"></span>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="settingsPage.removeCertificate()">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-text">
+                                                            <i class="fas fa-info-circle me-2"></i>
+                                                            Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="col-md-6">
+                                                    <div class="document-upload-section">
+                                                        <h5><i class="fas fa-id-card text-primary me-2"></i>National ID / Passport</h5>
+                                                        <div class="upload-area" id="idUploadArea">
+                                                            <div class="upload-content">
+                                                                <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
+                                                                <p class="text-muted">Drag and drop your ID or passport here</p>
+                                                                <p class="text-muted">or</p>
+                                                                <button type="button" class="btn btn-outline-primary" onclick="settingsPage.uploadId()">
+                                                                    <i class="fas fa-upload me-2"></i>Choose File
+                                                                </button>
+                                                                <input type="file" id="idInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="uploaded-file mt-3" id="idFileInfo" style="display: none;">
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle me-2"></i>
+                                                                <strong>ID uploaded:</strong>
+                                                                <span id="idFileName"></span>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="settingsPage.removeId()">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-text">
+                                                            <i class="fas fa-info-circle me-2"></i>
+                                                            Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="row mt-4">
+                                                <div class="col-12">
+                                                    <div class="document-status">
+                                                        <h5><i class="fas fa-clipboard-check text-primary me-2"></i>Document Status</h5>
+                                                        <div class="row">
+                                                            <div class="col-md-6">
+                                                                <div class="status-item">
+                                                                    <div class="status-icon">
+                                                                        <i class="fas fa-certificate"></i>
+                                                                    </div>
+                                                                    <div class="status-info">
+                                                                        <h6>Medical License</h6>
+                                                                        <span class="badge bg-warning" id="certificateStatus">Pending</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-6">
+                                                                <div class="status-item">
+                                                                    <div class="status-icon">
+                                                                        <i class="fas fa-id-card"></i>
+                                                                    </div>
+                                                                    <div class="status-info">
+                                                                        <h6>National ID</h6>
+                                                                        <span class="badge bg-warning" id="idStatus">Pending</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="form-actions">
+                                                <button type="button" class="btn btn-primary" onclick="settingsPage.saveDocuments()">
+                                                    <i class="fas fa-save me-2"></i>Save Documents
+                                                    </button>
+                                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.previewDocuments()">
+                                                    <i class="fas fa-eye me-2"></i>Preview Documents
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <!-- Security Settings Tab -->
+                                    <div class="settings-tab" id="security-tab">
+                                        <div class="settings-tab-content">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <h5><i class="fas fa-key text-primary me-2"></i>Change Password</h5>
+                                                    <form id="passwordForm" class="settings-form">
+                                                        <div class="form-group">
+                                                            <label for="currentPassword">
+                                                                <i class="fas fa-lock text-primary me-2"></i>
+                                                                Current Password
+                                                            </label>
+                                                            <input type="password" class="form-control" id="currentPassword" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="newPassword">
+                                                                <i class="fas fa-key text-primary me-2"></i>
+                                                                New Password
+                                                            </label>
+                                                            <input type="password" class="form-control" id="newPassword" required>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="confirmPassword">
+                                                                <i class="fas fa-check-circle text-primary me-2"></i>
+                                                                Confirm New Password
+                                                            </label>
+                                                            <input type="password" class="form-control" id="confirmPassword" required>
+                                                        </div>
+                                                        <div class="form-actions">
+                                                        <button type="submit" class="btn btn-primary">
+                                                                <i class="fas fa-key me-2"></i>Change Password
+                                                        </button>
+                                                            <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.resetPasswordForm()">
+                                                                <i class="fas fa-undo me-2"></i>Reset
+                                                            </button>
+                                                        </div>
+                                                    </form>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <h5><i class="fas fa-shield-alt text-primary me-2"></i>Account Security</h5>
+                                                    <div class="security-options">
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="twoFactorAuth">
+                                                            <label class="form-check-label" for="twoFactorAuth">
+                                                                <i class="fas fa-mobile-alt text-primary me-2"></i>
+                                                                Enable Two-Factor Authentication
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                                            <label class="form-check-label" for="emailNotifications">
+                                                                <i class="fas fa-envelope text-primary me-2"></i>
+                                                                Email Notifications
+                                                            </label>
+                                                        </div>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="smsNotifications">
+                                                            <label class="form-check-label" for="smsNotifications">
+                                                                <i class="fas fa-sms text-primary me-2"></i>
+                                                                SMS Notifications
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="mt-4">
+                                                        <h6><i class="fas fa-users text-primary me-2"></i>Session Management</h6>
+                                                        <button type="button" class="btn btn-outline-danger btn-sm" onclick="settingsPage.logoutAllDevices()">
+                                                            <i class="fas fa-sign-out-alt me-2"></i>Logout All Devices
+                                                        </button>
+                                                    </div>
+                                                    <div class="form-actions mt-4">
+                                                        <button type="button" class="btn btn-primary" onclick="settingsPage.saveSecuritySettings()">
+                                                            <i class="fas fa-save me-2"></i>Save Security Settings
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Content -->
+            <div id="profile-content" class="dashboard-content" style="display: none;">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-user-circle"></i> Clinic Profile</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <!-- Profile Image Section -->
+                                    <div class="col-md-4 text-center mb-4">
+                                        <div class="profile-image-container">
+                                            <img id="profileDisplayImage" src="https://via.placeholder.com/200x200/159BBD/FFFFFF?text=Clinic" 
+                                                 alt="Clinic Profile" class="profile-image mb-3">
+                                            <div class="profile-status">
+                                                <span class="badge bg-success">Active</span>
+                                                <span class="badge bg-primary ms-2">Verified</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Profile Information -->
+                                    <div class="col-md-8">
+                                        <div class="profile-info">
+                                            <h4 id="profileClinicName" class="text-primary mb-3">Clinic Name</h4>
+                                            <p id="profileClinicAbout" class="text-muted mb-4">About the clinic...</p>
+                                            
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <label><i class="fas fa-envelope text-primary"></i> Email</label>
+                                                        <p id="profileClinicEmail">email@clinic.com</p>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <label><i class="fas fa-phone text-primary"></i> Phone</label>
+                                                        <p id="profileClinicPhone">+250 XXX XXX XXX</p>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <label><i class="fas fa-map-marker-alt text-primary"></i> Address</label>
+                                                        <p id="profileClinicAddress">Address to be updated</p>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="info-item">
+                                                        <label><i class="fas fa-location-dot text-primary"></i> Location</label>
+                                                        <p id="profileClinicLocation">Location to be updated</p>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <label><i class="fas fa-calendar-alt text-primary"></i> Created</label>
+                                                        <p id="profileClinicCreated">Registration date</p>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <label><i class="fas fa-clock text-primary"></i> Last Updated</label>
+                                                        <p id="profileClinicUpdated">Last update date</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Services Section -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-stethoscope"></i> Available Services</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="profileServices" class="services-list">
+                                    <span class="badge bg-primary me-2 mb-2">General Medicine</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-calendar-week"></i> Working Schedule</h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="profileSchedule" class="schedule-list">
+                                    <!-- Schedule will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Statistics Section -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <h5><i class="fas fa-chart-bar"></i> Clinic Statistics</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3 text-center">
+                                        <div class="stat-item">
+                                            <h3 class="text-primary">0</h3>
+                                            <p>Total Appointments</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="stat-item">
+                                            <h3 class="text-success">0</h3>
+                                            <p>Completed</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="stat-item">
+                                            <h3 class="text-warning">0</h3>
+                                            <p>Pending</p>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 text-center">
+                                        <div class="stat-item">
+                                            <h3 class="text-info">0</h3>
+                                            <p>This Month</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appointments Content -->
+            <div id="appointments-content" class="dashboard-content" style="display: none;">
+                <!-- Appointments Header -->
+                <div class="appointments-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="header-content">
+                                <h2 class="mb-2">
+                                    <i class="fas fa-calendar-check text-primary me-3"></i>
+                                    Appointments Management
+                                </h2>
+                                <p class="text-muted mb-0">Complete overview and management of all clinic appointments</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="header-actions">
+                                <button class="btn btn-primary" onclick="appointmentsPage.refresh()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+    </div>
+    
+                <!-- Appointments Statistics -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-appointments">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalAppointments">0</h3>
+                                <p>Total Appointments</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-appointments">
+                            <div class="stat-icon bg-warning">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="pendingAppointments">0</h3>
+                                <p>Pending</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-appointments">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="confirmedAppointments">0</h3>
+                                <p>Confirmed</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-appointments">
+                            <div class="stat-icon bg-danger">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="cancelledAppointments">0</h3>
+                                <p>Cancelled</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointments Management Card -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-list-alt text-primary me-2"></i>
+                                        Appointments List
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Filter and manage your appointments</p>
+                                </div>
+                                <div class="header-actions d-flex gap-2">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-sm active" data-filter="all">
+                                            <i class="fas fa-list me-1"></i>All
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning btn-sm" data-filter="pending">
+                                            <i class="fas fa-clock me-1"></i>Pending
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" data-filter="confirmed">
+                                            <i class="fas fa-check me-1"></i>Confirmed
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger btn-sm" data-filter="cancelled">
+                                            <i class="fas fa-times me-1"></i>Cancelled
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="appointments-page-container" id="appointmentsPageList">
+                                    <!-- Appointments will be loaded dynamically -->
+                                    <div class="loading-state">
+                                        <div class="spinner-container">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <p class="loading-text">Loading all appointments...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Messages Content -->
+            <div id="messages-content" class="dashboard-content" style="display: none;">
+                <!-- Messages Header -->
+                <div class="messages-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="header-content">
+                                <h2 class="mb-2">
+                                    <i class="fas fa-comments text-primary me-3"></i>
+                                    Messages Center
+                                </h2>
+                                <p class="text-muted mb-0">Communicate with patients and manage clinic communications</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="header-actions">
+                                <button class="btn btn-primary" onclick="messagesPage.composeNewMessage()">
+                                    <i class="fas fa-plus me-2"></i>New Message
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Statistics -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-messages">
+                            <div class="stat-icon bg-primary">
+                                <i class="fas fa-inbox"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalMessages">0</h3>
+                                <p>Total Messages</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-messages">
+                            <div class="stat-icon bg-warning">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="unreadMessages">0</h3>
+                                <p>Unread</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-messages">
+                            <div class="stat-icon bg-success">
+                                <i class="fas fa-reply"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="sentMessages">0</h3>
+                                <p>Sent</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-3">
+                        <div class="stat-card-messages">
+                            <div class="stat-icon bg-info">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="pendingReplies">0</h3>
+                                <p>Pending Replies</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Management -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-envelope text-primary me-2"></i>
+                                        Messages
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Manage your clinic communications</p>
+                                </div>
+                                <div class="header-actions d-flex gap-2">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-outline-primary btn-sm active" data-filter="all">
+                                            <i class="fas fa-list me-1"></i>All
+                                        </button>
+                                        <button type="button" class="btn btn-outline-warning btn-sm" data-filter="unread">
+                                            <i class="fas fa-envelope me-1"></i>Unread
+                                        </button>
+                                        <button type="button" class="btn btn-outline-success btn-sm" data-filter="sent">
+                                            <i class="fas fa-reply me-1"></i>Sent
+                                        </button>
+                                        <button type="button" class="btn btn-outline-info btn-sm" data-filter="urgent">
+                                            <i class="fas fa-exclamation me-1"></i>Urgent
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="messages-container" id="messagesList">
+                                    <!-- Messages will be loaded dynamically -->
+                                    <div class="loading-state">
+                                        <div class="spinner-container">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <p class="loading-text">Loading messages...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom JS -->
+    <script src="/js/dashboard.js"></script>
+    <script src="/js/dashboard-appointments.js"></script>
+    <script src="/js/dashboard-navigation.js"></script>
+    <script src="/js/appointment-details.js"></script>
+    <script src="/js/appointments-page.js"></script>
+    <script src="/js/messages-page.js"></script>
+    <script src="/js/settings-page.js"></script>
+</body>
+</html> 

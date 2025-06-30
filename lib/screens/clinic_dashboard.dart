@@ -2,23 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import '../services/appointment_service.dart';
-import '../services/notification_service.dart';
-import 'clinic_appointments_page.dart';
-import 'chat.dart';
+import 'onlineconsult.dart';
+import 'calendar_page.dart';
+import 'chat_page.dart';
 import 'clinic_profile_page.dart';
-import 'clinic_notification_page.dart';
-import 'login2.dart';
+import '../services/appointment_service.dart';
+import '../models/appointment.dart';
 import 'appointment_detail_page.dart';
+import '../services/hospital_service.dart';
+import '../services/database_cleanup_service.dart';
 import '../widgets/professional_bottom_nav.dart';
+import 'login2.dart';
+import 'clinic_appointments_page.dart';
+import '../services/notification_service.dart';
+import 'clinic_notification_page.dart';
 import '../widgets/notification_badge.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:path_provider/path_provider.dart';
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/services.dart';
-import '../models/appointment.dart';
 
 class ClinicDashboardPage extends StatefulWidget {
   const ClinicDashboardPage({Key? key}) : super(key: key);
@@ -431,8 +435,8 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                     textAlign: TextAlign.center,
                                   ),
                                 ),
-                              );
-                            },
+                          );
+                        },
                           ),
                         ],
                       ),
@@ -610,7 +614,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                           style: TextStyle(
                                             color: Color(0xFF159BBD),
                                             fontSize: 16,
-                                          ),
+                                    ),
                                         ),
                                         SizedBox(height: 8),
                                         Text(
@@ -618,7 +622,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                           style: TextStyle(
                                             color: Colors.grey,
                                             fontSize: 12,
-                                          ),
+                                    ),
                                           textAlign: TextAlign.center,
                         ),
                       ],
@@ -642,7 +646,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                 fontWeight: FontWeight.w600,
                                             color: const Color(0xFF666666),
                                           ),
-                                        ),
+          ),
                                         const SizedBox(height: 8),
                                         Text(
                                           'Please wait while we verify your health center details',
@@ -650,9 +654,9 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                             fontSize: 14,
                                             color: const Color(0xFF999999),
                                           ),
-            ),
-          ],
-        ),
+          ),
+        ],
+      ),
       ),
                                 ),
                               ] else if (appointmentError != null) ...[
@@ -716,13 +720,13 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
           decoration: BoxDecoration(
             color: const Color(0xFF159BBD).withOpacity(0.1),
                                                 borderRadius: BorderRadius.circular(50),
-                                              ),
+          ),
                                               child: Icon(
                                                 Icons.calendar_today_outlined,
                                                 size: 48,
                                                 color: const Color(0xFF159BBD),
-                                              ),
-                                            ),
+          ),
+        ),
                                             const SizedBox(height: 16),
               Text(
                                               'No Upcoming Appointments',
@@ -759,7 +763,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                                     Icons.info_outline,
                                             color: const Color(0xFF159BBD),
                                             size: 20,
-                                          ),
+                ),
                                                   const SizedBox(width: 8),
                                                   Expanded(
                                                     child: Text(
@@ -776,7 +780,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                 ),
                               ),
                                           ],
-                                        ),
+          ),
                                       )
                                     : Column(
             children: [
@@ -790,7 +794,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                                       context,
                                                       MaterialPageRoute(
                                                         builder: (context) => AppointmentDetailPage(appointment: appointment),
-                                                      ),
+                    ),
                                                     );
                                                     if (result == true) {
                                                       // Rafraîchir la liste des rendez-vous après confirmation/annulation
@@ -818,8 +822,8 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                         border: Border.all(
                                                   color: const Color(0xFF159BBD).withOpacity(0.1),
                                                   width: 1,
-                                                ),
-                                              ),
+                                        ),
+                                      ),
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
@@ -841,7 +845,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                 ),
                               ),
                                           ],
-                                          
+
                                           // Si moins de 3 rendez-vous, afficher un message d'encouragement
                                           if (upcomingAppointments.length < 3 && upcomingAppointments.isNotEmpty) ...[
                                             const SizedBox(height: 16),
@@ -853,8 +857,8 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                   border: Border.all(
                                                   color: Colors.green.withOpacity(0.1),
                                                   width: 1,
-                                                ),
-                                              ),
+                                  ),
+                                ),
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
@@ -891,34 +895,35 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                                 ),
                               ),
       ),
-      bottomNavigationBar: ProfessionalBottomNav(
+      bottomNavigationBar: BottomNavigationBar(
+        type: BottomNavigationBarType.fixed,
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
                                     backgroundColor: const Color(0xFF159BBD),
-        selectedColor: Colors.white,
-        unselectedColor: Colors.white.withOpacity(0.7),
+        selectedItemColor: Colors.white,
+        unselectedItemColor: Colors.white.withOpacity(0.7),
         items: const [
-          BottomNavItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.dashboard_rounded),
             activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
             label: 'Home',
-          ),
-          BottomNavItem(
+                                  ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.event_note_rounded),
             activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
           ),
-          BottomNavItem(
+          BottomNavigationBarItem(
             icon: Icon(Icons.chat_bubble_outline_rounded),
             activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
             label: 'Chat',
-          ),
-          BottomNavItem(
+                                ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.person_outline_rounded),
             activeIcon: Icon(Icons.person_rounded, color: Colors.white),
             label: 'Profile',
-          ),
-        ],
+              ),
+            ],
       ),
     );
   }
@@ -949,7 +954,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
           border: Border.all(
             color: const Color(0xFF159BBD).withOpacity(0.1),
             width: 1,
-          ),
+                          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.08),
@@ -966,12 +971,12 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
               decoration: BoxDecoration(
                 color: const Color(0xFF159BBD).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(10),
-              ),
+                                ),
               child: Icon(
                 icon,
                 size: 22,
                 color: const Color(0xFF159BBD),
-              ),
+                              ),
             ),
             const SizedBox(height: 8),
             Flexible(
@@ -1044,13 +1049,13 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
         border: Border.all(
           color: _getStatusColor(status).withOpacity(0.2),
           width: 1.5,
-        ),
+      ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
             blurRadius: 12,
             offset: const Offset(0, 4),
-          ),
+            ),
         ],
       ),
             child: Row(
@@ -1068,7 +1073,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                 ],
               ),
               borderRadius: BorderRadius.circular(12),
-            ),
+                      ),
             child: Icon(
               _getStatusIcon(status),
               color: _getStatusColor(status),
@@ -1161,8 +1166,8 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                         fontSize: 13,
                         color: Colors.grey[600],
                         fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                        ),
+                  ),
                     const SizedBox(width: 16),
                     Icon(
                       Icons.access_time,
@@ -1190,14 +1195,14 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
             decoration: BoxDecoration(
               color: Colors.grey[100],
               borderRadius: BorderRadius.circular(8),
-            ),
+              ),
             child: Icon(
               Icons.arrow_forward_ios,
               size: 14,
               color: Colors.grey[500],
-            ),
-          ),
-        ],
+                  ),
+              ),
+            ],
       ),
     );
   }

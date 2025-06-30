@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:math';
 import '../models/hospital.dart';
 
 class HospitalService {
@@ -8,37 +9,17 @@ class HospitalService {
 
   // Fetch all hospitals from Firebase
   static Stream<List<Hospital>> getHospitals() {
-    try {
-      print('Starting to fetch hospitals from Firebase...');
       return _firestore
           .collection('clinics')
           .orderBy('createdAt', descending: true)
           .snapshots()
-          .handleError((error) {
-            print('Error in getHospitals stream: $error');
-            throw error;
-          })
           .map((snapshot) {
-        print('Fetched ${snapshot.docs.length} hospitals from Firebase');
-        try {
-          final hospitals = snapshot.docs.map((doc) {
+      return snapshot.docs.map((doc) {
             final data = doc.data();
             print('Processing hospital: ${data['name']}');
-            print('Hospital: ${data['name']} - Profile Image: ${data['profileImageUrl']?.substring(0, 50) ?? 'null'}...');
-            print('Hospital: ${data['name']} - About: ${data['about']?.substring(0, 50) ?? 'null'}...');
             return Hospital.fromFirestore(data, doc.id);
           }).toList();
-          print('Successfully processed ${hospitals.length} hospitals');
-          return hospitals;
-        } catch (e) {
-          print('Error processing hospitals data: $e');
-          throw e;
-        }
-      });
-    } catch (e) {
-      print('Error setting up getHospitals stream: $e');
-      throw e;
-    }
+    });
   }
 
   // Fetch a single hospital by ID
@@ -50,7 +31,7 @@ class HospitalService {
       }
       return null;
     } catch (e) {
-      print('Error fetching hospital: $e');
+      print('Error getting hospital by ID: $e');
       return null;
     }
   }
@@ -61,27 +42,18 @@ class HospitalService {
       return getHospitals();
     }
     
-    try {
-      print('Searching hospitals with query: $query');
-      return _firestore
-          .collection('clinics')
-          .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThan: query + '\uf8ff')
-          .snapshots()
-          .handleError((error) {
-            print('Error in searchHospitals stream: $error');
-            throw error;
-          })
-          .map((snapshot) {
-        print('Found ${snapshot.docs.length} hospitals matching query: $query');
-        return snapshot.docs.map((doc) {
-          return Hospital.fromFirestore(doc.data(), doc.id);
-        }).toList();
-      });
-    } catch (e) {
-      print('Error setting up searchHospitals stream: $e');
-      throw e;
-    }
+    return _firestore
+        .collection('clinics')
+        .where('name', isGreaterThanOrEqualTo: query)
+        .where('name', isLessThan: query + '\uf8ff')
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        print('Search result - Processing hospital: ${data['name']}');
+        return Hospital.fromFirestore(data, doc.id);
+      }).toList();
+    });
   }
 
   // Créer ou mettre à jour un document de clinique
@@ -298,6 +270,168 @@ class HospitalService {
     } catch (e) {
       print('Error synchronizing clinic names: $e');
       throw e;
+    }
+  }
+
+  // Sauvegarder les coordonnées d'un hôpital
+  static Future<bool> updateHospitalCoordinates(
+    String hospitalId,
+    double latitude,
+    double longitude,
+  ) async {
+    try {
+      print('=== UPDATING HOSPITAL COORDINATES ===');
+      print('Hospital ID: $hospitalId');
+      print('Latitude: $latitude');
+      print('Longitude: $longitude');
+
+      await _firestore.collection('clinics').doc(hospitalId).update({
+        'latitude': latitude,
+        'longitude': longitude,
+        'coordinatesUpdatedAt': FieldValue.serverTimestamp(),
+      });
+
+      print('✓ Hospital coordinates updated successfully');
+      return true;
+    } catch (e) {
+      print('Error updating hospital coordinates: $e');
+      return false;
+    }
+  }
+
+  // Obtenir les hôpitaux avec des coordonnées
+  static Stream<List<Hospital>> getHospitalsWithCoordinates() {
+    return _firestore
+        .collection('clinics')
+        .where('latitude', isNull: false)
+        .where('longitude', isNull: false)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs.map((doc) {
+        final data = doc.data();
+        print('Processing hospital with coordinates: ${data['name']}');
+        return Hospital.fromFirestore(data, doc.id);
+      }).toList();
+    });
+  }
+
+  // Obtenir les hôpitaux par proximité (triés par distance)
+  static Future<List<Hospital>> getHospitalsByProximity(
+    double userLatitude,
+    double userLongitude,
+  ) async {
+    try {
+      print('=== GETTING HOSPITALS BY PROXIMITY ===');
+      print('User location: $userLatitude, $userLongitude');
+
+      final snapshot = await _firestore
+          .collection('clinics')
+          .where('latitude', isNull: false)
+          .where('longitude', isNull: false)
+          .get();
+
+      final hospitals = snapshot.docs.map((doc) {
+        final data = doc.data();
+        return Hospital.fromFirestore(data, doc.id);
+      }).toList();
+
+      // Calculer les distances et trier
+      final hospitalsWithDistance = hospitals.map((hospital) {
+        final distance = _calculateDistance(
+          userLatitude,
+          userLongitude,
+          hospital.latitude!,
+          hospital.longitude!,
+        );
+        return {
+          'hospital': hospital,
+          'distance': distance,
+        };
+      }).toList();
+
+      // Trier par distance
+      hospitalsWithDistance.sort((a, b) => (a['distance'] as double).compareTo(b['distance'] as double));
+
+      print('✓ Found ${hospitalsWithDistance.length} hospitals with coordinates');
+      return hospitalsWithDistance.map((item) => item['hospital'] as Hospital).toList();
+    } catch (e) {
+      print('Error getting hospitals by proximity: $e');
+      return [];
+    }
+  }
+
+  // Calculer la distance entre deux points (formule de Haversine)
+  static double _calculateDistance(
+    double lat1,
+    double lon1,
+    double lat2,
+    double lon2,
+  ) {
+    const double earthRadius = 6371000; // Rayon de la Terre en mètres
+
+    final double lat1Rad = lat1 * (pi / 180);
+    final double lat2Rad = lat2 * (pi / 180);
+    final double deltaLat = (lat2 - lat1) * (pi / 180);
+    final double deltaLon = (lon2 - lon1) * (pi / 180);
+
+    final double a = sin(deltaLat / 2) * sin(deltaLat / 2) +
+        cos(lat1Rad) * cos(lat2Rad) * sin(deltaLon / 2) * sin(deltaLon / 2);
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return earthRadius * c;
+  }
+
+  // Mettre à jour les informations d'un hôpital
+  static Future<bool> updateHospital(String hospitalId, Map<String, dynamic> data) async {
+    try {
+      await _firestore.collection('clinics').doc(hospitalId).update(data);
+      return true;
+    } catch (e) {
+      print('Error updating hospital: $e');
+      return false;
+    }
+  }
+
+  // Supprimer un hôpital
+  static Future<bool> deleteHospital(String hospitalId) async {
+    try {
+      await _firestore.collection('clinics').doc(hospitalId).delete();
+      return true;
+    } catch (e) {
+      print('Error deleting hospital: $e');
+      return false;
+    }
+  }
+
+  // Obtenir les statistiques des hôpitaux
+  static Future<Map<String, dynamic>> getHospitalStats() async {
+    try {
+      final snapshot = await _firestore.collection('clinics').get();
+      final totalHospitals = snapshot.docs.length;
+      
+      final verifiedHospitals = snapshot.docs.where((doc) {
+        final data = doc.data();
+        return data['certificateUrl'] != null && data['certificateUrl'].isNotEmpty;
+      }).length;
+
+      final hospitalsWithCoordinates = snapshot.docs.where((doc) {
+        final data = doc.data();
+        return data['latitude'] != null && data['longitude'] != null;
+      }).length;
+
+      return {
+        'total': totalHospitals,
+        'verified': verifiedHospitals,
+        'withCoordinates': hospitalsWithCoordinates,
+      };
+    } catch (e) {
+      print('Error getting hospital stats: $e');
+      return {
+        'total': 0,
+        'verified': 0,
+        'withCoordinates': 0,
+      };
     }
   }
 } 

@@ -293,30 +293,7 @@ class NotificationService {
           .where('clinicId', isEqualTo: clinicId)
           .orderBy('createdAt', descending: true)
           .snapshots()
-          .map((snapshot) {
-            final notifications = snapshot.docs.map((doc) => AppointmentNotification.fromFirestore(doc)).toList();
-            print('Complex query: Found ${notifications.length} notifications for clinic "$clinicId"');
-            return notifications;
-          })
-          .handleError((error) {
-            print('Complex query failed, using fallback method: $error');
-            // Fallback: récupérer toutes les notifications et filtrer côté client
-            return FirebaseFirestore.instance
-                .collection('clinic_notifications')
-                .snapshots()
-                .map((snapshot) {
-                  final allNotifications = snapshot.docs.map((doc) => AppointmentNotification.fromFirestore(doc)).toList();
-                  final filteredNotifications = allNotifications.where((notification) => 
-                      notification.clinicId == clinicId
-                  ).toList();
-                  
-                  // Trier par date (plus récent en premier)
-                  filteredNotifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-                  
-                  print('Fallback: Found ${filteredNotifications.length} notifications for clinic "$clinicId"');
-                  return filteredNotifications;
-                });
-          });
+          .map((snapshot) => snapshot.docs.map((doc) => AppointmentNotification.fromFirestore(doc.data(), doc.id)).toList());
     } catch (e) {
       print('Error in getClinicNotifications: $e');
       return Stream.value([]);
@@ -334,7 +311,7 @@ class NotificationService {
           .collection('clinic_notifications')
           .get();
       
-      final allNotifications = snapshot.docs.map((doc) => AppointmentNotification.fromFirestore(doc)).toList();
+      final allNotifications = snapshot.docs.map((doc) => AppointmentNotification.fromFirestore(doc.data(), doc.id)).toList();
       final filteredNotifications = allNotifications.where((notification) => 
           notification.clinicId == clinicId
       ).toList();
@@ -519,11 +496,9 @@ class AppointmentNotification {
   });
 
   // Méthode pour créer une notification depuis Firestore
-  factory AppointmentNotification.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    
+  factory AppointmentNotification.fromFirestore(Map<String, dynamic> data, String id) {
     return AppointmentNotification(
-      id: doc.id,
+      id: id,
       patientId: data['patientId'] ?? '',
       title: data['title'] ?? '',
       message: data['message'] ?? '',

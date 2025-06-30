@@ -6,6 +6,7 @@ import 'login.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
+import 'package:homecare_app/services/appointment_service.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final String hospitalName;
@@ -38,6 +39,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   int _selectedIndex = 0;
   String userName = 'User';
   String greeting = '';
+  int meetingDuration = 30; // Default duration, will be updated from clinic settings
 
   final List<String> departments = [
     'General Medicine',
@@ -54,6 +56,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   void initState() {
     super.initState();
     _updateGreeting();
+    _loadClinicMeetingDuration();
   }
 
   void _updateGreeting() {
@@ -64,6 +67,19 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       greeting = 'Good Afternoon';
     } else {
       greeting = 'Good Evening';
+    }
+  }
+
+  Future<void> _loadClinicMeetingDuration() async {
+    try {
+      final duration = await AppointmentService.getClinicMeetingDuration(widget.hospitalName);
+      setState(() {
+        meetingDuration = duration;
+      });
+      print('✓ Loaded clinic meeting duration: $duration minutes');
+    } catch (e) {
+      print('Error loading clinic meeting duration: $e');
+      // Keep default 30 minutes
     }
   }
 

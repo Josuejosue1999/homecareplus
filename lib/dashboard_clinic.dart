@@ -486,7 +486,7 @@ class _ClinicDashboardPageState extends State<ClinicDashboardPage> {
                 ),
                                         const SizedBox(height: 8),
                                         Row(
-                                          children: [
+                  children: [
                                             Icon(
                                               Icons.medical_services,
                                               size: 16,

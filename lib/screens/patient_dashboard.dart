@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/hospital.dart';
 import '../services/hospital_service.dart';
+import '../services/location_service.dart';
+import '../widgets/distance_badge.dart';
 import 'facilities.dart';
 import 'choose.dart';
 import 'hospital_details.dart';
@@ -18,6 +20,15 @@ class PatientDashboardPage extends StatefulWidget {
 class _PatientDashboardPageState extends State<PatientDashboardPage> {
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
+  UserLocation? _userLocation;
+  bool _isLocationLoading = false;
+  bool _showLocationPermissionDialog = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeLocation();
+  }
 
   @override
   void dispose() {
@@ -25,48 +36,95 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     super.dispose();
   }
 
+  Future<void> _initializeLocation() async {
+    setState(() {
+      _isLocationLoading = true;
+    });
+
+    try {
+      // Vérifier si la localisation est disponible
+      bool locationAvailable = await LocationService.isLocationAvailable();
+      
+      if (!locationAvailable) {
+        // Essayer d'obtenir la localisation depuis le cache
+        _userLocation = await LocationService.getCachedLocation();
+        
+        if (_userLocation == null) {
+          // Demander les permissions
+          bool permissionGranted = await LocationService.requestLocationPermission();
+          if (!permissionGranted) {
+            setState(() {
+              _showLocationPermissionDialog = true;
+            });
+          }
+        }
+      } else {
+        // Obtenir la localisation actuelle
+        _userLocation = await LocationService.getCurrentLocation();
+      }
+    } catch (e) {
+      print('Error initializing location: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLocationLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _requestLocationPermission() async {
+    bool permissionGranted = await LocationService.requestLocationPermission();
+    if (permissionGranted) {
+      await _initializeLocation();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-          child: Column(
-            children: [
-              // Header with Back Button
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: const BoxDecoration(
-                  color: Color(0xFF159BBD),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      decoration: BoxDecoration(
+      backgroundColor: Colors.grey[50],
+      appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const ChoosePage()),
+            );
+          },
+        ),
+        title: const Text(
+          'Find Hospitals',
+          style: TextStyle(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+            fontWeight: FontWeight.bold,
+          ),
                       ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Color(0xFF159BBD)),
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ChoosePage()),
-                          );
-                        },
-                      ),
+        backgroundColor: const Color(0xFF159BBD),
+        elevation: 0,
+        actions: [
+          // Bouton de localisation
+          IconButton(
+            icon: _isLocationLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
-                    const SizedBox(width: 16),
-                    const Text(
-                      'Patient Dashboard',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                  )
+                : const Icon(Icons.my_location, color: Colors.white),
+            onPressed: _isLocationLoading ? null : _initializeLocation,
+            tooltip: 'Update location',
                     ),
                   ],
                 ),
-              ),
+      body: Column(
+        children: [
+          // Header avec informations de localisation
+          _buildLocationHeader(),
 
             // Search Bar
               Padding(
@@ -74,7 +132,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
               child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: Colors.grey[100],
+                color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -194,6 +252,123 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                                             ),
                                           ],
                                         ),
+    );
+  }
+
+  Widget _buildLocationHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF159BBD),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(20),
+          bottomRight: Radius.circular(20),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                Icons.location_on,
+                color: Colors.white.withOpacity(0.9),
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'Your Location',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.9),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (_isLocationLoading) ...[
+            Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Detecting your location...',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ] else if (_userLocation != null) ...[
+            Text(
+              _userLocation!.address,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (_userLocation!.sector.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                'Sector: ${_userLocation!.sector}',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.8),
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ] else ...[
+            Row(
+              children: [
+                Icon(
+                  Icons.location_off,
+                  color: Colors.white.withOpacity(0.8),
+                  size: 16,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Location not available',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 13,
+                  ),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: _requestLocationPermission,
+                  style: TextButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: Text(
+                    'Enable',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -223,13 +398,15 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                                                     reviews: [
                                                       {
                                                         'name': 'John Doe',
-                                                        'rating': '4.5',
-                                                        'comment': 'Great service and professional staff.',
+                  'rating': '5',
+                  'comment': 'Excellent service and professional staff.',
+                  'date': '2024-01-15',
                                                       },
                                                       {
                                                         'name': 'Jane Smith',
-                                                        'rating': '4.3',
-                                                        'comment': 'Clean facilities and caring doctors.',
+                  'rating': '4',
+                  'comment': 'Good experience, clean facility.',
+                  'date': '2024-01-10',
                                                       },
                                                     ],
                                                   ),
@@ -237,6 +414,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                                               );
                                             },
       child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
           borderRadius: BorderRadius.circular(12),
@@ -283,7 +461,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     overflow: TextOverflow.ellipsis,
                                         ),
                                         const SizedBox(height: 4),
-                  Text(
+                  
+                  // Location and distance row
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
                     hospital.location ?? 'Location not available',
                                           style: TextStyle(
                       fontSize: 12,
@@ -292,6 +475,19 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                                         ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Distance badge
+                      DistanceBadge(
+                        hospitalLatitude: hospital.latitude,
+                        hospitalLongitude: hospital.longitude,
+                        fallbackText: 'Distance unavailable',
+                        showIcon: true,
+                        fontSize: 10,
+                      ),
+                    ],
+                  ),
+                  
                   const SizedBox(height: 8),
                                         Row(
                                           children: [
@@ -301,39 +497,79 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                         color: Colors.amber[600],
                       ),
                       const SizedBox(width: 4),
-                                            const Text(
+                      Text(
                         '4.5',
                                               style: TextStyle(
                                                 fontSize: 12,
-                                                fontWeight: FontWeight.w500,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey[700],
                                               ),
                                             ),
                       const SizedBox(width: 4),
                       Text(
-                        '(50)',
+                        '(50 reviews)',
                                           style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
+                          fontSize: 11,
+                          color: Colors.grey[500],
                                               ),
                                             ),
-                                          ],
-                                        ),
-                  const SizedBox(height: 8),
+                      const Spacer(),
+                      if (hospital.isVerified)
                                         Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: const Color(0xFF159BBD),
-                      borderRadius: BorderRadius.circular(12),
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.green[200]!),
                     ),
-                                            child: const Text(
-                      'View Details',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.verified,
+                                size: 12,
+                                color: Colors.green[600],
+                              ),
+                              const SizedBox(width: 2),
+                              Text(
+                                'Verified',
                                               style: TextStyle(
-                                                color: Colors.white,
                         fontSize: 10,
                                                 fontWeight: FontWeight.w500,
+                                  color: Colors.green[600],
                                             ),
                                           ),
+                            ],
                                         ),
+                        ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 8),
+                  // Facilities
+                  if (hospital.facilities.isNotEmpty) ...[
+                    Wrap(
+                      spacing: 4,
+                      runSpacing: 4,
+                      children: hospital.facilities.take(3).map((facility) {
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF159BBD).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            facility,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: const Color(0xFF159BBD),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                                       ],
                                     ),
                                   ),
@@ -530,29 +766,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: (hospitals.length / 2).ceil(),
+      itemCount: hospitals.length,
       itemBuilder: (context, index) {
-        final startIndex = index * 2;
-        final endIndex = (startIndex + 2).clamp(0, hospitals.length);
-        final rowHospitals = hospitals.sublist(startIndex, endIndex);
-
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Row(
-            children: rowHospitals.map((hospital) {
-              return Expanded(
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    right: rowHospitals.indexOf(hospital) == 0 && rowHospitals.length > 1 
-                        ? 8.0 
-                        : 0.0,
-                  ),
-                  child: _buildHospitalCard(hospital),
-                ),
-              );
-            }).toList(),
-                                                ),
-                                              );
+        return _buildHospitalCard(hospitals[index]);
                                             },
     );
   }

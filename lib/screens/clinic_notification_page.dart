@@ -428,20 +428,18 @@ class _ClinicNotificationPageState extends State<ClinicNotificationPage> {
                     Text(
                       notification.message,
                       style: TextStyle(
-                        fontSize: 13,
-                        color: notification.isRead 
-                            ? Colors.grey[600]
-                            : const Color(0xFF2C3E50),
-                        height: 1.3,
+                        fontSize: 14,
+                        color: notification.isRead ? Colors.grey[600] : Colors.grey[800],
+                        fontWeight: notification.isRead ? FontWeight.w400 : FontWeight.w500,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
+                    const SizedBox(height: 6),
                     
                     // Informations supplémentaires
                     if (notification.hospitalName?.isNotEmpty == true && 
                         notification.department?.isNotEmpty == true) ...[
-                      const SizedBox(height: 6),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                         decoration: BoxDecoration(

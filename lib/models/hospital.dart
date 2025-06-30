@@ -10,6 +10,8 @@ class Hospital {
   final bool isVerified;
   final DateTime createdAt;
   final Map<String, Map<String, String>> availableSchedule;
+  final double? latitude;
+  final double? longitude;
 
   Hospital({
     required this.id,
@@ -23,6 +25,8 @@ class Hospital {
     required this.isVerified,
     required this.createdAt,
     required this.availableSchedule,
+    this.latitude,
+    this.longitude,
   });
 
   factory Hospital.fromFirestore(Map<String, dynamic> data, String id) {
@@ -36,14 +40,16 @@ class Hospital {
       id: id,
       name: data['name'] ?? '',
       email: data['email'] ?? '',
-      about: data['about'] ?? 'This healthcare facility is committed to providing exceptional medical care and services. Our state-of-the-art facility is equipped with the latest medical technology and staffed by experienced healthcare professionals.',
-      location: address ?? 'Location not available',
+      about: data['about'],
+      location: address,
       facilities: List<String>.from(data['facilities'] ?? []),
       profileImageUrl: data['profileImageUrl'],
       certificateUrl: data['certificateUrl'],
       isVerified: data['certificateUrl'] != null && data['certificateUrl'].isNotEmpty,
       createdAt: (data['createdAt'] as dynamic)?.toDate() ?? DateTime.now(),
       availableSchedule: _parseSchedule(data['availableSchedule']),
+      latitude: data['latitude']?.toDouble(),
+      longitude: data['longitude']?.toDouble(),
     );
   }
 
@@ -73,6 +79,8 @@ class Hospital {
       'certificateUrl': certificateUrl,
       'createdAt': createdAt,
       'availableSchedule': availableSchedule,
+      'latitude': latitude,
+      'longitude': longitude,
     };
   }
 
@@ -94,5 +102,10 @@ class Hospital {
   // Méthode pour vérifier si l'image est un fichier local
   bool get hasLocalImage {
     return hasProfileImage && !profileImageUrl!.startsWith('data:image') && !profileImageUrl!.startsWith('http');
+  }
+
+  // Méthode pour vérifier si l'hôpital a des coordonnées géographiques
+  bool get hasCoordinates {
+    return latitude != null && longitude != null;
   }
 } 

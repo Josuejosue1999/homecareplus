@@ -129,6 +129,24 @@ class _ProHospitalsPageState extends State<ProHospitalsPage> {
                       ),
                     ),
                     
+                    // Bouton refresh
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: IconButton(
+                        icon: const Icon(Icons.refresh, color: Colors.white, size: 24),
+                        onPressed: () {
+                          setState(() {
+                            // This will trigger a rebuild and refresh the StreamBuilder
+                          });
+                        },
+                      ),
+                    ),
+                    
+                    const SizedBox(width: 8),
+                    
                     // Bouton profil
                     CircleAvatar(
                       radius: 25,
@@ -199,7 +217,18 @@ class _ProHospitalsPageState extends State<ProHospitalsPage> {
                       }
 
                       final hospitals = snapshot.data?.docs ?? [];
+                      print('=== HOSPITALS PAGE DEBUG ===');
                       print('Found ${hospitals.length} hospitals in Firebase');
+                      
+                      // Log each hospital for debugging
+                      for (int i = 0; i < hospitals.length; i++) {
+                        final hospitalData = hospitals[i].data() as Map<String, dynamic>;
+                        print('Hospital $i: ${hospitalData['name']} (ID: ${hospitals[i].id})');
+                        print('  - Email: ${hospitalData['email']}');
+                        print('  - Created: ${hospitalData['createdAt']}');
+                        print('  - Status: ${hospitalData['status']}');
+                      }
+                      print('=== END HOSPITALS DEBUG ===');
 
                       if (hospitals.isEmpty) {
                         return Center(
@@ -238,7 +267,7 @@ class _ProHospitalsPageState extends State<ProHospitalsPage> {
                         itemCount: hospitals.length,
                         itemBuilder: (context, index) {
                           final hospitalData = hospitals[index].data() as Map<String, dynamic>;
-                          print('Hospital data: $hospitalData');
+                          print('Building hospital card for: ${hospitalData['name']}');
                           
                           final hospital = Hospital.fromFirestore(hospitalData, hospitals[index].id);
                           print('Hospital name: ${hospital.name}');
