@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Health Center Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <%- include('partials/auth-styles') %>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+
+    <!-- Auth Container -->
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Healthcare Icon -->
+            <div class="healthcare-icon">
+                <i class="fas fa-hospital"></i>
+            </div>
+
+            <!-- Title -->
+            <h2 class="text-center mb-4" style="color: var(--gray-800); font-weight: 700;">
+                Créer un compte
+            </h2>
+            <p class="text-center mb-4" style="color: var(--gray-600);">
+                Rejoignez notre plateforme de santé
+            </p>
+
+            <!-- Register Form -->
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="clinicName" class="form-label">
+                        <i class="fas fa-hospital me-2"></i>Nom de la clinique
+                    </label>
+                    <input type="text" id="clinicName" name="clinicName" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope me-2"></i>Email
+                    </label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock me-2"></i>Mot de passe
+                    </label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword" class="form-label">
+                        <i class="fas fa-lock me-2"></i>Confirmer le mot de passe
+                    </label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" data-original-text="Créer un compte">
+                    <i class="fas fa-user-plus me-2"></i>Créer un compte
+                </button>
+            </form>
+
+            <!-- Links -->
+            <div class="text-center mt-4">
+                <p style="color: var(--gray-600);">
+                    Déjà un compte? 
+                    <a href="/login" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
+                        Se connecter
+                    </a>
+                </p>
+                <a href="/" style="color: var(--gray-500); text-decoration: none; font-size: 0.9rem;">
+                    <i class="fas fa-arrow-left me-1"></i>Retour à l'accueil
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/auth.js"></script>
+</body>
+</html>

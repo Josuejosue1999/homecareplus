@@ -13,6 +13,7 @@ import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:homecare_app/screens/notification_page.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 import 'package:homecare_app/widgets/notification_badge.dart';
+import 'package:homecare_app/widgets/chat_notification_badge.dart';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
 import '../services/notification_service.dart';
@@ -549,16 +550,18 @@ class _MainDashboardState extends State<MainDashboard> {
                                           textSize: 12,
                                         ),
                                         const SizedBox(width: 8),
-                                        _buildActionCard(
-                                          icon: Icons.message,
-                                          title: 'Messages',
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (context) => const ChatPage()),
-                                            );
-                                          },
-                                          textSize: 12,
+                                        ChatNotificationBadge(
+                                          child: _buildActionCard(
+                                            icon: Icons.message,
+                                            title: 'Messages',
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const ChatPage()),
+                                              );
+                                            },
+                                            textSize: 12,
+                                          ),
                                         ),
                                       ],
                                     ),

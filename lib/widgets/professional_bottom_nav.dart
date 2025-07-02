@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'chat_notification_badge.dart';
 
 class ProfessionalBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -56,11 +57,33 @@ class ProfessionalBottomNav extends StatelessWidget {
             type: BottomNavigationBarType.fixed,
             currentIndex: currentIndex,
             onTap: onTap,
-            items: items.map((item) => BottomNavigationBarItem(
-              icon: item.icon,
-              activeIcon: item.activeIcon ?? item.icon,
-              label: item.label,
-            )).toList(),
+            items: items.asMap().entries.map((entry) {
+              final index = entry.key;
+              final item = entry.value;
+              
+              // Ajouter le badge de notification seulement pour l'icône des messages (index 3)
+              if (index == 3) {
+                return BottomNavigationBarItem(
+                  icon: ChatNotificationBadge(
+                    child: item.icon,
+                    top: -5,
+                    right: -5,
+                  ),
+                  activeIcon: ChatNotificationBadge(
+                    child: item.activeIcon ?? item.icon,
+                    top: -5,
+                    right: -5,
+                  ),
+                  label: item.label,
+                );
+              }
+              
+              return BottomNavigationBarItem(
+                icon: item.icon,
+                activeIcon: item.activeIcon ?? item.icon,
+                label: item.label,
+              );
+            }).toList(),
           ),
         ),
       ),

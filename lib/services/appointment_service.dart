@@ -2,7 +2,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/appointment.dart';
+import '../models/chat_message.dart';
 import '../services/notification_service.dart';
+import '../services/chat_service.dart';
 
 class AppointmentService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -56,7 +58,7 @@ class AppointmentService {
         patientEmail: appointment.patientEmail,
         patientPhone: appointment.patientPhone,
         hospitalName: finalHospitalName,
-        hospitalImage: appointment.hospitalImage,
+        hospitalImage: clinicId != null ? (await _getHospitalImage(clinicId) ?? '') : '',
         hospitalLocation: appointment.hospitalLocation,
         department: appointment.department,
         appointmentDate: appointment.appointmentDate,
@@ -94,11 +96,78 @@ class AppointmentService {
       } catch (e) {
         print('Error creating clinic notification: $e');
       }
+
+      // NOUVEAU: Créer un message de chat automatique pour la demande de rendez-vous
+      try {
+        if (clinicId != null) {
+          await _createAppointmentRequestChatMessage(
+            correctedAppointment,
+            docRef.id,
+            clinicId,
+          );
+          print('✓ Appointment request chat message created successfully');
+        }
+      } catch (e) {
+        print('Error creating appointment request chat message: $e');
+      }
       
       print('=== APPOINTMENT CREATED ===');
       return docRef.id;
     } catch (e) {
       print('Error creating appointment: $e');
+      throw e;
+    }
+  }
+
+  // NOUVELLE FONCTION: Créer un message de chat automatique pour une demande de rendez-vous
+  static Future<void> _createAppointmentRequestChatMessage(
+    Appointment appointment,
+    String appointmentId,
+    String clinicId,
+  ) async {
+    try {
+      print('=== CREATING APPOINTMENT REQUEST CHAT MESSAGE ===');
+      
+      // Créer le message de demande de rendez-vous COURT et professionnel
+      final requestMessage = 'Hello, I have submitted an appointment request.';
+
+      // Récupérer l'image de l'hôpital
+      final hospitalImage = await _getHospitalImage(clinicId);
+
+      // Obtenir ou créer la conversation avec l'image de l'hôpital
+      final conversationId = await ChatService.getOrCreateConversation(
+        patientId: appointment.patientId,
+        clinicId: clinicId,
+        patientName: appointment.patientName,
+        clinicName: appointment.hospitalName,
+        hospitalImage: hospitalImage,
+      );
+
+      // Envoyer le message depuis le patient vers la clinique
+      await ChatService.sendMessage(
+        conversationId: conversationId,
+        senderId: appointment.patientId,
+        senderName: appointment.patientName,
+        senderType: SenderType.patient,
+        message: requestMessage,
+        messageType: MessageType.text,
+        appointmentId: appointmentId,
+        hospitalName: appointment.hospitalName,
+        department: appointment.department,
+        appointmentDate: appointment.appointmentDate,
+        appointmentTime: appointment.appointmentTime,
+        metadata: {
+          'action': 'appointment_request',
+          'appointmentId': appointmentId,
+          'status': 'pending',
+        },
+      );
+
+      print('✓ Appointment request chat message sent successfully');
+      print('✓ Conversation ID: $conversationId');
+      
+    } catch (e) {
+      print('❌ Error creating appointment request chat message: $e');
       throw e;
     }
   }
@@ -1138,7 +1207,7 @@ class AppointmentService {
         patientEmail: appointment.patientEmail,
         patientPhone: appointment.patientPhone,
         hospitalName: appointment.hospitalName,
-        hospitalImage: appointment.hospitalImage,
+        hospitalImage: appointment.clinicId != null ? (await _getHospitalImage(appointment.clinicId!) ?? '') : '',
         hospitalLocation: appointment.hospitalLocation,
         department: appointment.department,
         appointmentDate: appointment.appointmentDate,
@@ -1622,5 +1691,63 @@ class AppointmentService {
       print('Error formatting time with period: $e');
     }
     return time;
+  }
+
+  // Vérifier si un créneau horaire est disponible
+  static Future<bool> isTimeSlotAvailable(String hospitalName, DateTime date, String time) async {
+    try {
+      print('=== CHECKING TIME SLOT AVAILABILITY ===');
+      print('Hospital: $hospitalName');
+      print('Date: ${DateFormat('yyyy-MM-dd').format(date)}');
+      print('Time: $time');
+
+      // Récupérer l'ID de la clinique
+      final clinicId = await _getClinicIdByName(hospitalName);
+      if (clinicId == null) {
+        print('⚠ Clinic not found, allowing booking');
+        return true; // Si clinique non trouvée, permettre la réservation
+      }
+
+      // Vérifier les conflits avec les appointments existants
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final conflictingAppointments = await _firestore
+          .collection('appointments')
+          .where('clinicId', isEqualTo: clinicId)
+          .where('appointmentDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('appointmentDate', isLessThan: Timestamp.fromDate(endOfDay))
+          .where('appointmentTime', isEqualTo: time)
+          .where('status', whereIn: ['pending', 'confirmed'])
+          .get();
+
+      final isAvailable = conflictingAppointments.docs.isEmpty;
+      print(isAvailable ? '✓ Time slot is available' : '❌ Time slot is already booked');
+      
+      return isAvailable;
+    } catch (e) {
+      print('Error checking time slot availability: $e');
+      return true; // En cas d'erreur, permettre la réservation
+    }
+  }
+
+  // Récupérer l'image de l'hôpital depuis la collection clinics
+  static Future<String?> _getHospitalImage(String clinicId) async {
+    try {
+      final clinicDoc = await _firestore
+          .collection('clinics')
+          .doc(clinicId)
+          .get();
+      
+      if (clinicDoc.exists) {
+        final data = clinicDoc.data();
+        return data?['imageUrl'] ?? data?['image'] ?? data?['profileImage'];
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error getting hospital image: $e');
+      return null;
+    }
   }
 } 

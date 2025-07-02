@@ -1,0 +1,172 @@
+<!-- Section des rendez-vous -->
+<div class="appointments-section">
+    <div class="section-header">
+        <h2 class="section-title">
+            <i class="fas fa-calendar-alt me-2"></i>
+            Rendez-vous du jour
+        </h2>
+        <div class="section-actions">
+            <button class="btn btn-outline-primary btn-sm" onclick="refreshAppointments()">
+                <i class="fas fa-sync-alt me-1"></i>
+                Actualiser
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtres -->
+    <div class="filters-row mb-3">
+        <div class="btn-group" role="group">
+            <button type="button" class="btn btn-outline-primary active" data-filter="all">
+                Tous (<span id="count-all">12</span>)
+            </button>
+            <button type="button" class="btn btn-outline-warning" data-filter="pending">
+                En attente (<span id="count-pending">4</span>)
+            </button>
+            <button type="button" class="btn btn-outline-success" data-filter="confirmed">
+                Confirmés (<span id="count-confirmed">8</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- Liste des rendez-vous -->
+    <div class="appointments-list" id="appointmentsList">
+        <!-- Rendez-vous 1 -->
+        <div class="appointment-card" data-status="confirmed" data-appointment-id="1">
+            <div class="appointment-time">
+                <div class="time-primary">09:00</div>
+                <div class="time-duration">30 min</div>
+            </div>
+            <div class="appointment-details">
+                <div class="patient-info">
+                    <h4 class="patient-name">Marie Dupont</h4>
+                    <p class="patient-details">
+                        <i class="fas fa-phone me-1"></i>+33 6 12 34 56 78
+                        <span class="separator">•</span>
+                        <i class="fas fa-user me-1"></i>Consultation générale
+                    </p>
+                </div>
+                <div class="appointment-actions">
+                    <span class="status-badge status-confirmed">
+                        <i class="fas fa-check-circle me-1"></i>Confirmé
+                    </span>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('1')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="startAppointment('1')">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendez-vous 2 -->
+        <div class="appointment-card" data-status="pending" data-appointment-id="2">
+            <div class="appointment-time">
+                <div class="time-primary">10:30</div>
+                <div class="time-duration">45 min</div>
+            </div>
+            <div class="appointment-details">
+                <div class="patient-info">
+                    <h4 class="patient-name">Jean Martin</h4>
+                    <p class="patient-details">
+                        <i class="fas fa-phone me-1"></i>+33 6 98 76 54 32
+                        <span class="separator">•</span>
+                        <i class="fas fa-user me-1"></i>Suivi cardiologique
+                    </p>
+                </div>
+                <div class="appointment-actions">
+                    <span class="status-badge status-pending">
+                        <i class="fas fa-clock me-1"></i>En attente
+                    </span>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-success" onclick="confirmAppointment('2')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="declineAppointment('2')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('2')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendez-vous 3 -->
+        <div class="appointment-card" data-status="confirmed" data-appointment-id="3">
+            <div class="appointment-time">
+                <div class="time-primary">14:00</div>
+                <div class="time-duration">60 min</div>
+            </div>
+            <div class="appointment-details">
+                <div class="patient-info">
+                    <h4 class="patient-name">Sophie Bernard</h4>
+                    <p class="patient-details">
+                        <i class="fas fa-phone me-1"></i>+33 6 11 22 33 44
+                        <span class="separator">•</span>
+                        <i class="fas fa-user me-1"></i>Examen gynécologique
+                    </p>
+                </div>
+                <div class="appointment-actions">
+                    <span class="status-badge status-confirmed">
+                        <i class="fas fa-check-circle me-1"></i>Confirmé
+                    </span>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('3')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-success" onclick="startAppointment('3')">
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rendez-vous 4 -->
+        <div class="appointment-card" data-status="pending" data-appointment-id="4">
+            <div class="appointment-time">
+                <div class="time-primary">16:15</div>
+                <div class="time-duration">30 min</div>
+            </div>
+            <div class="appointment-details">
+                <div class="patient-info">
+                    <h4 class="patient-name">Pierre Dubois</h4>
+                    <p class="patient-details">
+                        <i class="fas fa-phone me-1"></i>+33 6 55 66 77 88
+                        <span class="separator">•</span>
+                        <i class="fas fa-user me-1"></i>Vaccination
+                    </p>
+                </div>
+                <div class="appointment-actions">
+                    <span class="status-badge status-pending">
+                        <i class="fas fa-clock me-1"></i>En attente
+                    </span>
+                    <div class="action-buttons">
+                        <button class="btn btn-sm btn-success" onclick="confirmAppointment('4')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="declineAppointment('4')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('4')">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message si aucun rendez-vous -->
+    <div class="no-appointments" id="noAppointments" style="display: none;">
+        <div class="text-center py-5">
+            <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">Aucun rendez-vous aujourd'hui</h4>
+            <p class="text-muted">Profitez de ce temps libre pour organiser votre planning</p>
+        </div>
+    </div>
+</div> 

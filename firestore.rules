@@ -1,0 +1,97 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 🔐 CHAT SYSTEM SECURITY RULES
+    
+    // Chat conversations - Both patients and clinics can read/write their conversations
+    match /chat_conversations/{conversationId} {
+      allow read, write: if isSignedIn() && 
+        (resource.data.patientId == request.auth.uid || 
+         resource.data.clinicId == request.auth.uid);
+      
+      allow create: if isSignedIn() && 
+        (request.resource.data.patientId == request.auth.uid || 
+         request.resource.data.clinicId == request.auth.uid);
+    }
+    
+    // Chat messages - Both patients and clinics can read/write messages in their conversations
+    match /chat_messages/{messageId} {
+      allow read: if isSignedIn() && 
+        (isPatientInConversation(resource.data.conversationId) || 
+         isClinicInConversation(resource.data.conversationId));
+      
+      allow create: if isSignedIn() && 
+        (request.resource.data.senderId == request.auth.uid);
+      
+      allow update: if isSignedIn() && 
+        (isPatientInConversation(resource.data.conversationId) || 
+         isClinicInConversation(resource.data.conversationId));
+    }
+    
+    // Users collection - Users can read/write their own profile
+    match /users/{userId} {
+      allow read, write: if isSignedIn() && userId == request.auth.uid;
+      
+      // Allow clinics to read user profiles for chat avatars
+      allow read: if isSignedIn() && isClinic();
+    }
+    
+    // Clinics collection - Clinics can read/write their own profile
+    match /clinics/{clinicId} {
+      allow read, write: if isSignedIn() && clinicId == request.auth.uid;
+      
+      // Allow patients to read clinic profiles for hospital info
+      allow read: if isSignedIn();
+    }
+    
+    // Appointments - Patients and clinics can access their appointments
+    match /appointments/{appointmentId} {
+      allow read, write: if isSignedIn() && 
+        (resource.data.patientId == request.auth.uid || 
+         isClinicForHospital(resource.data.hospital));
+      
+      allow create: if isSignedIn();
+    }
+    
+    // 🔧 HELPER FUNCTIONS
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isClinic() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/clinics/$(request.auth.uid));
+    }
+    
+    function isPatient() {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+    
+    function isPatientInConversation(conversationId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/chat_conversations/$(conversationId)) &&
+        get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.patientId == request.auth.uid;
+    }
+    
+    function isClinicInConversation(conversationId) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/chat_conversations/$(conversationId)) &&
+        get(/databases/$(database)/documents/chat_conversations/$(conversationId)).data.clinicId == request.auth.uid;
+    }
+    
+    function isClinicForHospital(hospitalName) {
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/clinics/$(request.auth.uid)) &&
+        (get(/databases/$(database)/documents/clinics/$(request.auth.uid)).data.name == hospitalName ||
+         get(/databases/$(database)/documents/clinics/$(request.auth.uid)).data.clinicName == hospitalName);
+    }
+    
+    // Default deny all other operations
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+} 

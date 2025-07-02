@@ -1,6 +1,6 @@
 const { initializeApp } = require("firebase/app");
 const { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } = require("firebase/auth");
-const { getFirestore, doc, setDoc, getDoc, collection, query, where, orderBy, getDocs, updateDoc } = require("firebase/firestore");
+const { getFirestore, doc, setDoc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment } = require("firebase/firestore");
 
 // Configuration Firebase (même que l"app mobile)
 const firebaseConfig = {
@@ -31,5 +31,9 @@ module.exports = {
   where,
   orderBy,
   getDocs,
-  updateDoc
+  updateDoc,
+  addDoc,
+  serverTimestamp,
+  writeBatch,
+  increment
 };

@@ -3,12 +3,12 @@ const { getFirestore, collection, getDocs, doc, updateDoc, query, where } = requ
 
 // Configuration Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyBqXqXqXqXqXqXqXqXqXqXqXqXqXqXqXqXq",
-    authDomain: "homecareplus-12345.firebaseapp.com",
-    projectId: "homecareplus-12345",
-    storageBucket: "homecareplus-12345.appspot.com",
-    messagingSenderId: "123456789",
-    appId: "1:123456789:web:abcdef123456"
+    apiKey: "AIzaSyDYaKiltvi2oUAUO_mi4YNtqCpbJ3RbJI8",
+    authDomain: "homecare-9f4d0.firebaseapp.com",
+    projectId: "homecare-9f4d0",
+    storageBucket: "homecare-9f4d0.firebasestorage.app",
+    messagingSenderId: "54787084616",
+    appId: "1:54787084616:android:7892366bf2029a3908a37d"
 };
 
 // Initialiser Firebase
@@ -16,47 +16,57 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 async function debugAppointments() {
+    console.log('🔍 Debugging appointments...\n');
+    
     try {
-        console.log('=== DEBUGGING APPOINTMENTS ===');
-        
-        // Récupérer tous les rendez-vous
         const appointmentsRef = collection(db, 'appointments');
         const appointmentsSnapshot = await getDocs(appointmentsRef);
         
-        console.log(`Total appointments: ${appointmentsSnapshot.size}`);
+        console.log(`Total appointments found: ${appointmentsSnapshot.size}\n`);
         
-        let appointmentCount = 0;
-        appointmentsSnapshot.forEach((docSnapshot) => {
-            appointmentCount++;
-            const appointment = docSnapshot.data();
+        const hospitalCounts = {};
+        let kingHospitalAppointments = [];
+        
+        for (const docSnapshot of appointmentsSnapshot.docs) {
+            const appointment = { id: docSnapshot.id, ...docSnapshot.data() };
             
-            console.log(`\n--- Appointment ${appointmentCount}: ${docSnapshot.id} ---`);
-            console.log('Data:', JSON.stringify(appointment, null, 2));
+            // Count by hospital
+            const hospital = appointment.hospital || appointment.hospitalName || 'Unknown';
+            hospitalCounts[hospital] = (hospitalCounts[hospital] || 0) + 1;
             
-            // Vérifier les champs importants
-            const hasClinicId = appointment.clinicId || appointment.clinic_id;
-            const hasHospital = appointment.hospital || appointment.hospitalName;
-            const hasClinicName = appointment.clinicName;
-            const hasDate = appointment.date;
-            const hasStatus = appointment.status;
-            
-            console.log('Fields check:');
-            console.log(`  - clinicId/clinic_id: ${hasClinicId ? '✓' : '✗'} (${appointment.clinicId || appointment.clinic_id || 'undefined'})`);
-            console.log(`  - hospital/hospitalName: ${hasHospital ? '✓' : '✗'} (${appointment.hospital || appointment.hospitalName || 'undefined'})`);
-            console.log(`  - clinicName: ${hasClinicName ? '✓' : '✗'} (${appointment.clinicName || 'undefined'})`);
-            console.log(`  - date: ${hasDate ? '✓' : '✗'} (${appointment.date || 'undefined'})`);
-            console.log(`  - status: ${hasStatus ? '✓' : '✗'} (${appointment.status || 'undefined'})`);
-            
-            if (!hasClinicId && !hasHospital && !hasClinicName) {
-                console.log('  ⚠️  WARNING: This appointment has no clinic identification!');
+            // Collect king Hospital appointments
+            if (hospital === 'king Hospital') {
+                kingHospitalAppointments.push(appointment);
             }
-        });
+            
+            // Show first few appointments structure
+            if (Object.keys(hospitalCounts).length <= 5) {
+                console.log(`📋 Appointment ${appointment.id}:`);
+                console.log(`   Hospital: ${hospital}`);
+                console.log(`   Patient: ${appointment.patientName || appointment.patient || 'Unknown'}`);
+                console.log(`   Service: ${appointment.service || appointment.department || 'Unknown'}`);
+                console.log(`   Status: ${appointment.status || 'Unknown'}`);
+                console.log(`   Date: ${appointment.appointmentDate ? new Date(appointment.appointmentDate.seconds * 1000).toLocaleDateString() : 'Unknown'}`);
+                console.log('');
+            }
+        }
         
-        console.log('\n=== SUMMARY ===');
-        console.log(`Total appointments analyzed: ${appointmentCount}`);
+        console.log('📊 Hospital breakdown:');
+        for (const [hospital, count] of Object.entries(hospitalCounts)) {
+            console.log(`   ${hospital}: ${count} appointments`);
+        }
+        
+        console.log(`\n👑 King Hospital appointments: ${kingHospitalAppointments.length}`);
+        
+        if (kingHospitalAppointments.length > 0) {
+            console.log('\n📋 King Hospital appointment details:');
+            kingHospitalAppointments.forEach((appointment, index) => {
+                console.log(`   ${index + 1}. ${appointment.patientName || 'Unknown'} - ${appointment.service || 'Unknown service'} (${appointment.status || 'Unknown status'})`);
+            });
+        }
         
     } catch (error) {
-        console.error('Error debugging appointments:', error);
+        console.error('❌ Error debugging appointments:', error);
     }
 }
 

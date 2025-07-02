@@ -7,6 +7,7 @@ import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
 import '../widgets/professional_bottom_nav.dart';
@@ -34,7 +35,7 @@ class BookAppointmentPage extends StatefulWidget {
 }
 
 class _BookAppointmentPageState extends State<BookAppointmentPage> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 2;
   String? selectedDepartment;
   DateTime? selectedDate;
   String? selectedTime;
@@ -53,7 +54,29 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   List<String> availableDays = [];
   List<String> availableTimeSlots = [];
   Map<String, List<String>> dayTimeSlots = {};
+  // NOUVEAU: Stocker les créneaux indisponibles pour feedback visuel
+  Set<String> bookedTimeSlots = {};
   bool isLoading = false;
+  
+  // NOUVEAU: Variable pour l'écoute en temps réel
+  StreamSubscription<QuerySnapshot>? _appointmentsListener;
+  String? _currentClinicId;
+
+  // Liste des départements disponibles
+  final List<String> departments = [
+    'General Medicine',
+    'Cardiology',
+    'Neurology',
+    'Pediatrics',
+    'Gynecology',
+    'Dermatology',
+    'Orthopedics',
+    'ENT',
+    'Ophthalmology',
+    'Laboratory',
+    'Physiotherapy',
+    'Mental Health',
+  ];
 
   @override
   void initState() {
@@ -61,11 +84,15 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     _reasonOfBookingController = TextEditingController(text: reasonOfBooking);
     _initializeAvailableSlots();
     _loadClinicMeetingDuration();
+    // NOUVEAU: Initialiser l'écoute en temps réel
+    _initializeRealtimeListener();
   }
 
   @override
   void dispose() {
     _reasonOfBookingController.dispose();
+    // NOUVEAU: Annuler l'écoute en temps réel
+    _appointmentsListener?.cancel();
     super.dispose();
   }
 
@@ -235,6 +262,9 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         isLoading = true;
       });
 
+      // NOUVEAU: Récupérer les créneaux déjà réservés pour le feedback visuel
+      final bookedSlots = await _getBookedTimeSlots(date);
+
       // Récupérer l'ID de la clinique
       final clinicId = await _getClinicId(widget.hospitalName);
       if (clinicId != null) {
@@ -242,14 +272,17 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         final slots = await AppointmentService.getAvailableTimeSlots(clinicId, date);
         setState(() {
           dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
+          bookedTimeSlots = bookedSlots;
           isLoading = false;
         });
-        print('✓ Generated ${slots.length} time slots for ${DateFormat('yyyy-MM-dd').format(date)}');
+        print('✓ Generated ${slots.length} available time slots for ${DateFormat('yyyy-MM-dd').format(date)}');
+        print('✓ Found ${bookedSlots.length} booked time slots');
       } else {
         // Fallback vers l'ancien système
         final slots = _generateDefaultTimeSlots();
         setState(() {
           dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
+          bookedTimeSlots = bookedSlots;
           isLoading = false;
         });
         print('⚠ Using fallback time slots: ${slots.length} slots');
@@ -260,6 +293,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       final slots = _generateDefaultTimeSlots();
       setState(() {
         dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
+        bookedTimeSlots = {};
         isLoading = false;
       });
     }
@@ -293,6 +327,73 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       print('Error getting clinic ID: $e');
       return null;
     }
+  }
+
+  // NOUVEAU: Récupérer les créneaux déjà réservés pour une date donnée
+  Future<Set<String>> _getBookedTimeSlots(DateTime date) async {
+    try {
+      final clinicId = await _getClinicId(widget.hospitalName);
+      if (clinicId == null) {
+        return {};
+      }
+
+      final startOfDay = DateTime(date.year, date.month, date.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+
+      final appointments = await FirebaseFirestore.instance
+          .collection('appointments')
+          .where('clinicId', isEqualTo: clinicId)
+          .where('appointmentDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('appointmentDate', isLessThan: Timestamp.fromDate(endOfDay))
+          .where('status', whereIn: ['pending', 'confirmed'])
+          .get();
+
+      final Set<String> bookedSlots = {};
+      for (final doc in appointments.docs) {
+        final data = doc.data();
+        final time = data['appointmentTime'] ?? '';
+        if (time.isNotEmpty) {
+          bookedSlots.add(time);
+        }
+      }
+
+      return bookedSlots;
+    } catch (e) {
+      print('Error getting booked time slots: $e');
+      return {};
+    }
+  }
+
+  // NOUVEAU: Initialiser l'écoute en temps réel des appointments
+  Future<void> _initializeRealtimeListener() async {
+    try {
+      _currentClinicId = await _getClinicId(widget.hospitalName);
+      if (_currentClinicId != null) {
+        _setupRealtimeAppointmentListener();
+      }
+    } catch (e) {
+      print('Error initializing realtime listener: $e');
+    }
+  }
+
+  // NOUVEAU: Configurer l'écoute en temps réel des appointments
+  void _setupRealtimeAppointmentListener() {
+    if (_currentClinicId == null) return;
+
+    _appointmentsListener = FirebaseFirestore.instance
+        .collection('appointments')
+        .where('clinicId', isEqualTo: _currentClinicId)
+        .where('status', whereIn: ['pending', 'confirmed'])
+        .snapshots()
+        .listen((snapshot) {
+          print('=== REALTIME UPDATE: ${snapshot.docs.length} appointments ===');
+          // Rafraîchir les créneaux si une date est sélectionnée
+          if (selectedDate != null) {
+            _generateTimeSlotsForDate(selectedDate!);
+          }
+        });
+
+    print('✓ Realtime appointment listener set up for clinic: $_currentClinicId');
   }
 
   void _onItemTapped(int index) {
@@ -377,11 +478,57 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     }
 
     try {
-      // Afficher un indicateur de progression
-    showDialog(
-      context: context,
+      // NOUVEAU: Vérifier la disponibilité du créneau avant de procéder
+      showDialog(
+        context: context,
         barrierDismissible: false,
-      builder: (BuildContext context) {
+        builder: (BuildContext context) {
+          return const AlertDialog(
+            content: Row(
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                ),
+                SizedBox(width: 20),
+                Text('Checking availability...'),
+              ],
+            ),
+          );
+        },
+      );
+
+      // Vérifier si le créneau est encore disponible
+      final isAvailable = await AppointmentService.isTimeSlotAvailable(
+        widget.hospitalName, 
+        selectedDate!, 
+        selectedTime!
+      );
+
+      // Fermer le dialogue de vérification
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+
+      if (!isAvailable) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sorry, this time slot has already been booked by another patient. Please select a different time.'),
+              backgroundColor: Colors.red,
+              duration: Duration(seconds: 4),
+            ),
+          );
+          // Rafraîchir les créneaux disponibles
+          await _generateTimeSlotsForDate(selectedDate!);
+        }
+        return;
+      }
+
+      // Afficher un indicateur de progression pour la réservation
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
           return const AlertDialog(
             content: Row(
               children: [
@@ -392,9 +539,9 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 Text('Booking your appointment...'),
               ],
             ),
-        );
-      },
-    );
+          );
+        },
+      );
 
       // Récupérer les informations de l'utilisateur connecté
       final user = FirebaseAuth.instance.currentUser;
@@ -454,7 +601,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         Navigator.of(context).pop();
       }
 
-      // Afficher une popup de confirmation
+      // Afficher une popup de confirmation simplifiée
       if (context.mounted) {
         showDialog(
           context: context,
@@ -462,7 +609,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           builder: (BuildContext context) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
               ),
               title: Row(
                 children: [
@@ -479,55 +626,30 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  const Text(
-                    'Success!',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
+                  const Expanded(
+                    child: Text(
+                      'Success!',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                   ),
                 ],
               ),
-              content: Column(
+              content: const Column(
                 mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Your appointment has been booked successfully!',
+                  Text(
+                    'Your appointment has been successfully booked.',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF159BBD).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(12),
-          ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Hospital: ${widget.hospitalName}',
-                          style: const TextStyle(fontWeight: FontWeight.w500),
-                        ),
-                        const SizedBox(height: 4),
-                        Text('Department: $selectedDepartment'),
-                        const SizedBox(height: 4),
-                        Text('Date: ${DateFormat('MMM dd, yyyy').format(selectedDate!)}'),
-                        const SizedBox(height: 4),
-                        Text('Time: ${_formatTimeWithPeriod(selectedTime!)}'),
-                        const SizedBox(height: 4),
-                        Text('Duration: $meetingDuration minutes'),
-                        const SizedBox(height: 4),
-                        Text('Reason: ${reasonOfBooking.trim()}'),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
+                  SizedBox(height: 8),
+                  Text(
                     'You will receive a confirmation email shortly.',
                     style: TextStyle(
                       fontSize: 12,
@@ -564,7 +686,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                       ),
                     ),
                   ),
-          ),
+                ),
               ],
             );
           },
@@ -1163,9 +1285,21 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
 
   Widget _buildTimeSlotsGrid() {
     final dayName = DateFormat('EEEE').format(selectedDate!);
-    final timeSlots = dayTimeSlots[dayName] ?? [];
+    final availableSlots = dayTimeSlots[dayName] ?? [];
     
-    if (timeSlots.isEmpty) {
+    // NOUVEAU: Générer une liste complète incluant les créneaux indisponibles
+    final allPossibleSlots = _generateDefaultTimeSlots();
+    final List<String> allSlots = [];
+    
+    // Combiner les créneaux disponibles et indisponibles
+    for (final slot in allPossibleSlots) {
+      if (availableSlots.contains(slot) || bookedTimeSlots.contains(slot)) {
+        allSlots.add(slot);
+      }
+    }
+    
+    // Si aucun créneau, afficher le message par défaut
+    if (allSlots.isEmpty && availableSlots.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -1194,23 +1328,34 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: timeSlots.map((time) {
+      children: allSlots.map((time) {
         final isSelected = selectedTime == time;
+        final isBooked = bookedTimeSlots.contains(time);
+        final isAvailable = availableSlots.contains(time);
+        
         return GestureDetector(
-          onTap: () {
+          onTap: isAvailable ? () {
             setState(() {
               selectedTime = time;
             });
-          },
+          } : null,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF159BBD) : Colors.white,
+              color: isBooked 
+                  ? Colors.grey[100] 
+                  : isSelected 
+                      ? const Color(0xFF159BBD) 
+                      : Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? const Color(0xFF159BBD) : Colors.grey[300]!,
+                color: isBooked 
+                    ? Colors.grey[300]! 
+                    : isSelected 
+                        ? const Color(0xFF159BBD) 
+                        : Colors.grey[300]!,
               ),
-              boxShadow: isSelected ? [
+              boxShadow: isSelected && isAvailable ? [
                 BoxShadow(
                   color: const Color(0xFF159BBD).withOpacity(0.3),
                   blurRadius: 4,
@@ -1218,13 +1363,31 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 ),
               ] : null,
             ),
-            child: Text(
-              _formatTimeForDisplay(time),
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? Colors.white : Colors.grey[700],
-              ),
+            child: Stack(
+              children: [
+                Text(
+                  isBooked ? 'Unavailable' : _formatTimeForDisplay(time),
+                  style: TextStyle(
+                    fontSize: isBooked ? 10 : 12,
+                    fontWeight: FontWeight.w600,
+                    color: isBooked 
+                        ? Colors.grey[500] 
+                        : isSelected 
+                            ? Colors.white 
+                            : Colors.grey[700],
+                    decoration: isBooked ? TextDecoration.lineThrough : null,
+                  ),
+                ),
+                if (isBooked)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        color: Colors.grey.withOpacity(0.1),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         );

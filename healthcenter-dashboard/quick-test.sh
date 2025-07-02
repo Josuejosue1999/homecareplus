@@ -72,4 +72,45 @@ echo "   Login: http://localhost:3001/login"
 echo "   Register: http://localhost:3001/register"
 
 echo ""
-echo "✅ Test terminé !" 
+echo "✅ Test terminé !"
+
+echo "🧪 Quick Test: Adding a test appointment..."
+
+# Get current timestamp
+TIMESTAMP=$(date +%s)
+TOMORROW=$((TIMESTAMP + 86400)) # Tomorrow
+
+# Create test appointment data
+TEST_APPOINTMENT=$(cat <<EOF
+{
+  "patientName": "Test Patient - $(date '+%H:%M:%S')",
+  "patientEmail": "test@example.com",
+  "patientPhone": "+250123456789",
+  "appointmentDate": {
+    "seconds": $TOMORROW,
+    "nanoseconds": 0
+  },
+  "appointmentTime": "10:00",
+  "department": "General Medicine",
+  "status": "pending",
+  "hospitalName": "New Hospital",
+  "hospitalLocation": "Test Location",
+  "notes": "Test appointment for notification system"
+}
+EOF
+)
+
+echo "📋 Test appointment data:"
+echo "$TEST_APPOINTMENT"
+
+# Add to Firebase (you'll need to run this manually with proper credentials)
+echo ""
+echo "🚀 To add this appointment to Firebase, run:"
+echo "cd healthcenter-dashboard && node quick-test-notification.js"
+echo ""
+echo "📱 Then book a real appointment from the mobile app to test the notification system!"
+echo ""
+echo "🔍 Check the web dashboard console for logs:"
+echo "   - Open http://localhost:3001"
+echo "   - Press F12 to open console"
+echo "   - Look for notification logs" 
