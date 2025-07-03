@@ -13,14 +13,12 @@ class DashboardNavigation {
     // Setup navigation between dashboard sections
     setupNavigation() {
         const settingsLink = document.getElementById('settings-link');
-        const profileLink = document.getElementById('profile-link');
         const dashboardLink = document.querySelector('a[href="#dashboard"]');
         const appointmentsLink = document.querySelector('a[href="#appointments"]');
         const messagesLink = document.querySelector('a[href="#messages"]');
         
         const dashboardContent = document.querySelector('.dashboard-content');
         const settingsContent = document.getElementById('settings-content');
-        const profileContent = document.getElementById('profile-content');
         const appointmentsContent = document.getElementById('appointments-content');
         const messagesContent = document.getElementById('messages-content');
 
@@ -28,7 +26,7 @@ class DashboardNavigation {
         if (settingsLink) {
             settingsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('settings', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
+                this.showSection('settings', dashboardContent, settingsContent, appointmentsContent, messagesContent);
                 this.updateHeaderTitle('Settings');
                 // Initialize settings page if not already done
                 if (typeof settingsPage !== 'undefined' && settingsPage.init) {
@@ -37,21 +35,11 @@ class DashboardNavigation {
             });
         }
 
-        // Profile navigation
-        if (profileLink) {
-            profileLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showSection('profile', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
-                this.updateHeaderTitle('Profile');
-                this.loadClinicDataIntoProfile();
-            });
-        }
-
         // Dashboard navigation
         if (dashboardLink) {
             dashboardLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('dashboard', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
+                this.showSection('dashboard', dashboardContent, settingsContent, appointmentsContent, messagesContent);
                 this.updateHeaderTitle('Dashboard');
             });
         }
@@ -60,7 +48,7 @@ class DashboardNavigation {
         if (appointmentsLink) {
             appointmentsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('appointments', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
+                this.showSection('appointments', dashboardContent, settingsContent, appointmentsContent, messagesContent);
                 this.updateHeaderTitle('Appointments');
                 // Initialize appointments page if not already done
                 if (typeof appointmentsPage !== 'undefined' && appointmentsPage.init) {
@@ -73,7 +61,7 @@ class DashboardNavigation {
         if (messagesLink) {
             messagesLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('messages', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
+                this.showSection('messages', dashboardContent, settingsContent, appointmentsContent, messagesContent);
                 this.updateHeaderTitle('Messages');
                 // Initialize messages page if not already done
                 if (typeof messagesPage !== 'undefined' && messagesPage.init) {
@@ -84,11 +72,10 @@ class DashboardNavigation {
     }
 
     // Show specific section
-    showSection(section, dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent) {
+    showSection(section, dashboardContent, settingsContent, appointmentsContent, messagesContent) {
         // Hide all sections
         if (dashboardContent) dashboardContent.style.display = 'none';
         if (settingsContent) settingsContent.style.display = 'none';
-        if (profileContent) profileContent.style.display = 'none';
         if (appointmentsContent) appointmentsContent.style.display = 'none';
         if (messagesContent) messagesContent.style.display = 'none';
 
@@ -99,9 +86,6 @@ class DashboardNavigation {
                 break;
             case 'settings':
                 if (settingsContent) settingsContent.style.display = 'block';
-                break;
-            case 'profile':
-                if (profileContent) profileContent.style.display = 'block';
                 break;
             case 'appointments':
                 if (appointmentsContent) appointmentsContent.style.display = 'block';
@@ -115,6 +99,30 @@ class DashboardNavigation {
         this.setActiveNavItem(section);
     }
 
+    // Set active navigation item
+    setActiveNavItem(section) {
+        // Remove active class from all nav items
+        document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+
+        // Add active class to current section
+        const sectionMap = {
+            'dashboard': 'a[href="#dashboard"]',
+            'appointments': 'a[href="#appointments"]', 
+            'messages': 'a[href="#messages"]',
+            'settings': 'a[href="#settings"]'
+        };
+
+        const selector = sectionMap[section];
+        if (selector) {
+            const activeLink = document.querySelector(selector);
+            if (activeLink) {
+                activeLink.closest('.nav-item').classList.add('active');
+            }
+        }
+    }
+
     // Update header title
     updateHeaderTitle(title) {
         const headerTitle = document.querySelector('.header-title h1');
@@ -122,7 +130,6 @@ class DashboardNavigation {
             const icons = {
                 'Dashboard': 'fas fa-tachometer-alt',
                 'Settings': 'fas fa-cog',
-                'Profile': 'fas fa-user-circle',
                 'Appointments': 'fas fa-calendar-check',
                 'Messages': 'fas fa-comments'
             };

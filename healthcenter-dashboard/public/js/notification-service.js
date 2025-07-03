@@ -17,9 +17,10 @@ class NotificationService {
 
     init() {
         console.log('🔔 Professional Notification Service starting...');
-        this.createNotificationContainer();
-        this.requestNotificationPermission();
-        this.startPolling();
+        // Disabled notification container creation for clean UI
+        // this.createNotificationContainer();
+        // this.requestNotificationPermission();
+        // this.startPolling();
     }
 
     createNotificationContainer() {
@@ -250,29 +251,7 @@ class NotificationService {
     }
 
     updateChatBadge(conversations) {
-        // Count total unread messages
-        let totalUnread = 0;
-        if (conversations && conversations.length > 0) {
-            conversations.forEach(conv => {
-                if (conv.hasUnreadMessages) {
-                    totalUnread += conv.unreadCount || 1;
-                }
-            });
-        }
-
-        this.unreadChatCount = totalUnread;
-        
-        // Update chat badge in sidebar
-        const chatBadge = document.getElementById('chatBadge');
-        if (chatBadge) {
-            if (totalUnread > 0) {
-                chatBadge.style.display = 'block';
-                chatBadge.textContent = totalUnread;
-                chatBadge.className = 'badge bg-warning ms-auto';
-            } else {
-                chatBadge.style.display = 'none';
-            }
-        }
+        // Chat badge removed for clean UI - no action needed
     }
 
     updateChatIcon() {
@@ -352,38 +331,11 @@ class NotificationService {
     }
 
     animateNotificationBell() {
-        const bell = document.getElementById('notificationBell');
-        if (bell) {
-            bell.classList.add('ringing');
-            setTimeout(() => {
-                bell.classList.remove('ringing');
-            }, 1000);
-        }
+        // Notification bell removed for clean UI - no action needed
     }
 
     updateNotificationBadge() {
-        const badge = document.querySelector('.notifications .badge');
-        if (badge) {
-            if (this.notificationCount > 0) {
-                badge.textContent = this.notificationCount;
-                badge.style.display = 'inline-flex';
-                badge.className = 'badge bg-danger';
-            } else {
-                badge.style.display = 'none';
-            }
-        }
-        
-        // Also update appointment badge in sidebar
-        const appointmentBadge = document.getElementById('appointmentBadge');
-        if (appointmentBadge) {
-            if (this.notificationCount > 0) {
-                appointmentBadge.textContent = this.notificationCount;
-                appointmentBadge.style.display = 'inline-flex';
-                appointmentBadge.className = 'badge bg-danger ms-auto';
-            } else {
-                appointmentBadge.style.display = 'none';
-            }
-        }
+        // Badges removed for clean UI - no action needed
     }
 
     updateNotificationCount() {

@@ -66,20 +66,12 @@
                     <a href="#appointments" class="nav-link">
                         <i class="fas fa-calendar-check"></i>
                         <span>Appointments</span>
-                        <span class="badge bg-danger ms-auto" id="appointmentBadge" style="display: none;">0</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#messages" class="nav-link" id="messages-link">
                         <i class="fas fa-comments" id="chatIcon"></i>
                         <span>Messages</span>
-                        <span class="badge bg-warning ms-auto" id="chatBadge" style="display: none;">0</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#profile" class="nav-link" id="profile-link">
-                        <i class="fas fa-user-circle"></i>
-                        <span>Profile</span>
                     </a>
                 </li>
             </ul>
@@ -111,17 +103,9 @@
                         <span class="text-secondary" style="font-size:0.95rem;">Stay productive!</span>
                     </div>
                     <div class="header-actions d-flex align-items-center gap-2">
-                        <div class="notifications me-2" id="notificationBell">
-                            <i class="fas fa-bell"></i>
-                            <span class="badge" id="notificationCount" style="display: none;">0</span>
-                        </div>
-                        <button class="btn btn-outline-primary btn-sm me-2" onclick="testNotification()" title="Test Notification Sound">
-                            <i class="fas fa-volume-up"></i>
-                        </button>
                         <div class="user-menu d-flex align-items-center gap-2">
                             <img src="<%= user.profileImageUrl || '/assets/hospital.PNG' %>" alt="User" class="user-avatar-small" id="headerUserAvatar">
                             <span class="fw-bold"><%= user.clinicName || 'Admin' %></span>
-                            <i class="fas fa-chevron-down ms-2"></i>
                         </div>
                     </div>
                 </div>
@@ -1781,35 +1765,13 @@
     <script src="/js/appointments-page.js"></script>
     <script src="/js/messages-page.js"></script>
     <script src="/js/settings-page.js"></script>
-    <script src="/js/profile-editor.js"></script>
+
     <script src="/js/notification-service.js"></script>
     
-    <!-- Sound Control Button -->
-    <div class="sound-control" id="soundControl" title="Toggle Sound Notifications">
-        <i class="fas fa-volume-up"></i>
-    </div>
+
     
     <script>
-        // Test notification function
-        function testNotification() {
-            console.log('🧪 Testing notification sound...');
-            
-            // Create a test appointment object
-            const testAppointment = {
-                id: 'test-' + Date.now(),
-                patientName: 'Test Patient',
-                appointmentDate: { seconds: Math.floor(Date.now() / 1000) },
-                status: 'pending'
-            };
-            
-            // Trigger notification
-            if (window.notificationService) {
-                window.notificationService.showAppointmentNotification(testAppointment);
-            } else {
-                console.error('❌ Notification service not found');
-                alert('Notification service not available');
-            }
-        }
+        // Test notification function removed for clean UI
     </script>
 </body>
 </html> 

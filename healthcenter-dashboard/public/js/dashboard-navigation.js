@@ -13,14 +13,14 @@ class DashboardNavigation {
     // Setup navigation between dashboard sections
     setupNavigation() {
         const settingsLink = document.getElementById('settings-link');
-        const profileLink = document.getElementById('profile-link');
+        // Profile link removed for clean UI
         const dashboardLink = document.querySelector('a[href="#dashboard"]');
         const appointmentsLink = document.querySelector('a[href="#appointments"]');
         const messagesLink = document.querySelector('a[href="#messages"]');
         
         const dashboardContent = document.querySelector('.dashboard-content');
         const settingsContent = document.getElementById('settings-content');
-        const profileContent = document.getElementById('profile-content');
+        // Profile content removed for clean UI
         const appointmentsContent = document.getElementById('appointments-content');
         const messagesContent = document.getElementById('messages-content');
 
@@ -37,15 +37,7 @@ class DashboardNavigation {
             });
         }
 
-        // Profile navigation
-        if (profileLink) {
-            profileLink.addEventListener('click', (e) => {
-                e.preventDefault();
-                this.showSection('profile', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
-                this.updateHeaderTitle('Profile');
-                this.loadClinicDataIntoProfile();
-            });
-        }
+        // Profile navigation removed for clean UI
 
         // Dashboard navigation
         if (dashboardLink) {
@@ -88,7 +80,6 @@ class DashboardNavigation {
         // Hide all sections
         if (dashboardContent) dashboardContent.style.display = 'none';
         if (settingsContent) settingsContent.style.display = 'none';
-        if (profileContent) profileContent.style.display = 'none';
         if (appointmentsContent) appointmentsContent.style.display = 'none';
         if (messagesContent) messagesContent.style.display = 'none';
 
@@ -99,9 +90,6 @@ class DashboardNavigation {
                 break;
             case 'settings':
                 if (settingsContent) settingsContent.style.display = 'block';
-                break;
-            case 'profile':
-                if (profileContent) profileContent.style.display = 'block';
                 break;
             case 'appointments':
                 if (appointmentsContent) appointmentsContent.style.display = 'block';
@@ -122,7 +110,6 @@ class DashboardNavigation {
             const icons = {
                 'Dashboard': 'fas fa-tachometer-alt',
                 'Settings': 'fas fa-cog',
-                'Profile': 'fas fa-user-circle',
                 'Appointments': 'fas fa-calendar-check',
                 'Messages': 'fas fa-comments'
             };

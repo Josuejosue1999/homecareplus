@@ -67,26 +67,18 @@
                     <a href="#appointments" class="nav-link">
                         <i class="fas fa-calendar-check"></i>
                         <span>Appointments</span>
-                        <span class="badge bg-danger ms-auto">3</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#messages" class="nav-link">
                         <i class="fas fa-comments"></i>
                         <span>Messages</span>
-                        <span class="badge bg-warning ms-auto">5</span>
                     </a>
                 </li>
                 <li class="nav-item">
                     <a href="#settings" class="nav-link" id="settings-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a href="#profile" class="nav-link" id="profile-link">
-                        <i class="fas fa-user-circle"></i>
-                        <span>Profile</span>
                     </a>
                 </li>
             </ul>
@@ -118,24 +110,15 @@
                         <span class="text-secondary" style="font-size:0.95rem;">Stay productive!</span>
                     </div>
                     <div class="header-actions d-flex align-items-center gap-2">
-                        <div class="notifications me-2" id="notificationBell">
-                            <i class="fas fa-bell"></i>
-                            <span class="badge" id="notificationCount">0</span>
-                        </div>
-                        <button class="btn btn-outline-primary btn-sm me-2" onclick="testNotification()" title="Test Notification Sound">
-                            <i class="fas fa-volume-up"></i>
-                        </button>
                         <div class="user-menu d-flex align-items-center gap-2">
                             <img src="<%= user.profileImageUrl || '/assets/hospital.PNG' %>" alt="User" class="user-avatar-small" id="headerUserAvatar">
                             <span class="fw-bold"><%= user.clinicName || 'Admin' %></span>
-                            <i class="fas fa-chevron-down ms-2"></i>
                         </div>
                     </div>
                 </div>
             </header>
             
-            <!-- Notification Toast Container -->
-            <div id="notificationContainer" class="notification-toast-container"></div>
+
             
             <!-- Dashboard Content -->
             <div class="dashboard-content">
@@ -863,140 +846,7 @@
                 </div>
             </div>
 
-            <!-- Profile Content -->
-            <div id="profile-content" class="dashboard-content" style="display: none;">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="content-card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-user-circle"></i> Clinic Profile</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <!-- Profile Image Section -->
-                                    <div class="col-md-4 text-center mb-4">
-                                        <div class="profile-image-container">
-                                            <img id="profileDisplayImage" src="https://via.placeholder.com/200x200/159BBD/FFFFFF?text=Clinic" 
-                                                 alt="Clinic Profile" class="profile-image mb-3">
-                                            <div class="profile-status">
-                                                <span class="badge bg-success">Active</span>
-                                                <span class="badge bg-primary ms-2">Verified</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <!-- Profile Information -->
-                                    <div class="col-md-8">
-                                        <div class="profile-info">
-                                            <h4 id="profileClinicName" class="text-primary mb-3">Clinic Name</h4>
-                                            <p id="profileClinicAbout" class="text-muted mb-4">About the clinic...</p>
-                                            
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="info-item">
-                                                        <label><i class="fas fa-envelope text-primary"></i> Email</label>
-                                                        <p id="profileClinicEmail">email@clinic.com</p>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <label><i class="fas fa-phone text-primary"></i> Phone</label>
-                                                        <p id="profileClinicPhone">+250 XXX XXX XXX</p>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <label><i class="fas fa-map-marker-alt text-primary"></i> Address</label>
-                                                        <p id="profileClinicAddress">Address to be updated</p>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="info-item">
-                                                        <label><i class="fas fa-location-dot text-primary"></i> Location</label>
-                                                        <p id="profileClinicLocation">Location to be updated</p>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <label><i class="fas fa-calendar-alt text-primary"></i> Created</label>
-                                                        <p id="profileClinicCreated">Registration date</p>
-                                                    </div>
-                                                    <div class="info-item">
-                                                        <label><i class="fas fa-clock text-primary"></i> Last Updated</label>
-                                                        <p id="profileClinicUpdated">Last update date</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Services Section -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <div class="content-card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-stethoscope"></i> Available Services</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="profileServices" class="services-list">
-                                    <span class="badge bg-primary me-2 mb-2">General Medicine</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-6">
-                        <div class="content-card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-calendar-week"></i> Working Schedule</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="profileSchedule" class="schedule-list">
-                                    <!-- Schedule will be populated by JavaScript -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Statistics Section -->
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="content-card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-bar"></i> Clinic Statistics</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-3 text-center">
-                                        <div class="stat-item">
-                                            <h3 class="text-primary">0</h3>
-                                            <p>Total Appointments</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 text-center">
-                                        <div class="stat-item">
-                                            <h3 class="text-success">0</h3>
-                                            <p>Completed</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 text-center">
-                                        <div class="stat-item">
-                                            <h3 class="text-warning">0</h3>
-                                            <p>Pending</p>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3 text-center">
-                                        <div class="stat-item">
-                                            <h3 class="text-info">0</h3>
-                                            <p>This Month</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+
 
             <!-- Appointments Content -->
             <div id="appointments-content" class="dashboard-content" style="display: none;">
@@ -1288,32 +1138,9 @@
     <script src="/js/settings-page.js"></script>
     <script src="/js/notification-service.js"></script>
     
-    <!-- Sound Control Button -->
-    <div class="sound-control" id="soundControl" title="Toggle Sound Notifications">
-        <i class="fas fa-volume-up"></i>
-    </div>
     
     <script>
-        // Test notification function
-        function testNotification() {
-            console.log('🧪 Testing notification sound...');
-            
-            // Create a test appointment object
-            const testAppointment = {
-                id: 'test-' + Date.now(),
-                patientName: 'Test Patient',
-                appointmentDate: { seconds: Math.floor(Date.now() / 1000) },
-                status: 'pending'
-            };
-            
-            // Trigger notification
-            if (window.notificationService) {
-                window.notificationService.showAppointmentNotification(testAppointment);
-            } else {
-                console.error('❌ Notification service not found');
-                alert('Notification service not available');
-            }
-        }
+        // Clean UI - notification functions removed
     </script>
 </body>
 </html> 

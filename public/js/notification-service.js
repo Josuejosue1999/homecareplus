@@ -15,11 +15,8 @@ class NotificationService {
     }
 
     init() {
-        console.log('🔔 Initializing Notification Service...');
-        this.loadSoundSettings();
-        this.startRealTimeChecks();
-        this.setupSoundControl();
-        this.updateNotificationBadge();
+        console.log('🔔 Notification Service disabled for clean UI');
+        // All notification functionality disabled
     }
 
     loadSoundSettings() {
