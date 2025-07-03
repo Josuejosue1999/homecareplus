@@ -38,7 +38,7 @@ body {
 /* Sidebar Styles */
 .sidebar {
     width: 280px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #6366f1 100%);
     color: white;
     display: flex;
     flex-direction: column;
@@ -46,7 +46,7 @@ body {
     height: 100vh;
     z-index: 1000;
     transition: all 0.3s ease;
-    box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 4px 0 15px rgba(30, 64, 175, 0.15);
 }
 
 .sidebar-header {
@@ -64,7 +64,8 @@ body {
 
 .logo i {
     font-size: 2rem;
-    color: #fbbf24;
+    color: #60a5fa;
+    filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.3));
 }
 
 .sidebar-user {

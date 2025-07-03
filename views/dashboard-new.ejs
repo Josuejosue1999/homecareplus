@@ -118,74 +118,112 @@
                 </div>
             </header>
             
-
-            
             <!-- Dashboard Content -->
             <div class="dashboard-content">
-                <!-- Stats Cards -->
-                <div class="row mb-4">
-                    <div class="col-xl-6 col-md-6 mb-4">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-primary">
-                                <i class="fas fa-calendar-check"></i>
+                <!-- Key Metrics Section (Top Horizontal) -->
+                <div class="key-metrics-section mb-4">
+                    <div class="row">
+                        <div class="col-xl-4 col-md-4 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-primary">
+                                    <i class="fas fa-calendar-alt"></i>
                             </div>
-                            <div class="stat-content">
-                                <h3>24</h3>
-                                <p>Today's Appointments</p>
-                                <span class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> 12%
-                                </span>
+                                <div class="metric-content">
+                                    <h3 id="totalAppointments">--</h3>
+                                    <p>Total Appointments</p>
+                                    <span class="metric-subtitle">All time</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-6 col-md-6 mb-4">
-                        <div class="stat-card">
-                            <div class="stat-icon bg-success">
-                                <i class="fas fa-user-check"></i>
+                        <div class="col-xl-4 col-md-4 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-success">
+                                    <i class="fas fa-check-circle"></i>
                             </div>
-                            <div class="stat-content">
-                                <h3>18</h3>
-                                <p>Confirmed Appointments</p>
-                                <span class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i> 8%
-                                </span>
+                                <div class="metric-content">
+                                    <h3 id="approvedAppointments">--</h3>
+                                    <p>Approved Appointments</p>
+                                    <span class="metric-subtitle">This month</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xl-4 col-md-4 mb-3">
+                            <div class="metric-card">
+                                <div class="metric-icon bg-warning">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="metric-content">
+                                    <h3 id="pendingAppointments">--</h3>
+                                    <p>Pending Appointments</p>
+                                    <span class="metric-subtitle">Awaiting approval</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Main Content Row -->
+                <!-- Main Dashboard Row -->
                 <div class="row">
-                    <!-- Appointments List -->
-                    <div class="col-12">
+                    <!-- Center: Appointment Trends Chart -->
+                    <div class="col-xl-8 col-lg-7 mb-4">
                         <div class="content-card">
                             <div class="card-header d-flex justify-content-between align-items-center">
                                 <div class="header-content">
                                     <h5 class="mb-0">
-                                        <i class="fas fa-calendar-alt text-primary me-2"></i>
-                                        Upcoming Appointments
+                                        <i class="fas fa-chart-line text-primary me-2"></i>
+                                        Appointment Trends
                                     </h5>
-                                    <p class="text-muted mb-0 mt-1">Manage and view your clinic appointments</p>
+                                    <p class="text-muted mb-0 mt-1">Weekly appointment analytics and patterns</p>
                                 </div>
                                 <div class="header-actions">
-                                    <button class="btn btn-outline-primary btn-sm me-2" onclick="dashboardAppointments.refresh()">
-                                        <i class="fas fa-refresh me-1"></i> Refresh
+                                    <select class="form-select form-select-sm" id="trendsTimeRange">
+                                        <option value="7">Last 7 days</option>
+                                        <option value="30" selected>Last 30 days</option>
+                                        <option value="90">Last 3 months</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="appointmentTrendsChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right: Upcoming Appointments (Enhanced Professional Design) -->
+                    <div class="col-xl-4 col-lg-5 mb-4">
+                        <div class="content-card upcoming-appointments-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-calendar-check me-2"></i>
+                                        Upcoming Appointments
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Next scheduled patient visits</p>
+                                </div>
+                                <div class="header-actions">
+                                    <button class="btn btn-outline-primary btn-sm me-2" onclick="dashboardAppointments.refresh()" title="Refresh appointments">
+                                        <i class="fas fa-sync-alt"></i>
                                     </button>
-                                    <button class="btn btn-primary btn-sm" onclick="navigateToAppointments()">
-                                        <i class="fas fa-list me-1"></i> View All
+                                    <button class="btn btn-primary btn-sm" onclick="navigateToAppointments()" title="View all appointments">
+                                        <i class="fas fa-list me-1"></i>
+                                        View All
                                     </button>
                             </div>
                                         </div>
                             <div class="card-body p-0">
-                                <div class="appointments-container" id="appointmentsList">
-                                    <!-- Appointments will be loaded dynamically -->
+                                <div class="upcoming-appointments-container">
+                                    <div class="simplified-appointments-list" id="upcomingAppointmentsList">
+                                        <!-- Enhanced appointments with patient profiles will be loaded here -->
                                     <div class="loading-state">
                                         <div class="spinner-container">
                                             <div class="spinner-border text-primary" role="status">
                                                 <span class="visually-hidden">Loading...</span>
                                         </div>
                                         </div>
-                                        <p class="loading-text">Loading appointments...</p>
+                                            <p class="loading-text">Loading upcoming appointments...</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -846,128 +884,247 @@
                 </div>
             </div>
 
-
-
-            <!-- Appointments Content -->
+            <!-- Appointments Content (Hidden by default) -->
             <div id="appointments-content" class="dashboard-content" style="display: none;">
                 <!-- Appointments Header -->
-                <div class="appointments-header mb-4">
+                <div class="appointments-header-modern mb-4">
                     <div class="row align-items-center">
                         <div class="col-md-8">
-                            <div class="header-content">
-                                <h2 class="mb-2">
+                            <div class="header-content-modern">
+                                <h2 class="page-title">
                                     <i class="fas fa-calendar-check text-primary me-3"></i>
                                     Appointments Management
                                 </h2>
-                                <p class="text-muted mb-0">Complete overview and management of all clinic appointments</p>
+                                <p class="page-subtitle">Complete overview and management of all clinic appointments</p>
                             </div>
                         </div>
                         <div class="col-md-4 text-end">
-                            <div class="header-actions">
+                            <div class="header-actions-modern">
+                                <button class="btn btn-outline-primary me-2" onclick="appointmentsPage.exportAppointments()">
+                                    <i class="fas fa-download me-2"></i>Export
+                                </button>
                                 <button class="btn btn-primary" onclick="appointmentsPage.refresh()">
-                                    <i class="fas fa-sync-alt me-2"></i>Refresh Data
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh
                                 </button>
                             </div>
                         </div>
                     </div>
     </div>
     
-                <!-- Appointments Statistics -->
-                <div class="row mb-4">
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="stat-card-appointments">
-                            <div class="stat-icon bg-primary">
+                <!-- Appointments Statistics - Modern Cards -->
+                <div class="stats-container-modern mb-4">
+                    <div class="row g-3">
+                        <div class="col-xl-3 col-md-6">
+                            <div class="stat-card-modern stat-primary">
+                                <div class="stat-icon-modern">
                                 <i class="fas fa-calendar-alt"></i>
                             </div>
-                            <div class="stat-content">
-                                <h3 id="totalAppointments">0</h3>
+                                <div class="stat-content-modern">
+                                    <h3 id="totalAppointmentsPage">0</h3>
                                 <p>Total Appointments</p>
+                                    <div class="stat-trend">
+                                        <i class="fas fa-arrow-up"></i>
+                                        <span>+12% from last month</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="stat-card-appointments">
-                            <div class="stat-icon bg-warning">
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="stat-card-modern stat-warning">
+                                <div class="stat-icon-modern">
                                 <i class="fas fa-clock"></i>
                             </div>
-                            <div class="stat-content">
-                                <h3 id="pendingAppointments">0</h3>
-                                <p>Pending</p>
+                                <div class="stat-content-modern">
+                                    <h3 id="pendingAppointmentsPage">0</h3>
+                                    <p>Pending Review</p>
+                                    <div class="stat-trend">
+                                        <i class="fas fa-arrow-down"></i>
+                                        <span>-5% from last week</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="stat-card-appointments">
-                            <div class="stat-icon bg-success">
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="stat-card-modern stat-success">
+                                <div class="stat-icon-modern">
                                 <i class="fas fa-check-circle"></i>
                             </div>
-                            <div class="stat-content">
+                                <div class="stat-content-modern">
                                 <h3 id="confirmedAppointments">0</h3>
                                 <p>Confirmed</p>
+                                    <div class="stat-trend">
+                                        <i class="fas fa-arrow-up"></i>
+                                        <span>+8% from last week</span>
                             </div>
                         </div>
                     </div>
-                    <div class="col-xl-3 col-md-6 mb-3">
-                        <div class="stat-card-appointments">
-                            <div class="stat-icon bg-danger">
+                        </div>
+                        <div class="col-xl-3 col-md-6">
+                            <div class="stat-card-modern stat-danger">
+                                <div class="stat-icon-modern">
                                 <i class="fas fa-times-circle"></i>
                             </div>
-                            <div class="stat-content">
+                                <div class="stat-content-modern">
                                 <h3 id="cancelledAppointments">0</h3>
                                 <p>Cancelled</p>
+                                    <div class="stat-trend">
+                                        <i class="fas fa-minus"></i>
+                                        <span>No change</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Appointments Management Card -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="content-card">
-                            <div class="card-header d-flex justify-content-between align-items-center">
-                                <div class="header-content">
+                <!-- Appointments Table Container -->
+                <div class="appointments-table-container">
+                    <div class="table-header-modern">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="table-title">
                                     <h5 class="mb-0">
                                         <i class="fas fa-list-alt text-primary me-2"></i>
-                                        Appointments List
+                                        All Appointments
                                     </h5>
-                                    <p class="text-muted mb-0 mt-1">Filter and manage your appointments</p>
+                                    <p class="text-muted mb-0 mt-1">
+                                        <span id="appointmentsCount">0</span> appointments found
+                                    </p>
                                 </div>
-                                <div class="header-actions d-flex gap-2">
-                                    <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-outline-primary btn-sm active" data-filter="all">
-                                            <i class="fas fa-list me-1"></i>All
+                            </div>
+                            <div class="col-md-6">
+                                <div class="table-controls d-flex gap-2 justify-content-end">
+                                    <!-- Search Input -->
+                                    <div class="search-container">
+                                        <input type="text" 
+                                               class="form-control search-input" 
+                                               id="appointmentSearch" 
+                                               placeholder="Search patients, services...">
+                                        <i class="fas fa-search search-icon"></i>
+                                    </div>
+                                    
+                                    <!-- Filter Dropdown -->
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" 
+                                                type="button" 
+                                                id="filterDropdown" 
+                                                data-bs-toggle="dropdown">
+                                            <i class="fas fa-filter me-2"></i>Filter
                                         </button>
-                                        <button type="button" class="btn btn-outline-warning btn-sm" data-filter="pending">
-                                            <i class="fas fa-clock me-1"></i>Pending
-                                        </button>
-                                        <button type="button" class="btn btn-outline-success btn-sm" data-filter="confirmed">
-                                            <i class="fas fa-check me-1"></i>Confirmed
-                                        </button>
-                                        <button type="button" class="btn btn-outline-danger btn-sm" data-filter="cancelled">
-                                            <i class="fas fa-times me-1"></i>Cancelled
-                                        </button>
+                                        <ul class="dropdown-menu">
+                                            <li><a class="dropdown-item filter-option active" data-filter="all" href="#">
+                                                <i class="fas fa-list me-2"></i>All Appointments
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item filter-option" data-filter="pending" href="#">
+                                                <i class="fas fa-clock me-2 text-warning"></i>Pending
+                                            </a></li>
+                                            <li><a class="dropdown-item filter-option" data-filter="confirmed" href="#">
+                                                <i class="fas fa-check me-2 text-success"></i>Confirmed
+                                            </a></li>
+                                            <li><a class="dropdown-item filter-option" data-filter="cancelled" href="#">
+                                                <i class="fas fa-times me-2 text-danger"></i>Cancelled
+                                            </a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            <li><a class="dropdown-item filter-option" data-filter="today" href="#">
+                                                <i class="fas fa-calendar-day me-2 text-info"></i>Today
+                                            </a></li>
+                                            <li><a class="dropdown-item filter-option" data-filter="upcoming" href="#">
+                                                <i class="fas fa-calendar-week me-2 text-primary"></i>Upcoming
+                                            </a></li>
+                                        </ul>
                                     </div>
                                 </div>
                             </div>
-                            <div class="card-body p-0">
-                                <div class="appointments-page-container" id="appointmentsPageList">
-                                    <!-- Appointments will be loaded dynamically -->
-                                    <div class="loading-state">
-                                        <div class="spinner-container">
-                                            <div class="spinner-border text-primary" role="status">
-                                                <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+
+                    <!-- Appointments Table -->
+                    <div class="appointments-table-wrapper">
+                        <div class="table-responsive">
+                            <table class="appointments-table" id="appointmentsTable">
+                                <thead>
+                                    <tr>
+                                        <th class="sortable" data-sort="patient">
+                                            <div class="th-content">
+                                                <span>Patient</span>
+                                                <i class="fas fa-sort sort-icon"></i>
                                             </div>
+                                        </th>
+                                        <th class="sortable" data-sort="service">
+                                            <div class="th-content">
+                                                <span>Service</span>
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </div>
+                                        </th>
+                                        <th class="sortable" data-sort="date">
+                                            <div class="th-content">
+                                                <span>Date & Time</span>
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </div>
+                                        </th>
+                                        <th class="sortable" data-sort="status">
+                                            <div class="th-content">
+                                                <span>Status</span>
+                                                <i class="fas fa-sort sort-icon"></i>
+                                            </div>
+                                        </th>
+                                        <th>Contact</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="appointmentsTableBody">
+                                    <!-- Appointments will be loaded dynamically -->
+                                </tbody>
+                            </table>
+                                            </div>
+                        
+                        <!-- Loading State -->
+                        <div class="table-loading-state" id="tableLoadingState">
+                            <div class="loading-content">
+                                <div class="spinner-border text-primary mb-3" role="status"></div>
+                                <h6>Loading appointments...</h6>
+                                <p class="text-muted">Please wait while we fetch your data</p>
                                         </div>
-                                        <p class="loading-text">Loading all appointments...</p>
                                     </div>
+
+                        <!-- Empty State -->
+                        <div class="table-empty-state" id="tableEmptyState" style="display: none;">
+                            <div class="empty-content">
+                                <i class="fas fa-calendar-times mb-3"></i>
+                                <h6>No appointments found</h6>
+                                <p class="text-muted">No appointments match your current filter criteria</p>
+                                <button class="btn btn-outline-primary" onclick="appointmentsPage.clearFilters()">
+                                    <i class="fas fa-refresh me-2"></i>Clear Filters
+                                </button>
                                 </div>
+                            </div>
+                        </div>
+
+                    <!-- Table Footer with Pagination -->
+                    <div class="table-footer-modern">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="table-info">
+                                    <span class="text-muted">
+                                        Showing <span id="showingStart">1</span> to <span id="showingEnd">10</span> 
+                                        of <span id="totalAppointments">0</span> appointments
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <nav aria-label="Appointments pagination">
+                                    <ul class="pagination pagination-modern justify-content-end mb-0" id="appointmentsPagination">
+                                        <!-- Pagination will be generated dynamically -->
+                                    </ul>
+                                </nav>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Messages Content -->
+            <!-- Messages Content (Hidden by default) -->
             <div id="messages-content" class="dashboard-content" style="display: none;">
                 <!-- Messages Header -->
                 <div class="messages-header mb-4">
@@ -1141,6 +1298,54 @@
     
     <script>
         // Clean UI - notification functions removed
+    </script>
+
+    <script>
+        // Missing functions for appointment details
+        function viewAppointmentDetails(appointmentId) {
+            console.log('Viewing appointment details for:', appointmentId);
+            // Navigate to appointments page and show details
+            navigateToAppointments();
+            setTimeout(() => {
+                if (typeof AppointmentDetails !== 'undefined') {
+                    AppointmentDetails.showDetails(appointmentId);
+                }
+            }, 500);
+        }
+
+        function navigateToAppointments() {
+            if (typeof dashboardNavigation !== 'undefined') {
+                dashboardNavigation.showSection('appointments');
+            }
+        }
+
+        // Initialize dashboard when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Dashboard initializing...');
+            
+            // Initialize navigation
+            if (typeof DashboardNavigation !== 'undefined') {
+                new DashboardNavigation();
+            }
+            
+            // Initialize dashboard appointments
+            if (typeof dashboardAppointments !== 'undefined') {
+                dashboardAppointments.init();
+            }
+            
+            // Initialize other components
+            if (typeof appointmentsPage !== 'undefined') {
+                appointmentsPage.init();
+            }
+            
+            if (typeof messagesPage !== 'undefined') {
+                messagesPage.init();
+            }
+            
+            if (typeof settingsPage !== 'undefined') {
+                settingsPage.init();
+            }
+        });
     </script>
 </body>
 </html> 
