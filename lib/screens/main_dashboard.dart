@@ -792,7 +792,15 @@ class _MainDashboardState extends State<MainDashboard> {
                                                         borderRadius: BorderRadius.circular(10),
                                                         color: const Color(0xFF159BBD).withOpacity(0.1),
                                                       ),
-                                                      child: _buildHospitalImageForAppointment(data['hospitalImage']),
+                                                      child: FutureBuilder<Widget>(
+                                                        future: _buildHospitalImageForAppointmentWithFallback(data['hospitalImage'], data['hospitalName']),
+                                                        builder: (context, snapshot) {
+                                                          if (snapshot.hasData) {
+                                                            return snapshot.data!;
+                                                          }
+                                                          return _buildPlaceholderImageForAppointment();
+                                                        },
+                                                      ),
                                                     ),
                                                     const SizedBox(width: 12),
                                                     
@@ -933,7 +941,15 @@ class _MainDashboardState extends State<MainDashboard> {
                                                     borderRadius: BorderRadius.circular(10),
                                                       color: const Color(0xFF159BBD).withOpacity(0.1),
                                                     ),
-                                                    child: _buildHospitalImageForAppointment(data['hospitalImage']),
+                                                    child: FutureBuilder<Widget>(
+                                                      future: _buildHospitalImageForAppointmentWithFallback(data['hospitalImage'], data['hospitalName']),
+                                                      builder: (context, snapshot) {
+                                                        if (snapshot.hasData) {
+                                                          return snapshot.data!;
+                                                        }
+                                                        return _buildPlaceholderImageForAppointment();
+                                                      },
+                                                    ),
                                                   ),
                                                   const SizedBox(width: 12),
                                                   
@@ -1720,5 +1736,28 @@ class _MainDashboardState extends State<MainDashboard> {
         size: 24,
       ),
     );
+  }
+
+  // 🔧 FIX: Build hospital image with fallback fetching for appointments
+  Future<Widget> _buildHospitalImageForAppointmentWithFallback(String? hospitalImage, String? hospitalName) async {
+    // If we already have a hospital image, use it
+    if (hospitalImage != null && hospitalImage.trim().isNotEmpty) {
+      return _buildHospitalImageForAppointment(hospitalImage);
+    }
+    
+    // If no image but we have hospital name, try to fetch image dynamically
+    if (hospitalName != null && hospitalName.trim().isNotEmpty) {
+      try {
+        final fetchedImage = await AppointmentService.getHospitalImageByName(hospitalName.trim());
+        if (fetchedImage != null && fetchedImage.trim().isNotEmpty) {
+          return _buildHospitalImageForAppointment(fetchedImage);
+        }
+      } catch (e) {
+        print('Error fetching hospital image for $hospitalName: $e');
+      }
+    }
+    
+    // Fallback to placeholder
+    return _buildPlaceholderImageForAppointment();
   }
 } 

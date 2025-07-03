@@ -51,34 +51,34 @@
                         </div>
                     </div>
 
-                    <!-- Settings Tabs -->
+                    <!-- Settings Navigation & Content -->
                     <div class="row">
                         <div class="col-12">
-                            <div class="card shadow-sm" data-aos="fade-up" data-aos-delay="100">
+                            <div class="card shadow-sm settings-card" data-aos="fade-up" data-aos-delay="100">
                                 <div class="card-header bg-white border-0">
                                     <ul class="nav nav-tabs card-header-tabs" id="settingsTabs" role="tablist">
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab">
+                                            <button class="nav-link active" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile" type="button" role="tab" aria-controls="profile" aria-selected="true">
                                                 <i class="fas fa-user-md me-2"></i>Profile Information
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab">
+                                            <button class="nav-link" id="contact-tab" data-bs-toggle="tab" data-bs-target="#contact" type="button" role="tab" aria-controls="contact" aria-selected="false">
                                                 <i class="fas fa-address-book me-2"></i>Contact Details
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab">
+                                            <button class="nav-link" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab" aria-controls="services" aria-selected="false">
                                                 <i class="fas fa-stethoscope me-2"></i>Services & Facilities
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab">
+                                            <button class="nav-link" id="schedule-tab" data-bs-toggle="tab" data-bs-target="#schedule" type="button" role="tab" aria-controls="schedule" aria-selected="false">
                                                 <i class="fas fa-calendar-alt me-2"></i>Working Hours
                                             </button>
                                         </li>
                                         <li class="nav-item" role="presentation">
-                                            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab">
+                                            <button class="nav-link" id="security-tab" data-bs-toggle="tab" data-bs-target="#security" type="button" role="tab" aria-controls="security" aria-selected="false">
                                                 <i class="fas fa-shield-alt me-2"></i>Security
                                             </button>
                                         </li>
@@ -87,7 +87,7 @@
                                 <div class="card-body p-4">
                                     <div class="tab-content" id="settingsTabContent">
                                         <!-- Profile Information Tab -->
-                                        <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                                        <div class="tab-pane fade show active" id="profile" role="tabpanel" aria-labelledby="profile-tab" tabindex="0">
                                             <form id="profileForm">
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
@@ -107,13 +107,36 @@
                                                     <small class="text-muted">This information will be displayed to patients</small>
                                                 </div>
                                                 
+                                                <!-- Hospital Image Section -->
                                                 <div class="row">
-                                                    <div class="col-md-6 mb-3">
-                                                        <label for="profileImage" class="form-label">Profile Image</label>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label class="form-label">Current Hospital Image</label>
+                                                        <div class="profile-image-section text-center">
+                                                            <div class="profile-image-container" onclick="document.getElementById('profileImage').click()">
+                                                                <img id="currentHospitalImage" 
+                                                                     src="/assets/hospital.PNG" 
+                                                                     alt="Hospital Profile" 
+                                                                     class="profile-image">
+                                                                <div class="profile-image-overlay">
+                                                                    <button type="button" class="btn btn-light btn-sm">
+                                                                        <i class="fas fa-camera me-1"></i>Change
+                                                                    </button>
+                                                                </div>
+                                                                <div id="imageLoadingSpinner" class="d-none position-absolute top-50 start-50 translate-middle">
+                                                                    <div class="spinner-border text-primary" role="status">
+                                                                        <span class="visually-hidden">Loading...</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <p class="text-muted mt-2 small">Click to change hospital image</p>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 mb-3">
+                                                        <label for="profileImage" class="form-label">Upload New Image</label>
                                                         <input type="file" class="form-control" id="profileImage" name="profileImage" accept="image/*">
                                                         <small class="text-muted">Recommended size: 400x400 pixels</small>
                                                     </div>
-                                                    <div class="col-md-6 mb-3">
+                                                    <div class="col-md-4 mb-3">
                                                         <label for="certificate" class="form-label">Medical License/Certificate</label>
                                                         <input type="file" class="form-control" id="certificate" name="certificate" accept=".pdf,.jpg,.jpeg,.png">
                                                         <small class="text-muted">Upload your medical license or certificate</small>
@@ -129,7 +152,7 @@
                                         </div>
 
                                         <!-- Contact Details Tab -->
-                                        <div class="tab-pane fade" id="contact" role="tabpanel">
+                                        <div class="tab-pane fade" id="contact" role="tabpanel" aria-labelledby="contact-tab" tabindex="0">
                                             <form id="contactForm">
                                                 <div class="row">
                                                     <div class="col-md-6 mb-3">
@@ -153,8 +176,24 @@
                                                         <input type="text" class="form-control" id="city" name="city" value="<%= user.city || '' %>" required>
                                                     </div>
                                                     <div class="col-md-6 mb-3">
+                                                        <label for="sector" class="form-label">Sector</label>
+                                                        <select class="form-control" id="sector" name="sector">
+                                                            <option value="">Select Sector</option>
+                                                            <option value="KG (Kigali)" <%= (user.sector === 'KG (Kigali)') ? 'selected' : '' %>>KG (Kigali)</option>
+                                                            <option value="KK (Kacyiru)" <%= (user.sector === 'KK (Kacyiru)') ? 'selected' : '' %>>KK (Kacyiru)</option>
+                                                            <option value="KN (Kanombe)" <%= (user.sector === 'KN (Kanombe)') ? 'selected' : '' %>>KN (Kanombe)</option>
+                                                            <option value="KR (Kinyinya)" <%= (user.sector === 'KR (Kinyinya)') ? 'selected' : '' %>>KR (Kinyinya)</option>
+                                                            <option value="KX (Kimisagara)" <%= (user.sector === 'KX (Kimisagara)') ? 'selected' : '' %>>KX (Kimisagara)</option>
+                                                            <option value="NY (Nyarugenge)" <%= (user.sector === 'NY (Nyarugenge)') ? 'selected' : '' %>>NY (Nyarugenge)</option>
+                                                            <option value="Other" <%= (user.sector === 'Other') ? 'selected' : '' %>>Other</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                
+                                                <div class="row">
+                                                    <div class="col-md-12 mb-3">
                                                         <label for="country" class="form-label">Country *</label>
-                                                        <input type="text" class="form-control" id="country" name="country" value="<%= user.country || '' %>" required>
+                                                        <input type="text" class="form-control" id="country" name="country" value="<%= user.country || 'Rwanda' %>" required>
                                                     </div>
                                                 </div>
                                                 
@@ -178,7 +217,7 @@
                                         </div>
 
                                         <!-- Services & Facilities Tab -->
-                                        <div class="tab-pane fade" id="services" role="tabpanel">
+                                        <div class="tab-pane fade" id="services" role="tabpanel" aria-labelledby="services-tab" tabindex="0">
                                             <form id="servicesForm">
                                                 <div class="mb-4">
                                                     <label class="form-label">Available Services & Facilities</label>
@@ -243,7 +282,7 @@
                                         </div>
 
                                         <!-- Working Hours Tab -->
-                                        <div class="tab-pane fade" id="schedule" role="tabpanel">
+                                        <div class="tab-pane fade" id="schedule" role="tabpanel" aria-labelledby="schedule-tab" tabindex="0">
                                             <form id="scheduleForm">
                                                 <div class="mb-4">
                                                     <label class="form-label">Working Hours</label>
@@ -280,7 +319,7 @@
                                         </div>
 
                                         <!-- Security Tab -->
-                                        <div class="tab-pane fade" id="security" role="tabpanel">
+                                        <div class="tab-pane fade" id="security" role="tabpanel" aria-labelledby="security-tab" tabindex="0">
                                             <form id="securityForm">
                                                 <div class="alert alert-info">
                                                     <i class="fas fa-info-circle me-2"></i>
@@ -321,18 +360,433 @@
         </div>
     </div>
 
+    <!-- Success/Error Notification -->
+    <div id="notification" class="notification" style="display: none;">
+        <div class="notification-content">
+            <i class="notification-icon"></i>
+            <span class="notification-message"></span>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
     <script src="/js/dashboard.js"></script>
-    <script src="/js/settings.js"></script>
     
+    <!-- Include SweetAlert2 for beautiful notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Settings Page JavaScript -->
     <script>
-        // Initialize AOS
-        AOS.init({
-            duration: 800,
-            easing: 'ease-in-out',
-            once: true
+        /**
+         * Settings Page Manager - Enhanced for Port 3001
+         * Handles profile editing, contact info, services, and file uploads
+         */
+        const settingsPage = {
+            currentData: {},
+            
+            /**
+             * Initialize the settings page
+             */
+            init() {
+                console.log('🚀 Initializing Settings Page...');
+                this.bindEvents();
+                this.loadInitialData();
+                this.setupTabs();
+                console.log('✅ Settings Page initialized');
+            },
+
+            /**
+             * Setup tab navigation
+             */
+            setupTabs() {
+                const tabs = document.querySelectorAll('.nav-link[data-bs-toggle="tab"]');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        console.log('🔄 Switching to tab:', e.target.textContent);
+                    });
+                });
+            },
+
+            /**
+             * Bind all event listeners
+             */
+            bindEvents() {
+                // Form submissions
+                const profileForm = document.getElementById('profileForm');
+                if (profileForm) {
+                    profileForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.saveProfile();
+                    });
+                }
+
+                const contactForm = document.getElementById('contactForm');
+                if (contactForm) {
+                    contactForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.saveContact();
+                    });
+                }
+
+                const servicesForm = document.getElementById('servicesForm');
+                if (servicesForm) {
+                    servicesForm.addEventListener('submit', (e) => {
+                        e.preventDefault();
+                        this.saveServices();
+                    });
+                }
+
+                // Profile image click handler
+                const profileImageContainer = document.querySelector('.profile-image-container');
+                if (profileImageContainer) {
+                    profileImageContainer.addEventListener('click', () => {
+                        document.getElementById('profileImage')?.click();
+                    });
+                }
+
+                // Image upload handler
+                const profileImageInput = document.getElementById('profileImage');
+                if (profileImageInput) {
+                    profileImageInput.addEventListener('change', (e) => {
+                        this.handleImageUpload(e);
+                    });
+                }
+            },
+
+            /**
+             * Load initial data from server
+             */
+            async loadInitialData() {
+                try {
+                    console.log('🔄 Loading initial data...');
+                    
+                    const response = await fetch('/api/settings/clinic-data');
+                    const result = await response.json();
+                    
+                    if (result.success && result.data) {
+                        console.log('✅ Data loaded successfully:', result.data);
+                        this.currentData = result.data;
+                        this.populateAllForms(result.data);
+                    } else {
+                        console.log('⚠️ No data found, using existing form values');
+                        this.loadFromExistingValues();
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading initial data:', error);
+                    this.loadFromExistingValues();
+                }
+            },
+
+            /**
+             * Load data from existing form values (fallback)
+             */
+            loadFromExistingValues() {
+                console.log('🔄 Loading from existing form values...');
+                // The EJS template has already populated the form fields
+                // Just update the hospital image
+                this.loadHospitalImage();
+            },
+
+            /**
+             * Populate all forms with data
+             */
+            populateAllForms(data) {
+                if (!data) return;
+                
+                // Profile form
+                this.setFieldValue('clinicName', data.clinicName || data.name);
+                this.setFieldValue('about', data.about);
+                this.setFieldValue('meetingDuration', data.meetingDuration || 30);
+                
+                // Contact form  
+                this.setFieldValue('phone', data.phone);
+                this.setFieldValue('address', data.address);
+                this.setFieldValue('sector', data.sector);
+                this.setFieldValue('latitude', data.latitude);
+                this.setFieldValue('longitude', data.longitude);
+                
+                // Services
+                if (Array.isArray(data.facilities)) {
+                    document.querySelectorAll('input[name="facilities[]"]:checked').forEach(checkbox => {
+                        checkbox.checked = data.facilities.includes(checkbox.value);
+                    });
+                }
+                
+                // Load hospital image
+                this.loadHospitalImage();
+            },
+
+            /**
+             * Set field value safely
+             */
+            setFieldValue(fieldId, value) {
+                const field = document.getElementById(fieldId);
+                if (field && value !== null && value !== undefined) {
+                    field.value = value;
+                }
+            },
+
+            /**
+             * Load hospital image
+             */
+            async loadHospitalImage() {
+                const imageElement = document.getElementById('currentHospitalImage');
+                if (!imageElement) return;
+                
+                try {
+                    const response = await fetch('/api/settings/hospital-image');
+                    const data = await response.json();
+                    
+                    if (data.success && data.imageUrl) {
+                        imageElement.src = data.imageUrl;
+                        console.log('✅ Hospital image loaded');
+                    } else {
+                        imageElement.src = '/assets/hospital.PNG';
+                        console.log('⚠️ Using default hospital image');
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading hospital image:', error);
+                    imageElement.src = '/assets/hospital.PNG';
+                }
+            },
+
+            /**
+             * Save profile section with SweetAlert feedback
+             */
+            async saveProfile() {
+                try {
+                    const clinicName = document.getElementById('clinicName')?.value?.trim();
+                    const about = document.getElementById('about')?.value?.trim();
+                    
+                    // Validation
+                    if (!clinicName) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Validation Error',
+                            text: 'Clinic name is required'
+                        });
+                        return;
+                    }
+
+                    // Show loading
+                    Swal.fire({
+                        title: 'Saving Profile...',
+                        text: 'Please wait while we update your profile information.',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('clinicName', clinicName);
+                    formData.append('about', about || '');
+                    
+                    // Handle image upload if present
+                    const profileImageInput = document.getElementById('profileImage');
+                    if (profileImageInput && profileImageInput.files[0]) {
+                        formData.append('profileImage', profileImageInput.files[0]);
+                    }
+
+                    const response = await fetch('/api/settings/profile', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Update current data
+                        this.currentData = { ...this.currentData, clinicName: clinicName, about: about };
+                        
+                        // Reload hospital image after a short delay
+                        setTimeout(() => {
+                            this.loadHospitalImage();
+                        }, 1000);
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Profile Updated!',
+                            text: 'Your profile information has been saved successfully.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Update Failed',
+                            text: result.message || 'Failed to update profile information'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Profile save error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while saving your profile. Please try again.'
+                    });
+                }
+            },
+
+            /**
+             * Save contact details
+             */
+            async saveContact() {
+                try {
+                    const phone = document.getElementById('phone')?.value?.trim();
+                    const address = document.getElementById('address')?.value?.trim();
+                    const sector = document.getElementById('sector')?.value?.trim();
+                    
+                    // Show loading
+                    Swal.fire({
+                        title: 'Saving Contact Details...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const formData = new FormData();
+                    formData.append('phone', phone || '');
+                    formData.append('address', address || '');
+                    formData.append('sector', sector || '');
+
+                    const response = await fetch('/api/settings/contact', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.currentData = { ...this.currentData, phone, address, sector };
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Contact Details Updated!',
+                            text: 'Your contact information has been saved successfully.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Update Failed',
+                            text: result.message || 'Failed to update contact details'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Contact save error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while saving your contact details. Please try again.'
+                    });
+                }
+            },
+
+            /**
+             * Save services
+             */
+            async saveServices() {
+                try {
+                    const selectedServices = [];
+                    document.querySelectorAll('input[name="facilities[]"]:checked').forEach(checkbox => {
+                        selectedServices.push(checkbox.value);
+                    });
+
+                    // Show loading
+                    Swal.fire({
+                        title: 'Saving Services...',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    const formData = new FormData();
+                    selectedServices.forEach(service => {
+                        formData.append('facilities', service);
+                    });
+
+                    const response = await fetch('/api/settings/services', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        this.currentData = { ...this.currentData, facilities: selectedServices };
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Services Updated!',
+                            text: `${selectedServices.length} services have been saved successfully.`,
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Update Failed',
+                            text: result.message || 'Failed to update services'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Services save error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while saving your services. Please try again.'
+                    });
+                }
+            },
+
+            /**
+             * Handle image upload with preview
+             */
+            handleImageUpload(event) {
+                const file = event.target.files[0];
+                const imageElement = document.getElementById('currentHospitalImage');
+                
+                if (file && imageElement) {
+                    // Validate file type
+                    if (!file.type.match(/^image\/(jpeg|jpg|png)$/)) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Invalid File Type',
+                            text: 'Please select a JPG or PNG image file.'
+                        });
+                        return;
+                    }
+                    
+                    // Validate file size (5MB max)
+                    if (file.size > 5 * 1024 * 1024) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'File Too Large',
+                            text: 'Please select an image smaller than 5MB.'
+                        });
+                        return;
+                    }
+                    
+                    // Show preview
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imageElement.src = e.target.result;
+                        console.log('✅ Image preview updated');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+        };
+
+        // Initialize when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM loaded, initializing settings page...');
+            settingsPage.init();
         });
     </script>
 </body>

@@ -50,6 +50,24 @@ class AppointmentService {
       
       print('Final hospital name: "$finalHospitalName"');
       
+      // 🔧 FIX: Get hospital image with enhanced retrieval
+      String hospitalImageUrl = '';
+      if (clinicId != null) {
+        hospitalImageUrl = await _getHospitalImage(clinicId) ?? '';
+        if (hospitalImageUrl.isEmpty) {
+          print('⚠️ No image found for clinic ID $clinicId, trying by name...');
+          hospitalImageUrl = await getHospitalImageByName(finalHospitalName) ?? '';
+        }
+      } else {
+        hospitalImageUrl = await getHospitalImageByName(finalHospitalName) ?? '';
+      }
+      
+      if (hospitalImageUrl.isNotEmpty) {
+        print('✅ Hospital image found and will be stored: ${hospitalImageUrl.length > 50 ? hospitalImageUrl.substring(0, 50) + "..." : hospitalImageUrl}');
+      } else {
+        print('⚠️ No hospital image found for "$finalHospitalName"');
+      }
+
       // Créer une copie du rendez-vous avec le nom corrigé et l'ID de la clinique
       final correctedAppointment = Appointment(
         id: appointment.id,
@@ -58,7 +76,7 @@ class AppointmentService {
         patientEmail: appointment.patientEmail,
         patientPhone: appointment.patientPhone,
         hospitalName: finalHospitalName,
-        hospitalImage: clinicId != null ? (await _getHospitalImage(clinicId) ?? '') : '',
+        hospitalImage: hospitalImageUrl,
         hospitalLocation: appointment.hospitalLocation,
         department: appointment.department,
         appointmentDate: appointment.appointmentDate,
@@ -1741,13 +1759,108 @@ class AppointmentService {
       
       if (clinicDoc.exists) {
         final data = clinicDoc.data();
-        return data?['imageUrl'] ?? data?['image'] ?? data?['profileImage'];
+        
+        // 🔧 FIX: Try multiple potential image field names for hospitals
+        final List<String> imageFields = [
+          'imageUrl',
+          'profileImageUrl', 
+          'image',
+          'profileImage',
+          'hospitalImage',
+          'logo',
+          'avatar',
+          'picture',
+          'photoURL'
+        ];
+        
+        for (final field in imageFields) {
+          final imageValue = data?[field];
+          if (imageValue != null && imageValue.toString().trim().isNotEmpty && imageValue.toString() != 'null') {
+            print('✅ Found hospital image using field "$field": ${imageValue.toString().length > 50 ? imageValue.toString().substring(0, 50) + "..." : imageValue.toString()}');
+            return imageValue.toString();
+          }
+        }
+        
+        print('⚠️ Hospital document exists but no valid image found in any field for clinic: $clinicId');
+        print('Available fields: ${data?.keys.toList()}');
+      } else {
+        print('❌ Hospital document not found for clinic ID: $clinicId');
       }
       
       return null;
     } catch (e) {
       print('Error getting hospital image: $e');
       return null;
+    }
+  }
+
+  // Récupérer l'image de l'hôpital par son nom (méthode publique)
+  static Future<String?> getHospitalImageByName(String hospitalName) async {
+    try {
+      print('🔍 Getting hospital image for: "$hospitalName"');
+      
+      // Trouver l'ID de la clinique par son nom
+      final clinicId = await _getClinicIdByName(hospitalName);
+      
+      if (clinicId != null) {
+        // Récupérer l'image de l'hôpital
+        final hospitalImage = await _getHospitalImage(clinicId);
+        if (hospitalImage != null) {
+          print('✅ Found hospital image for "$hospitalName": ${hospitalImage.length > 50 ? hospitalImage.substring(0, 50) + "..." : hospitalImage}');
+        } else {
+          print('⚠️ No hospital image found for "$hospitalName"');
+        }
+        return hospitalImage;
+      } else {
+        print('❌ No clinic found with name: "$hospitalName"');
+        return null;
+      }
+    } catch (e) {
+      print('❌ Error getting hospital image by name: $e');
+      return null;
+    }
+  }
+
+  // 🔧 FIX: Enhanced method to update appointments with missing hospital images
+  static Future<void> updateAppointmentHospitalImages() async {
+    try {
+      print('🔄 Updating appointments with missing hospital images...');
+      
+      final appointmentsSnapshot = await _firestore.collection('appointments').get();
+      int updatedCount = 0;
+      
+      for (final doc in appointmentsSnapshot.docs) {
+        final data = doc.data();
+        final hospitalImage = data['hospitalImage'] ?? '';
+        final hospitalName = data['hospitalName'] ?? '';
+        final clinicId = data['clinicId'];
+        
+        // Skip if image already exists and is valid
+        if (hospitalImage.isNotEmpty && hospitalImage != 'null') {
+          continue;
+        }
+        
+        // Try to get image by clinic ID first, then by name
+        String? fetchedImage;
+        if (clinicId != null) {
+          fetchedImage = await _getHospitalImage(clinicId);
+        } else if (hospitalName.isNotEmpty) {
+          fetchedImage = await getHospitalImageByName(hospitalName);
+        }
+        
+        if (fetchedImage != null && fetchedImage.isNotEmpty) {
+          await doc.reference.update({
+            'hospitalImage': fetchedImage,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          updatedCount++;
+          print('✅ Updated appointment ${doc.id} with hospital image');
+        }
+      }
+      
+      print('🎉 Updated $updatedCount appointments with hospital images');
+    } catch (e) {
+      print('❌ Error updating appointment hospital images: $e');
     }
   }
 } 

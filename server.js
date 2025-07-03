@@ -910,16 +910,38 @@ app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async 
         const userId = req.user.uid;
         const { message, messageType = 'text', appointmentId, metadata } = req.body;
         
-        console.log('=== SEND MESSAGE ===');
+        console.log('=== SEND MESSAGE DEBUG ===');
         console.log(`Conversation ID: ${conversationId}`);
-        console.log(`Clinic ID: ${userId}`);
+        console.log(`User/Clinic ID: ${userId}`);
+        console.log(`User object:`, JSON.stringify(req.user, null, 2));
         console.log(`Message: ${message}`);
+        console.log(`Message Type: ${messageType}`);
         
-        // Vérifier que la conversation appartient à cette clinique
+        // Validation des paramètres
+        if (!conversationId) {
+            console.log('❌ Missing conversationId');
+            return res.status(400).json({
+                success: false,
+                message: "Conversation ID is required"
+            });
+        }
+        
+        if (!message || message.trim() === '') {
+            console.log('❌ Missing or empty message');
+            return res.status(400).json({
+                success: false,
+                message: "Message content is required"
+            });
+        }
+        
+        // Vérifier que la conversation existe
         const conversationRef = doc(db, 'chat_conversations', conversationId);
         const conversationDoc = await getDoc(conversationRef);
         
+        console.log(`Conversation exists: ${conversationDoc.exists()}`);
+        
         if (!conversationDoc.exists()) {
+            console.log('❌ Conversation not found');
             return res.status(404).json({
                 success: false,
                 message: "Conversation not found"
@@ -927,21 +949,70 @@ app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async 
         }
         
         const conversationData = conversationDoc.data();
-        if (conversationData.clinicId !== userId) {
+        console.log(`Conversation data:`, JSON.stringify(conversationData, null, 2));
+        console.log(`Conversation clinic ID: ${conversationData.clinicId}`);
+        console.log(`Current user ID: ${userId}`);
+        console.log(`IDs match: ${conversationData.clinicId === userId}`);
+        
+        // Vérifier les permissions avec plus de flexibilité
+        if (!conversationData.clinicId) {
+            console.log('⚠️ Conversation has no clinicId, checking if we can assign it...');
+            
+            // Si pas de clinicId, on peut l'assigner à l'utilisateur actuel
+            await updateDoc(conversationRef, {
+                clinicId: userId,
+                updatedAt: serverTimestamp()
+            });
+            
+            console.log(`✅ Assigned conversation to clinic: ${userId}`);
+        } else if (conversationData.clinicId !== userId) {
+            console.log(`❌ Permission denied. Conversation belongs to: ${conversationData.clinicId}, current user: ${userId}`);
             return res.status(403).json({
                 success: false,
                 message: "You don't have permission to send messages in this conversation"
             });
         }
         
-        // Récupérer les informations de la clinique
+        // Récupérer les informations de la clinique pour obtenir l'image
         const clinicDocRef = doc(db, 'clinics', userId);
         const clinicDoc = await getDoc(clinicDocRef);
         
         let clinicName = req.user.clinicName || "Clinic";
+        let hospitalImage = null;
+        
         if (clinicDoc.exists()) {
             const clinicData = clinicDoc.data();
             clinicName = clinicData.name || clinicData.clinicName || clinicName;
+            
+            // 🔧 FIX: Try multiple potential image field names for hospitals
+            const imageFields = [
+                'imageUrl',
+                'profileImageUrl', 
+                'image',
+                'profileImage',
+                'hospitalImage',
+                'logo',
+                'avatar',
+                'picture'
+            ];
+            
+            for (const field of imageFields) {
+                const imageValue = clinicData[field];
+                if (imageValue && imageValue.toString().trim() !== '' && imageValue.toString() !== 'null') {
+                    hospitalImage = imageValue.toString();
+                    console.log(`🏥 Found hospital image using field "${field}": ${hospitalImage.length > 50 ? hospitalImage.substring(0, 50) + "..." : hospitalImage}`);
+                    break;
+                }
+            }
+            
+            if (!hospitalImage) {
+                console.log('⚠️ No hospital image found for clinic:', userId);
+                console.log('Available fields:', Object.keys(clinicData));
+            }
+            
+            console.log(`✅ Found clinic: ${clinicName}`);
+        } else {
+            console.log(`⚠️ Clinic document not found for ID: ${userId}`);
         }
         
         // Créer le message
@@ -950,27 +1021,32 @@ app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async 
             senderId: userId,
             senderName: clinicName,
             senderType: 'clinic',
-            message: message,
+            message: message.trim(),
             messageType: messageType,
             timestamp: serverTimestamp(),
             isRead: false,
-            appointmentId: appointmentId,
             hospitalName: clinicName,
-            metadata: metadata
+            hospitalImage: hospitalImage,
+            ...(appointmentId && { appointmentId }),
+            ...(metadata && { metadata })
         };
         
+        console.log(`Creating message:`, JSON.stringify(messageData, null, 2));
+        
         const messageRef = await addDoc(collection(db, 'chat_messages'), messageData);
+        console.log(`✅ Message created with ID: ${messageRef.id}`);
         
         // Mettre à jour la conversation
         await updateDoc(conversationRef, {
             lastMessageTime: serverTimestamp(),
-            lastMessage: message,
+            lastMessage: message.trim(),
             hasUnreadMessages: true,
             unreadCount: increment(1),
             updatedAt: serverTimestamp()
         });
         
-        console.log('Message sent successfully');
+        console.log('✅ Conversation updated successfully');
+        console.log('✅ Message sent successfully');
         
         res.json({
             success: true,
@@ -979,12 +1055,72 @@ app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async 
         });
         
     } catch (error) {
-        console.error("Send message error:", error);
+        console.error("❌ Send message error:", error);
+        console.error("❌ Error stack:", error.stack);
         res.status(500).json({
             success: false,
             message: "Failed to send message",
-            error: error.message
+            error: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
+    }
+});
+
+// 🔧 FIX: Get patient avatar for hospital chat
+app.get('/api/chat/patient-avatar/:patientId', requireAuth, async (req, res) => {
+    try {
+        const { patientId } = req.params;
+        
+        console.log(`🔍 Looking for patient avatar with ID: ${patientId}`);
+        
+        // Try to get patient info from users collection
+        const userDoc = await getDoc(doc(db, 'users', patientId));
+        
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            
+            // 🔧 FIX: Try multiple potential image field names for patients
+            const imageFields = [
+                'profileImage',
+                'imageUrl', 
+                'profileImageUrl',
+                'avatar',
+                'photoURL',
+                'image',
+                'picture'
+            ];
+            
+            let avatar = null;
+            for (const field of imageFields) {
+                const imageValue = userData[field];
+                if (imageValue && imageValue.toString().trim() !== '' && imageValue.toString() !== 'null') {
+                    avatar = imageValue.toString();
+                    console.log(`✅ Found patient avatar using field "${field}": ${avatar.length > 50 ? avatar.substring(0, 50) + "..." : avatar}`);
+                    break;
+                }
+            }
+            
+            if (!avatar) {
+                console.log('⚠️ Patient document exists but no valid image found in any field for patient:', patientId);
+                console.log('Available fields:', Object.keys(userData));
+            }
+            
+            res.json({
+                success: true,
+                avatar: avatar,
+                name: userData.name || userData.fullName || userData.displayName || 'Patient'
+            });
+        } else {
+            console.log('❌ Patient document not found for ID:', patientId);
+            res.json({
+                success: true,
+                avatar: null,
+                name: 'Patient'
+            });
+        }
+    } catch (error) {
+        console.error('❌ Error getting patient avatar:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 });
 
@@ -1385,6 +1521,59 @@ We apologize for any inconvenience.`;
     return { success: false, error: error.message };
   }
 }
+
+// 🔧 Hospital Image API Endpoint  
+app.get('/api/settings/hospital-image', requireAuth, async (req, res) => {
+  try {
+    const user = req.user;
+    
+    // Get clinic document from Firestore
+    const clinicDoc = await getDoc(doc(db, 'clinics', user.uid));
+    
+    if (clinicDoc.exists()) {
+      const clinicData = clinicDoc.data();
+      
+      // Try multiple potential image field names
+      const imageFields = [
+        'profileImageUrl',
+        'imageUrl', 
+        'image',
+        'profileImage',
+        'hospitalImage',
+        'logo',
+        'avatar',
+        'picture'
+      ];
+      
+      let hospitalImage = null;
+      for (const field of imageFields) {
+        const imageValue = clinicData[field];
+        if (imageValue && imageValue.toString().trim().length > 0) {
+          hospitalImage = imageValue.toString().trim();
+          console.log(`Found hospital image in field "${field}": ${hospitalImage.substring(0, 50)}...`);
+          break;
+        }
+      }
+      
+      res.json({
+        success: true,
+        imageUrl: hospitalImage || '/assets/hospital.PNG'
+      });
+    } else {
+      res.json({
+        success: true,
+        imageUrl: '/assets/hospital.PNG'
+      });
+    }
+  } catch (error) {
+    console.error('Error getting hospital image:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting hospital image',
+      imageUrl: '/assets/hospital.PNG'
+    });
+  }
+});
 
 
 

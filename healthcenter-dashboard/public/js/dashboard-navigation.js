@@ -271,167 +271,291 @@ class DashboardNavigation {
         }
     }
 
-    // Load clinic data into profile display
+    // Load clinic data into profile display (fallback for client-side loading)
     loadClinicDataIntoProfile() {
-        console.log('🔍 Loading clinic data into profile...');
+        console.log('🔍 Loading comprehensive clinic data into profile...');
         
-        fetch('/api/settings/clinic-data')
-            .then(response => response.json())
+        // Check if profile data is already loaded server-side
+        const profileName = document.getElementById('profileClinicName');
+        if (profileName && profileName.textContent && !profileName.textContent.includes('Loading...')) {
+            console.log('✅ Profile data already loaded server-side, skipping client-side loading');
+            return;
+        }
+        
+        // Show loading spinners only if needed
+        this.showProfileLoadingState();
+        
+        fetch('/api/profile/clinic-data')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
                 if (data.success) {
-                    this.populateProfileDisplay(data.clinicData);
+                    console.log('✅ Profile data loaded successfully:', data.profile);
+                    this.populateProfileDisplay(data.profile);
                 } else {
-                    console.error('Failed to load clinic data:', data.message);
+                    console.error('❌ Failed to load profile data:', data.message);
+                    this.showProfileError(data.message || 'Failed to load profile data');
                 }
             })
             .catch(error => {
-                console.error('Error loading clinic data for profile:', error);
+                console.error('❌ Error loading profile data:', error);
+                this.showProfileError('Unable to load profile data. Please check your connection.');
+            })
+            .finally(() => {
+                this.hideProfileLoadingState();
             });
     }
 
-    // Populate profile display
-    populateProfileDisplay(clinicData) {
-        // Basic info
-        const nameElement = document.getElementById('profileClinicName');
-        const aboutElement = document.getElementById('profileClinicAbout');
-        const emailElement = document.getElementById('profileClinicEmail');
-        const phoneElement = document.getElementById('profileClinicPhone');
-        const addressElement = document.getElementById('profileClinicAddress');
-        const locationElement = document.getElementById('profileClinicLocation');
-
-        if (nameElement) nameElement.textContent = clinicData.name || clinicData.clinicName || 'Clinic Name';
-        if (aboutElement) aboutElement.textContent = clinicData.about || 'About the clinic...';
-        if (emailElement) emailElement.textContent = clinicData.email || 'email@clinic.com';
-        if (phoneElement) phoneElement.textContent = clinicData.phone || '+250 XXX XXX XXX';
-        if (addressElement) addressElement.textContent = clinicData.address || 'Address to be updated';
-        if (locationElement) locationElement.textContent = clinicData.location || 'Location to be updated';
-
-        // Dates
-        this.formatAndDisplayDate(clinicData.createdAt, 'profileClinicCreated', 'Registration date');
-        this.formatAndDisplayDate(clinicData.updatedAt, 'profileClinicUpdated', 'Last update date');
-
-        // Profile image
-        const imageElement = document.getElementById('profileDisplayImage');
-        if (imageElement) {
-            if (clinicData.profileImageUrl) {
-                imageElement.src = clinicData.profileImageUrl;
-                // Mettre à jour aussi l'image dans l'en-tête
-                const headerImage = document.getElementById('headerUserAvatar');
-                if (headerImage) {
-                    headerImage.src = clinicData.profileImageUrl;
-                }
-            } else {
-                imageElement.src = 'https://via.placeholder.com/200x200/159BBD/FFFFFF?text=Clinic';
-                // Mettre à jour aussi l'image dans l'en-tête avec l'image par défaut
-                const headerImage = document.getElementById('headerUserAvatar');
-                if (headerImage) {
-                    headerImage.src = '/assets/hospital.PNG';
-                }
-            }
-        }
-
-        // Services
-        this.populateServices(clinicData.facilities);
-
-        // Schedule
-        this.populateSchedule(clinicData.availableSchedule);
-
-        // Verification status
-        this.updateVerificationStatus(clinicData.isVerified);
-    }
-
-    // Format and display date
-    formatAndDisplayDate(dateData, elementId, fallbackText) {
-        const element = document.getElementById(elementId);
-        if (!element) return;
-
-        if (dateData) {
-            try {
-                let date;
-                if (dateData.seconds) {
-                    date = new Date(dateData.seconds * 1000);
+    // Populate profile display with data
+    populateProfileDisplay(profile) {
+        console.log('🔧 Populating profile display with data:', profile);
+        
+        try {
+            // Basic Information
+            this.safeUpdateElement('profileClinicName', profile.name || 'Clinic Name Not Set');
+            this.safeUpdateElement('profileClinicAbout', profile.about || 'About information not available');
+            this.safeUpdateElement('profileClinicEmail', profile.email || 'Email not set');
+            this.safeUpdateElement('profileClinicPhone', profile.phone || 'Phone not set');
+            this.safeUpdateElement('profileClinicAddress', profile.address || 'Address not set');
+            this.safeUpdateElement('profileClinicCity', profile.city || 'City not set');
+            this.safeUpdateElement('profileClinicCountry', profile.country || 'Country not set');
+            
+            // Website with link
+            const websiteElement = document.getElementById('profileClinicWebsite');
+            if (websiteElement) {
+                if (profile.website && profile.website !== 'null' && profile.website.trim() !== '') {
+                    websiteElement.innerHTML = `<a href="${profile.website}" target="_blank" class="text-primary">${profile.website}</a>`;
                 } else {
-                    date = new Date(dateData);
+                    websiteElement.textContent = 'Not provided';
                 }
-                element.textContent = date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
-            } catch (error) {
-                console.error('Error formatting date:', error);
-                element.textContent = fallbackText;
             }
-        } else {
-            element.textContent = fallbackText;
+            
+            // Profile Image
+            const profileImage = document.getElementById('profileDisplayImage');
+            if (profileImage && profile.profileImage) {
+                profileImage.src = profile.profileImage;
+                profileImage.onerror = function() {
+                    this.src = '/assets/hospital.PNG';
+                };
+            }
+            
+            // Services
+            this.populateServices(profile.services || []);
+            
+            // Schedule
+            this.populateSchedule(profile.schedule || {});
+            
+            // Status Badges
+            this.updateStatusBadges(profile);
+            
+            // System Information
+            this.populateSystemInfo(profile);
+            
+            // Statistics
+            this.updateStatistics(profile);
+            
+            console.log('✅ Profile display populated successfully');
+            
+        } catch (error) {
+            console.error('❌ Error populating profile display:', error);
+            this.showProfileError('Error displaying profile data');
         }
     }
 
-    // Populate services
-    populateServices(facilities) {
+    // Safe update element helper
+    safeUpdateElement(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.textContent = value || 'Not available';
+        }
+    }
+
+    // Populate services section
+    populateServices(services) {
         const servicesContainer = document.getElementById('profileServices');
         if (!servicesContainer) return;
-
-        servicesContainer.innerHTML = '';
-        if (facilities && Array.isArray(facilities) && facilities.length > 0) {
-            facilities.forEach(service => {
-                const badge = document.createElement('span');
-                badge.className = 'badge bg-primary me-2 mb-2';
-                badge.textContent = service;
-                servicesContainer.appendChild(badge);
-            });
+        
+        if (services && services.length > 0) {
+            servicesContainer.innerHTML = services.map(service => 
+                `<span class="badge bg-primary me-2 mb-2">${service}</span>`
+            ).join('');
         } else {
-            servicesContainer.innerHTML = '<span class="badge bg-secondary me-2 mb-2">No services listed</span>';
+            servicesContainer.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-exclamation-circle mb-2"></i>
+                    <p>No services configured yet</p>
+                </div>
+            `;
         }
     }
 
-    // Populate schedule
-    populateSchedule(availableSchedule) {
+    // Populate schedule section
+    populateSchedule(schedule) {
         const scheduleContainer = document.getElementById('profileSchedule');
         if (!scheduleContainer) return;
-
-        scheduleContainer.innerHTML = '';
-        if (availableSchedule) {
-            Object.keys(availableSchedule).forEach(day => {
-                const scheduleItem = document.createElement('div');
-                scheduleItem.className = 'schedule-item';
-                
-                const daySpan = document.createElement('span');
-                daySpan.className = 'schedule-day';
-                daySpan.textContent = day;
-                
-                const timeSpan = document.createElement('span');
-                timeSpan.className = 'schedule-time';
-                const schedule = availableSchedule[day];
-                if (schedule.start === 'Closed' || schedule.end === 'Closed') {
-                    timeSpan.textContent = 'Closed';
-                } else {
-                    const start = schedule.start || schedule.startTime || '';
-                    const end = schedule.end || schedule.endTime || '';
-                    timeSpan.textContent = `${start} - ${end}`;
-                }
-                
-                scheduleItem.appendChild(daySpan);
-                scheduleItem.appendChild(timeSpan);
-                scheduleContainer.appendChild(scheduleItem);
-            });
+        
+        if (schedule && Object.keys(schedule).length > 0) {
+            scheduleContainer.innerHTML = Object.keys(schedule).map(day => `
+                <div class="schedule-item">
+                    <div class="schedule-day">${day}</div>
+                    <div class="schedule-time">${schedule[day]}</div>
+                </div>
+            `).join('');
         } else {
-            scheduleContainer.innerHTML = '<p class="text-muted">No schedule information available</p>';
+            scheduleContainer.innerHTML = `
+                <div class="text-center text-muted">
+                    <i class="fas fa-clock mb-2"></i>
+                    <p>No schedule configured yet</p>
+                </div>
+            `;
         }
     }
 
-    // Update verification status
-    updateVerificationStatus(isVerified) {
-        const verificationBadge = document.getElementById('verificationStatus');
-        if (verificationBadge) {
-            if (isVerified) {
-                verificationBadge.textContent = 'Verified';
-                verificationBadge.className = 'badge bg-success';
+    // Update status badges
+    updateStatusBadges(profile) {
+        const statusBadges = ['profileStatusBadge', 'profileStatusBadge2'];
+        const verifiedBadges = ['profileVerifiedBadge', 'profileVerifiedBadge2'];
+        
+        statusBadges.forEach(badgeId => {
+            const badge = document.getElementById(badgeId);
+            if (badge) {
+                badge.textContent = profile.status === 'active' ? 'Active' : 'Inactive';
+                badge.className = `badge ${profile.status === 'active' ? 'bg-success' : 'bg-danger'}`;
+            }
+        });
+        
+        verifiedBadges.forEach(badgeId => {
+            const badge = document.getElementById(badgeId);
+            if (badge) {
+                badge.textContent = profile.isVerified ? 'Verified' : 'Unverified';
+                badge.className = `badge ${profile.isVerified ? 'bg-primary' : 'bg-warning'} ms-2`;
+            }
+        });
+    }
+
+    // Populate system information
+    populateSystemInfo(profile) {
+        // Created date
+        const createdElement = document.getElementById('profileClinicCreated');
+        if (createdElement) {
+            if (profile.createdAt) {
+                try {
+                    const date = new Date(profile.createdAt.seconds ? profile.createdAt.seconds * 1000 : profile.createdAt);
+                    createdElement.textContent = date.toLocaleDateString();
+                } catch (e) {
+                    createdElement.textContent = 'Not available';
+                }
             } else {
-                verificationBadge.textContent = 'Pending Verification';
-                verificationBadge.className = 'badge bg-warning';
+                createdElement.textContent = 'Not available';
             }
         }
+        
+        // Updated date
+        const updatedElement = document.getElementById('profileClinicUpdated');
+        if (updatedElement) {
+            if (profile.updatedAt) {
+                try {
+                    const date = new Date(profile.updatedAt.seconds ? profile.updatedAt.seconds * 1000 : profile.updatedAt);
+                    updatedElement.textContent = date.toLocaleDateString();
+                } catch (e) {
+                    updatedElement.textContent = 'Not available';
+                }
+            } else {
+                updatedElement.textContent = 'Not available';
+            }
+        }
+        
+        // Verification status
+        const verificationElement = document.getElementById('profileVerificationStatus');
+        if (verificationElement) {
+            const badgeClass = profile.isVerified ? 'bg-success' : 'bg-warning';
+            const icon = profile.isVerified ? 'fa-check-circle' : 'fa-exclamation-triangle';
+            const text = profile.isVerified ? 'Verified' : 'Pending Verification';
+            
+            verificationElement.innerHTML = `
+                <span class="badge ${badgeClass}">
+                    <i class="fas ${icon} me-1"></i>
+                    ${text}
+                </span>
+            `;
+        }
+    }
+
+    // Update statistics
+    updateStatistics(profile) {
+        // Services count
+        this.safeUpdateElement('profileServicesCount', (profile.services || []).length);
+        
+        // Working days
+        let workingDays = 0;
+        if (profile.schedule) {
+            workingDays = Object.values(profile.schedule).filter(time => 
+                time !== 'Closed' && time !== 'Not set' && time.trim() !== ''
+            ).length;
+        }
+        this.safeUpdateElement('profileWorkingDays', workingDays);
+        
+        // Meeting duration
+        this.safeUpdateElement('profileMeetingDuration', profile.meetingDuration || 30);
+        
+        // Status
+        this.safeUpdateElement('profileClinicStatus', profile.status === 'active' ? 'Active' : 'Inactive');
+    }
+
+    // Show loading state
+    showProfileLoadingState() {
+        const loadingElements = [
+            'profileClinicName', 'profileClinicAbout', 'profileClinicEmail', 
+            'profileClinicPhone', 'profileClinicAddress', 'profileClinicCity', 
+            'profileClinicCountry'
+        ];
+        
+        loadingElements.forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element && element.textContent.includes('Loading...')) {
+                element.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
+            }
+        });
+        
+        // Show image loading spinner
+        const imageSpinner = document.getElementById('profileImageLoadingSpinner');
+        if (imageSpinner) {
+            imageSpinner.style.display = 'block';
+        }
+    }
+
+    // Hide loading state
+    hideProfileLoadingState() {
+        const imageSpinner = document.getElementById('profileImageLoadingSpinner');
+        if (imageSpinner) {
+            imageSpinner.style.display = 'none';
+        }
+    }
+
+    // Show profile error
+    showProfileError(message) {
+        console.error('Profile loading error:', message);
+        
+        // Update main elements with error message
+        const errorElements = [
+            'profileClinicName', 'profileClinicAbout'
+        ];
+        
+        errorElements.forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = `
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${message}
+                    </div>
+                `;
+            }
+        });
     }
 }
 

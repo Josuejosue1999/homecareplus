@@ -1,0 +1,159 @@
+/* Chat Avatar Styles */
+.message-avatar {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.message-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.message-avatar-placeholder {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+}
+
+.message-avatar-placeholder.hospital {
+    background: linear-gradient(135deg, #159bbd 0%, #0ea5e9 100%);
+}
+
+.message-avatar-placeholder.patient {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+/* Patient Avatar in Conversation List */
+.patient-avatar {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.patient-avatar-initials {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.participant-avatar {
+    margin-right: 15px;
+}
+
+/* Chat Message Styling */
+.chat-message-wrapper {
+    margin-bottom: 15px;
+}
+
+.chat-message {
+    max-width: 70%;
+}
+
+.clinic-message {
+    margin-left: auto;
+}
+
+.patient-message {
+    margin-right: auto;
+}
+
+.message-bubble {
+    padding: 12px 16px;
+    border-radius: 18px;
+    position: relative;
+}
+
+.clinic-message .message-bubble {
+    background: linear-gradient(135deg, #159bbd 0%, #0ea5e9 100%);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+
+.patient-message .message-bubble {
+    background: #f3f4f6;
+    color: #1f2937;
+    border-bottom-left-radius: 4px;
+}
+
+.message-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.clinic-message .message-header {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.patient-message .message-header {
+    color: #6b7280;
+}
+
+.message-text {
+    line-height: 1.4;
+    word-wrap: break-word;
+}
+
+.message-meta {
+    margin-top: 8px;
+    font-size: 11px;
+    opacity: 0.6;
+}
+
+/* Empty Chat State */
+.empty-chat {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6b7280;
+}
+
+.empty-chat i {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+/* Responsive Chat Styles */
+@media (max-width: 768px) {
+    .chat-message {
+        max-width: 85%;
+    }
+    
+    .message-avatar {
+        width: 30px;
+        height: 30px;
+    }
+    
+    .message-avatar-placeholder {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
+    }
+    
+    .patient-avatar, .patient-avatar-initials {
+        width: 40px;
+        height: 40px;
+        font-size: 14px;
+    }
+} 

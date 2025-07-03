@@ -1,6 +1,6 @@
 /**
- * Notification Service
- * Handles real-time notifications for the health center dashboard
+ * Professional Notification Service
+ * Handles real-time notifications for the health center dashboard with enhanced chat support
  */
 class NotificationService {
     constructor() {
@@ -9,74 +9,38 @@ class NotificationService {
         this.lastAppointmentId = null;
         this.checkInterval = null;
         this.processedAppointments = new Set();
+        this.lastChatCheck = new Date();
+        this.unreadChatCount = 0;
+        this.processedSounds = new Set(); // Track played sounds to prevent repeats
         this.init();
     }
 
     init() {
-        console.log('🔔 Initializing notification service...');
-        
-        // Load sound preference from localStorage
-        this.soundEnabled = localStorage.getItem('notificationSoundEnabled') !== 'false';
-        console.log('🔊 Sound enabled:', this.soundEnabled);
-        
-        // Initialize notification elements
-        this.notificationBell = document.getElementById('notificationBell');
-        this.notificationCount = document.getElementById('notificationCount');
-        this.notificationContainer = document.getElementById('notificationContainer');
-        this.soundControl = document.getElementById('soundControl');
-        
-        // Set up sound control
-        this.setupSoundControl();
-        
-        // Start checking for new appointments
+        console.log('🔔 Professional Notification Service starting...');
+        this.createNotificationContainer();
+        this.requestNotificationPermission();
         this.startPolling();
-        
-        // Enable audio on first user interaction
-        this.enableAudioOnInteraction();
     }
 
-    setupSoundControl() {
-        if (!this.soundControl) return;
-        
-        // Update sound control icon
-        this.updateSoundControlIcon();
-        
-        // Add click event
-        this.soundControl.addEventListener('click', () => {
-            this.toggleSound();
-        });
-    }
-
-    updateSoundControlIcon() {
-        if (!this.soundControl) return;
-        
-        const icon = this.soundControl.querySelector('i');
-        if (icon) {
-            icon.className = this.soundEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+    createNotificationContainer() {
+        if (!document.getElementById('notificationContainer')) {
+            const container = document.createElement('div');
+            container.id = 'notificationContainer';
+            container.className = 'notification-toast-container';
+            document.body.appendChild(container);
         }
+        this.notificationContainer = document.getElementById('notificationContainer');
     }
 
-    toggleSound() {
-        this.soundEnabled = !this.soundEnabled;
-        localStorage.setItem('notificationSoundEnabled', this.soundEnabled.toString());
-        this.updateSoundControlIcon();
-        
-        console.log('🔊 Sound toggled:', this.soundEnabled ? 'ON' : 'OFF');
-        
-        // Show feedback
-        this.showToastNotification({
-            patientName: 'Sound ' + (this.soundEnabled ? 'Enabled' : 'Disabled'),
-            appointmentDate: { seconds: Math.floor(Date.now() / 1000) }
-        });
-    }
-
-    setupNotificationBell() {
-        if (!this.notificationBell) return;
-        
-        // Add click event to show notifications
-        this.notificationBell.addEventListener('click', () => {
-            this.showNotificationHistory();
-        });
+    async requestNotificationPermission() {
+        if ('Notification' in window && Notification.permission === 'default') {
+            try {
+                const permission = await Notification.requestPermission();
+                console.log('Notification permission:', permission);
+            } catch (error) {
+                console.log('Error requesting notification permission:', error);
+            }
+        }
     }
 
     startPolling() {
@@ -86,21 +50,21 @@ class NotificationService {
         this.checkForNewAppointments();
         this.checkForNewChatMessages();
         
-        // Then check every 10 seconds
+        // Then check every 15 seconds for better real-time experience
         this.pollingInterval = setInterval(() => {
             this.checkForNewAppointments();
             this.checkForNewChatMessages();
-        }, 10000);
+        }, 15000);
     }
 
     async checkForNewAppointments() {
         try {
-            console.log('🔍 Checking for new appointments...');
-            const response = await fetch('/api/appointments/clinic-appointments');
+            console.log('📅 Checking for new appointments...');
+            const response = await fetch('/api/appointments');
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.appointments) {
-                    console.log(`📋 Found ${data.appointments.length} appointments`);
+                    console.log(`📅 Found ${data.appointments.length} appointments`);
                     this.processAppointments(data.appointments);
                 }
             }
@@ -112,12 +76,13 @@ class NotificationService {
     async checkForNewChatMessages() {
         try {
             console.log('💬 Checking for new chat messages...');
-            const response = await fetch('/api/chat/clinic-conversations');
+            const response = await fetch('/api/chat/conversations');
             if (response.ok) {
                 const data = await response.json();
                 if (data.success && data.conversations) {
                     console.log(`💬 Found ${data.conversations.length} conversations`);
                     this.processChatMessages(data.conversations);
+                    this.updateChatBadge(data.conversations);
                 }
             }
         } catch (error) {
@@ -128,74 +93,46 @@ class NotificationService {
     processAppointments(appointments) {
         if (!appointments || appointments.length === 0) return;
 
-        console.log('🔍 Processing appointments for notifications...');
-        
-        // Find the most recent appointment
-        const latestAppointment = appointments.reduce((latest, current) => {
-            const latestDate = latest.appointmentDate || latest.date;
-            const currentDate = current.appointmentDate || current.date;
-            
-            if (!latestDate) return current;
-            if (!currentDate) return latest;
-            
-            return new Date(currentDate.seconds * 1000) > new Date(latestDate.seconds * 1000) ? current : latest;
-        });
-
-        console.log('🔍 Latest appointment ID:', latestAppointment.id);
-        console.log('🔍 Latest appointment date:', latestAppointment.appointmentDate || latestAppointment.date);
-        
-        // Check if this is a new appointment (within last 10 minutes)
-        const appointmentTime = latestAppointment.appointmentDate || latestAppointment.date;
-        if (!appointmentTime) {
-            console.log('❌ No appointment date found');
-            return;
-        }
-
-        const appointmentDate = new Date(appointmentTime.seconds * 1000);
+        console.log('📅 Processing appointments for notifications...');
         const now = new Date();
-        const timeDiff = now.getTime() - appointmentDate.getTime();
-        const minutesDiff = timeDiff / (1000 * 60);
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
-        console.log('⏰ Appointment time:', appointmentDate);
-        console.log('⏰ Current time:', now);
-        console.log('⏰ Time difference (minutes):', minutesDiff);
-
-        // Check if appointment is recent (within 10 minutes) and not already processed
-        if (minutesDiff <= 10 && minutesDiff >= 0) {
-            const appointmentId = latestAppointment.id;
+        appointments.forEach(appointment => {
+            const appointmentDate = new Date(appointment.date || appointment.createdAt);
             
-            // Check if we've already processed this appointment
-            if (!this.processedAppointments.has(appointmentId)) {
-                console.log('🎉 NEW APPOINTMENT DETECTED!');
-                console.log('📋 Appointment details:', latestAppointment);
+            if (appointmentDate > fiveMinutesAgo && !this.processedAppointments.has(appointment.id)) {
+                console.log('📅 NEW APPOINTMENT DETECTED!');
+                console.log('📋 Appointment details:', appointment);
                 
-                // Mark as processed
-                this.processedAppointments.add(appointmentId);
-                
-                // Show notification
-                this.showAppointmentNotification(latestAppointment);
-            } else {
-                console.log('✅ Appointment already processed:', appointmentId);
+                this.processedAppointments.add(appointment.id);
+                this.showAppointmentNotification(appointment);
+                this.notificationCount++;
+                this.updateNotificationBadge();
             }
-        } else {
-            console.log('⏰ Appointment is not recent enough or in the future');
-        }
+        });
     }
 
     processChatMessages(conversations) {
-        if (!conversations || conversations.length === 0) return;
+        if (!conversations || conversations.length === 0) {
+            this.unreadChatCount = 0;
+            this.updateChatBadge([]);
+            return;
+        }
 
         console.log('💬 Processing conversations for notifications...');
+        const now = new Date();
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
 
         conversations.forEach(conversation => {
             // Check if there are unread messages
             if (conversation.hasUnreadMessages && conversation.unreadCount > 0) {
                 const conversationId = conversation.id;
+                const lastMessageTime = new Date(conversation.lastMessageTime);
                 
-                // Check if we've already processed this conversation's latest message
+                // Check if this is a recent message we haven't notified about
                 const lastMessageKey = `chat_${conversationId}_${conversation.lastMessageTime}`;
                 
-                if (!this.processedAppointments.has(lastMessageKey)) {
+                if (lastMessageTime > fiveMinutesAgo && !this.processedAppointments.has(lastMessageKey)) {
                     console.log('💬 NEW CHAT MESSAGE DETECTED!');
                     console.log('📋 Conversation details:', conversation);
                     
@@ -210,196 +147,68 @@ class NotificationService {
     }
 
     showAppointmentNotification(appointment) {
-        console.log('🔔 Showing appointment notification for:', appointment);
+        console.log('📅 Showing appointment notification for:', appointment);
         
-        // Play notification sound
-        this.playNotificationSound();
+        // Play notification sound only once
+        const soundKey = `appointment_${appointment.id}`;
+        this.playNotificationSoundOnce(soundKey);
         
         // Animate notification bell
         this.animateNotificationBell();
         
-        // Show toast notification
-        this.showToastNotification(appointment);
-        
-        // Update notification count
+        // Update notification count (no toast for cleaner UI)
         this.updateNotificationCount();
-        
-        // Refresh appointments list if on appointments page
-        if (window.dashboardAppointments) {
-            window.dashboardAppointments.refresh();
-        }
     }
 
     showChatNotification(conversation) {
         console.log('💬 Showing chat notification for:', conversation);
         
-        // Play notification sound
-        this.playNotificationSound();
+        // Play notification sound only once
+        const soundKey = `chat_${conversation.id}_${conversation.lastMessageTime}`;
+        this.playNotificationSoundOnce(soundKey);
         
         // Animate notification bell
         this.animateNotificationBell();
         
-        // Show toast notification for chat
-        this.showChatToastNotification(conversation);
-        
-        // Update notification count
+        // Update notification count (no toast for cleaner UI)
         this.updateNotificationCount();
         
         // Update chat badge if chat interface exists
-        this.updateChatBadge();
+        this.updateChatIcon();
     }
 
-    playNotificationSound() {
-        if (!this.soundEnabled) {
-            console.log('🔇 Sound is disabled, skipping notification sound');
-            return;
-        }
+    showAppointmentToastNotification(appointment) {
+        if (!this.notificationContainer) return;
         
-        try {
-            console.log('🔊 Attempting to play notification sound...');
-            
-            // Try to play the appointment sound first
-            const appointmentSound = document.getElementById('appointmentSound');
-            if (appointmentSound) {
-                console.log('🎵 Playing appointment sound...');
-                appointmentSound.currentTime = 0;
-                appointmentSound.volume = 0.8;
-                
-                // Ensure audio context is resumed (required by modern browsers)
-                if (appointmentSound.audioContext && appointmentSound.audioContext.state === 'suspended') {
-                    appointmentSound.audioContext.resume();
-                }
-                
-                const playPromise = appointmentSound.play();
-                if (playPromise !== undefined) {
-                    playPromise
-                        .then(() => {
-                            console.log('✅ Appointment sound played successfully');
-                        })
-                        .catch(error => {
-                            console.error('❌ Error playing appointment sound:', error);
-                            this.tryWebAudioAPI();
-                        });
-                }
-            } else {
-                console.log('⚠️ Appointment sound element not found, trying Web Audio API...');
-                this.tryWebAudioAPI();
-            }
-        } catch (error) {
-            console.error('❌ Error in playNotificationSound:', error);
-            this.tryWebAudioAPI();
-        }
-    }
-
-    tryWebAudioAPI() {
-        try {
-            console.log('🎵 Trying Web Audio API...');
-            
-            // Create audio context
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            
-            // Create oscillator for beep sound
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            // Configure sound
-            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
-            
-            // Play 3 beeps
-            for (let i = 0; i < 3; i++) {
-                setTimeout(() => {
-                    oscillator.start(audioContext.currentTime);
-                    oscillator.stop(audioContext.currentTime + 0.3);
-                }, i * 400);
-            }
-            
-            console.log('✅ Web Audio API beep played successfully');
-        } catch (error) {
-            console.error('❌ Error with Web Audio API:', error);
-            this.trySystemBeep();
-        }
-    }
-
-    trySystemBeep() {
-        try {
-            console.log('🔊 Playing system beep...');
-            // Create a simple beep using the system
-            const audio = new Audio();
-            audio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT';
-            audio.volume = 0.5;
-            audio.play().then(() => {
-                console.log('✅ System beep played successfully');
-            }).catch(error => {
-                console.error('❌ System beep failed:', error);
-            });
-        } catch (error) {
-            console.error('❌ All sound methods failed:', error);
-        }
-    }
-
-    animateNotificationBell() {
-        const notificationBell = document.getElementById('notificationBell');
-        if (notificationBell) {
-            notificationBell.classList.add('ringing');
-            setTimeout(() => {
-                notificationBell.classList.remove('ringing');
-            }, 500);
-        }
-    }
-
-    showToastNotification(appointment) {
-        const container = document.getElementById('notificationContainer');
-        if (!container) return;
-
         const toast = document.createElement('div');
-        toast.className = 'notification-toast appointment';
+        toast.className = 'notification-toast appointment show';
         
-        const patientName = appointment.patientName || 'Unknown Patient';
-        const hospitalName = appointment.hospitalName || 'Your Clinic';
-        const department = appointment.department || 'General';
-        const appointmentTime = appointment.appointmentTime || 'TBD';
+        const timeAgo = this.getTimeAgo(new Date(appointment.date || appointment.createdAt));
         
         toast.innerHTML = `
-            <div class="notification-toast-header">
-                <div class="notification-toast-title">
-                    <i class="fas fa-calendar-plus"></i>
-                    New Appointment
-                </div>
-                <button class="notification-toast-close" onclick="this.parentElement.parentElement.remove()">
-                    <i class="fas fa-times"></i>
+            <div class="notification-header">
+                <i class="fas fa-calendar-plus"></i>
+                <span>New Appointment</span>
+                <button class="close-toast" onclick="this.parentElement.parentElement.remove()">×</button>
+            </div>
+            <div class="notification-body">
+                <strong>${appointment.patientName || 'New Patient'}</strong>
+                <p>${appointment.department || 'General Consultation'}</p>
+                <small>${timeAgo}</small>
+            </div>
+            <div class="notification-actions">
+                <button class="btn-view-appointment" onclick="window.location.href='#appointments'">
+                    View Details
                 </button>
             </div>
-            <div class="notification-toast-message">
-                <strong>${patientName}</strong> has booked an appointment for <strong>${department}</strong> at <strong>${appointmentTime}</strong>
-            </div>
-            <div class="notification-toast-time">
-                ${new Date().toLocaleTimeString()}
-            </div>
         `;
-
-        container.appendChild(toast);
         
-        // Show animation
-        setTimeout(() => {
-            toast.classList.add('show');
-        }, 100);
-
+        this.notificationContainer.appendChild(toast);
+        
         // Auto remove after 8 seconds
         setTimeout(() => {
-            if (toast.parentElement) {
-                toast.classList.remove('show');
-                setTimeout(() => {
-                    if (toast.parentElement) {
-                        toast.remove();
-                    }
-                }, 300);
+            if (toast.parentNode) {
+                toast.remove();
             }
         }, 8000);
     }
@@ -424,7 +233,7 @@ class NotificationService {
                 <small>${timeAgo}</small>
             </div>
             <div class="notification-actions">
-                <button class="btn-view-chat" onclick="window.open('/chat/${conversation.id}', '_blank')">
+                <button class="btn-view-chat" onclick="notificationService.navigateToMessages()">
                     View Chat
                 </button>
             </div>
@@ -440,83 +249,224 @@ class NotificationService {
         }, 8000);
     }
 
-    updateNotificationCount() {
-        this.notificationCount++;
-        const badge = document.getElementById('notificationCount');
-        if (badge) {
-            badge.textContent = this.notificationCount;
-            badge.style.display = this.notificationCount > 0 ? 'block' : 'none';
-        }
-    }
-
-    updateChatBadge() {
-        const chatBadge = document.getElementById('chatBadge');
-        const chatIcon = document.getElementById('chatIcon');
-        
-        if (chatBadge && chatIcon) {
-            // You can add logic here to count total unread chat messages
-            // For now, just indicate there are new messages
-            chatBadge.style.display = 'block';
-            chatIcon.classList.add('has-notification');
-        }
-    }
-
-    showNotificationHistory() {
-        // This could show a dropdown with recent notifications
-        console.log('📋 Showing notification history...');
-    }
-
-    // Method to manually trigger notification (for testing)
-    testNotification() {
-        const testAppointment = {
-            id: 'test-' + Date.now(),
-            patientName: 'Test Patient',
-            hospitalName: 'Test Hospital',
-            department: 'General Medicine',
-            appointmentTime: '10:00 AM'
-        };
-        
-        this.showAppointmentNotification(testAppointment);
-    }
-
-    // Cleanup method
-    destroy() {
-        if (this.checkInterval) {
-            clearInterval(this.checkInterval);
-        }
-    }
-
-    enableAudioOnInteraction() {
-        const enableAudio = () => {
-            console.log('🎵 Enabling audio on user interaction...');
-            
-            // Resume any suspended audio contexts
-            if (window.AudioContext || window.webkitAudioContext) {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
+    updateChatBadge(conversations) {
+        // Count total unread messages
+        let totalUnread = 0;
+        if (conversations && conversations.length > 0) {
+            conversations.forEach(conv => {
+                if (conv.hasUnreadMessages) {
+                    totalUnread += conv.unreadCount || 1;
                 }
+            });
+        }
+
+        this.unreadChatCount = totalUnread;
+        
+        // Update chat badge in sidebar
+        const chatBadge = document.getElementById('chatBadge');
+        if (chatBadge) {
+            if (totalUnread > 0) {
+                chatBadge.style.display = 'block';
+                chatBadge.textContent = totalUnread;
+                chatBadge.className = 'badge bg-warning ms-auto';
+            } else {
+                chatBadge.style.display = 'none';
+            }
+        }
+    }
+
+    updateChatIcon() {
+        const chatIcon = document.getElementById('chatIcon');
+        if (chatIcon) {
+            chatIcon.classList.add('has-notification');
+            
+            // Remove animation after 3 seconds
+            setTimeout(() => {
+                chatIcon.classList.remove('has-notification');
+            }, 3000);
+        }
+    }
+
+    navigateToMessages() {
+        // Navigate to messages page
+        console.log('🔗 Navigating to messages...');
+        
+        // If we have a messages page object, use it
+        if (typeof messagesPage !== 'undefined') {
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar .nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Find and activate messages nav item
+            const messagesLink = document.querySelector('a[href="#messages"]');
+            if (messagesLink) {
+                messagesLink.closest('.nav-item').classList.add('active');
             }
             
-            // Remove event listeners after first interaction
-            document.removeEventListener('click', enableAudio);
-            document.removeEventListener('keydown', enableAudio);
-            document.removeEventListener('touchstart', enableAudio);
-        };
+            // Show messages section
+            this.showSection('messages');
+        } else {
+            // Fallback: try to trigger click on messages link
+            const messagesLink = document.querySelector('a[href="#messages"]');
+            if (messagesLink) {
+                messagesLink.click();
+            }
+        }
+    }
+
+    showSection(sectionName) {
+        // Hide all sections
+        const sections = document.querySelectorAll('[id$="Section"]');
+        sections.forEach(section => {
+            section.style.display = 'none';
+        });
         
-        // Add event listeners for user interaction
-        document.addEventListener('click', enableAudio, { once: true });
-        document.addEventListener('keydown', enableAudio, { once: true });
-        document.addEventListener('touchstart', enableAudio, { once: true });
+        // Show target section
+        const targetSection = document.getElementById(`${sectionName}Section`);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+        }
+        
+        // Update header title
+        const headerTitle = document.querySelector('.header-title h1');
+        if (headerTitle) {
+            const icon = sectionName === 'messages' ? 'comments' : 'tachometer-alt';
+            const title = sectionName.charAt(0).toUpperCase() + sectionName.slice(1);
+            headerTitle.innerHTML = `<i class="fas fa-${icon} me-2"></i>${title}`;
+        }
+    }
+
+    playNotificationSound() {
+        if (!this.soundEnabled) return;
+        
+        try {
+            const audio = document.getElementById('notificationSound');
+            if (audio) {
+                audio.currentTime = 0;
+                audio.play().catch(e => console.log('Could not play notification sound:', e));
+            }
+        } catch (error) {
+            console.log('Error playing notification sound:', error);
+        }
+    }
+
+    animateNotificationBell() {
+        const bell = document.getElementById('notificationBell');
+        if (bell) {
+            bell.classList.add('ringing');
+            setTimeout(() => {
+                bell.classList.remove('ringing');
+            }, 1000);
+        }
+    }
+
+    updateNotificationBadge() {
+        const badge = document.querySelector('.notifications .badge');
+        if (badge) {
+            if (this.notificationCount > 0) {
+                badge.textContent = this.notificationCount;
+                badge.style.display = 'inline-flex';
+                badge.className = 'badge bg-danger';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        // Also update appointment badge in sidebar
+        const appointmentBadge = document.getElementById('appointmentBadge');
+        if (appointmentBadge) {
+            if (this.notificationCount > 0) {
+                appointmentBadge.textContent = this.notificationCount;
+                appointmentBadge.style.display = 'inline-flex';
+                appointmentBadge.className = 'badge bg-danger ms-auto';
+            } else {
+                appointmentBadge.style.display = 'none';
+            }
+        }
+    }
+
+    updateNotificationCount() {
+        // This method can be called to refresh the notification count
+        this.updateNotificationBadge();
+    }
+
+    getTimeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
+    }
+
+    // Public method to manually check for new notifications
+    refresh() {
+        this.checkForNewAppointments();
+        this.checkForNewChatMessages();
+    }
+
+    // Public method to clear all notifications
+    clearNotifications() {
+        this.notificationCount = 0;
+        this.unreadChatCount = 0;
+        this.updateNotificationBadge();
+        this.updateChatBadge([]);
+        
+        if (this.notificationContainer) {
+            this.notificationContainer.innerHTML = '';
+        }
+    }
+
+    // Public method to get current chat notification count
+    getChatNotificationCount() {
+        return this.unreadChatCount;
+    }
+
+    // Public method to toggle sound
+    toggleSound() {
+        this.soundEnabled = !this.soundEnabled;
+        console.log('🔊 Notification sound:', this.soundEnabled ? 'enabled' : 'disabled');
+        return this.soundEnabled;
+    }
+
+    // Clean up when needed
+    destroy() {
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
+        }
+    }
+
+    playNotificationSoundOnce(soundKey) {
+        if (this.processedSounds.has(soundKey)) return;
+        
+        this.processedSounds.add(soundKey);
+        this.playNotificationSound();
     }
 }
 
-// Initialize notification service when DOM is loaded
+// Initialize notification service when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.notificationService = new NotificationService();
 });
 
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = NotificationService;
+// Test notification function
+function testNotification() {
+    if (window.notificationService) {
+        // Test with a mock appointment
+        const mockAppointment = {
+            id: 'test_' + Date.now(),
+            patientName: 'Test Patient',
+            department: 'General Consultation',
+            date: new Date()
+        };
+        
+        window.notificationService.showAppointmentNotification(mockAppointment);
+        console.log('🧪 Test notification triggered');
+    }
 } 

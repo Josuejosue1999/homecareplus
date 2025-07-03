@@ -5,9 +5,12 @@ const messagesPage = {
     currentUser: null,
     currentConversation: null,
     refreshInterval: null,
+    patientAvatars: new Map(), // Cache for patient avatars
+    hospitalAvatar: null, // Cache for hospital avatar
 
     init() {
         this.bindEvents();
+        this.loadHospitalAvatar();
         this.loadConversations();
         this.startRealTimeUpdates();
     },
@@ -34,6 +37,44 @@ const messagesPage = {
         this.filterAndDisplayConversations();
     },
 
+    async loadHospitalAvatar() {
+        try {
+            const response = await fetch('/api/settings/hospital-image');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.imageUrl) {
+                    this.hospitalAvatar = data.imageUrl;
+                    console.log('✅ Hospital avatar loaded');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error loading hospital avatar:', error);
+        }
+    },
+
+    async loadPatientAvatars() {
+        const promises = this.allConversations.map(async (conversation) => {
+            if (!this.patientAvatars.has(conversation.patientId)) {
+                try {
+                    const response = await fetch(`/api/chat/patient-avatar/${conversation.patientId}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success) {
+                            this.patientAvatars.set(conversation.patientId, {
+                                avatar: data.avatar,
+                                name: data.name
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.log(`Could not load avatar for patient ${conversation.patientId}`);
+                }
+            }
+        });
+        
+        await Promise.all(promises);
+    },
+
     async loadConversations() {
         this.showLoadingState();
         
@@ -43,6 +84,9 @@ const messagesPage = {
             
             if (data.success) {
                 this.allConversations = data.conversations;
+                
+                await this.loadPatientAvatars();
+                
                 this.filterAndDisplayConversations();
                 this.updateStatistics();
             } else {
@@ -106,16 +150,21 @@ const messagesPage = {
         const unreadClass = conversation.hasUnreadMessages ? 'unread' : '';
         const urgentClass = conversation.lastMessage && conversation.lastMessage.includes('New Appointment Request') ? 'urgent' : '';
         
+        // Get patient avatar from cache
+        const patientInfo = this.patientAvatars.get(conversation.patientId);
+        const patientAvatar = patientInfo?.avatar;
+        const patientName = patientInfo?.name || conversation.patientName;
+        
         return `
             <div class="conversation-card ${unreadClass} ${urgentClass}" data-conversation-id="${conversation.id}">
                 <div class="conversation-header">
                     <div class="conversation-info">
                         <div class="conversation-participant">
                             <div class="participant-avatar">
-                                <i class="fas fa-user-circle fa-2x text-primary"></i>
+                                ${this.renderPatientAvatar(patientAvatar, patientName)}
                             </div>
                             <div class="participant-details">
-                                <strong>${conversation.patientName}</strong>
+                                <strong>${patientName}</strong>
                                 <span class="conversation-time">${this.formatTime(conversation.lastMessageTime)}</span>
                             </div>
                         </div>
@@ -141,6 +190,23 @@ const messagesPage = {
                 <div class="conversation-content">
                     <p class="conversation-preview">${this.truncateText(conversation.lastMessage, 100)}</p>
                 </div>
+            </div>
+        `;
+    },
+
+    renderPatientAvatar(avatarUrl, patientName) {
+        if (avatarUrl && avatarUrl.trim() !== '') {
+            if (avatarUrl.startsWith('data:image') || avatarUrl.startsWith('http')) {
+                // Valid image URL
+                return `<img src="${avatarUrl}" alt="${patientName}" class="patient-avatar" onerror="this.parentNode.innerHTML=this.parentNode.dataset.fallback">`;
+            }
+        }
+        
+        // Fallback to initials
+        const initials = this.getPatientInitials(patientName);
+        return `
+            <div class="patient-avatar-initials" data-fallback="${initials}">
+                ${initials}
             </div>
         `;
     },
@@ -198,83 +264,163 @@ const messagesPage = {
     },
 
     showConversationModal(messages, conversation) {
-        const modal = document.createElement('div');
-        modal.className = 'modal fade';
-        modal.id = 'conversationModal';
-        modal.innerHTML = `
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">
-                            <i class="fas fa-comments text-primary me-2"></i>
-                            Chat with ${conversation.patientName}
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        // Use the static modal from HTML
+        const modal = document.getElementById('chatModal');
+        if (!modal) {
+            console.error('Chat modal not found in DOM');
+            return;
+        }
+
+        // Update modal title with patient info
+        const patientNameSpan = modal.querySelector('#chatPatientName');
+        if (patientNameSpan) {
+            patientNameSpan.textContent = `Chat with ${conversation.patientName}`;
+        }
+
+        // Update messages content
+        const chatMessages = modal.querySelector('#chatMessages');
+        if (chatMessages) {
+            if (messages.length === 0) {
+                chatMessages.innerHTML = `
+                    <div class="empty-chat">
+                        <i class="fas fa-comments text-muted"></i>
+                        <p class="text-muted mt-2">No messages yet. Start the conversation!</p>
                     </div>
-                    <div class="modal-body">
-                        <div class="chat-messages" id="chatMessages" style="height: 400px; overflow-y: auto;">
-                            ${messages.map(message => this.createMessageBubble(message)).join('')}
-                        </div>
-                        <div class="chat-input mt-3">
-                            <div class="input-group">
-                                <textarea class="form-control" id="messageInput" placeholder="Type your message..." rows="2"></textarea>
-                                <button class="btn btn-primary" onclick="messagesPage.sendMessage('${conversation.id}')">
-                                    <i class="fas fa-paper-plane"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+                `;
+            } else {
+                chatMessages.innerHTML = messages.map(message => this.createMessageBubble(message)).join('');
+                
+                // Auto-scroll to bottom
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
+            }
+        }
+
+        // Setup event listeners for send button and input
+        const sendBtn = modal.querySelector('#sendMessageBtn');
+        const messageInput = modal.querySelector('#chatMessageInput');
         
-        document.body.appendChild(modal);
+        if (sendBtn && !sendBtn.hasAttribute('data-listener-added')) {
+            sendBtn.addEventListener('click', () => this.sendMessage(conversation.id));
+            sendBtn.setAttribute('data-listener-added', 'true');
+        }
         
+        if (messageInput && !messageInput.hasAttribute('data-listener-added')) {
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    this.sendMessage(conversation.id);
+                }
+            });
+            messageInput.setAttribute('data-listener-added', 'true');
+        }
+
+        // Show the modal
         const modalInstance = new bootstrap.Modal(modal);
         modalInstance.show();
         
-        // Scroll to bottom of messages
-        const chatMessages = modal.querySelector('#chatMessages');
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        
         // Handle modal close
         modal.addEventListener('hidden.bs.modal', () => {
-            document.body.removeChild(modal);
             this.currentConversation = null;
-        });
+            // Clear input
+            if (messageInput) {
+                messageInput.value = '';
+            }
+        }, { once: true });
     },
 
     createMessageBubble(message) {
-        const isClinic = message.senderType === 'clinic';
-        const messageClass = isClinic ? 'message-outgoing' : 'message-incoming';
-        const senderName = isClinic ? 'You' : message.senderName;
+        const isFromClinic = message.senderType === 'clinic';
+        const messageTime = new Date(message.timestamp).toLocaleString();
+        const alignment = isFromClinic ? 'justify-content-end' : 'justify-content-start';
+        const bubbleClass = isFromClinic ? 'clinic-message' : 'patient-message';
+        
+        // Get avatar
+        let avatar = '';
+        if (isFromClinic) {
+            // Hospital avatar - use the actual hospital image from message or cached avatar
+            if (message.hospitalImage) {
+                avatar = `<img src="${message.hospitalImage}" class="message-avatar-img" alt="Hospital">`;
+            } else if (this.hospitalAvatar) {
+                avatar = `<img src="${this.hospitalAvatar}" class="message-avatar-img" alt="Hospital">`;
+            } else {
+                avatar = `<div class="message-avatar-placeholder hospital"><i class="fas fa-hospital"></i></div>`;
+            }
+        } else {
+            // Patient avatar - try multiple ways to get the patient avatar
+            let patientAvatar = null;
+            
+            // First, try to get from message directly
+            if (message.patientImage) {
+                patientAvatar = message.patientImage;
+            } else if (this.currentConversation && this.patientAvatars.has(this.currentConversation.patientId)) {
+                // Then try to get from cached avatars using conversation patientId
+                const patientInfo = this.patientAvatars.get(this.currentConversation.patientId);
+                patientAvatar = patientInfo?.avatar;
+            }
+            
+            if (patientAvatar) {
+                avatar = `<img src="${patientAvatar}" class="message-avatar-img" alt="Patient">`;
+            } else {
+                const initials = this.getPatientInitials(message.senderName);
+                avatar = `<div class="message-avatar-placeholder patient">${initials}</div>`;
+            }
+        }
         
         return `
-            <div class="message-bubble ${messageClass} mb-2">
-                <div class="message-header">
-                    <small class="text-muted">${senderName} • ${this.formatTime(message.timestamp)}</small>
+            <div class="chat-message-wrapper d-flex ${alignment} mb-3">
+                ${!isFromClinic ? `<div class="message-avatar me-2">${avatar}</div>` : ''}
+                <div class="chat-message ${bubbleClass} ${isFromClinic ? 'ms-auto' : ''}">
+                    <div class="message-bubble">
+                        <div class="message-header">
+                            <small class="message-sender text-muted">${message.senderName}</small>
+                            <small class="message-time text-muted ms-2">${messageTime}</small>
+                        </div>
+                        <div class="message-text">${this.formatMessageText(message.content || message.message || '')}</div>
+                        ${message.appointmentId ? `
+                            <div class="message-meta mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar-check"></i>
+                                    Appointment: ${message.appointmentId}
+                                </small>
+                            </div>
+                        ` : ''}
+                    </div>
                 </div>
-                <div class="message-content">
-                    ${this.formatMessageContent(message)}
-                </div>
+                ${isFromClinic ? `<div class="message-avatar ms-2">${avatar}</div>` : ''}
             </div>
         `;
     },
 
-    formatMessageContent(message) {
-        if (message.messageType === 'system' || message.messageType === 'appointmentConfirmation' || message.messageType === 'appointmentCancellation') {
-            return `<div class="system-message">${message.message.replace(/\n/g, '<br>')}</div>`;
+    getPatientInitials(name) {
+        if (!name) return 'P';
+        const names = name.split(' ');
+        if (names.length >= 2) {
+            return (names[0][0] + names[1][0]).toUpperCase();
         }
-        return message.message.replace(/\n/g, '<br>');
+        return name[0].toUpperCase();
+    },
+
+    formatMessageText(text) {
+        // Convert markdown-style formatting to HTML
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/\n/g, '<br>');
     },
 
     async sendMessage(conversationId) {
-        const messageInput = document.getElementById('messageInput');
+        const messageInput = document.getElementById('chatMessageInput');
         const message = messageInput.value.trim();
         
         if (!message) return;
         
         try {
+            // Disable input while sending
+            messageInput.disabled = true;
+            document.getElementById('sendMessageBtn').disabled = true;
+
             const response = await fetch(`/api/chat/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 headers: {
@@ -295,6 +441,11 @@ const messagesPage = {
         } catch (error) {
             console.error('Error sending message:', error);
             alert('Error sending message');
+        } finally {
+            // Re-enable input
+            messageInput.disabled = false;
+            document.getElementById('sendMessageBtn').disabled = false;
+            messageInput.focus();
         }
     },
 

@@ -1,6 +1,6 @@
 /**
- * Messages Page Management
- * Handles chat conversations, message display, and real-time messaging
+ * Professional Messages Page Management
+ * Handles chat conversations, message display, and real-time messaging with enhanced UI
  */
 class MessagesPage {
     constructor() {
@@ -8,49 +8,55 @@ class MessagesPage {
         this.currentConversation = null;
         this.updateInterval = null;
         this.patientAvatars = new Map(); // Cache for patient avatars
+        this.hospitalAvatar = null; // Cache for hospital avatar
         this.init();
     }
 
     init() {
-        console.log('🔔 Initializing Messages Page...');
-        this.setupEventListeners();
+        this.bindEvents();
+        this.loadHospitalAvatar();
         this.loadConversations();
         this.startRealTimeUpdates();
     }
 
-    setupEventListeners() {
-        // Navigation event listeners
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.nav-link[data-target="messages"]')) {
-                e.preventDefault();
-                this.showMessagesContent();
-            }
+    bindEvents() {
+        // Refresh button
+        const refreshBtn = document.getElementById('refreshMessages');
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => this.loadConversations());
+        }
+
+        // Filter buttons
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const filter = e.target.dataset.filter;
+                this.filterConversations(filter);
+            });
         });
+
+        // Search functionality
+        const searchInput = document.getElementById('conversationSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.searchConversations(e.target.value);
+            });
+        }
     }
 
-    showMessagesContent() {
-        // Hide all dashboard sections
-        document.querySelectorAll('.dashboard-section').forEach(section => {
-            section.style.display = 'none';
-        });
-        
-        // Show messages section
-        const messagesSection = document.getElementById('messagesSection');
-        if (messagesSection) {
-            messagesSection.style.display = 'block';
-            this.loadConversations(); // Refresh when showing
-        }
-        
-        // Update sidebar active state
-        document.querySelectorAll('.sidebar .nav-item').forEach(item => {
-            item.classList.remove('active');
-        });
-        document.querySelector('.sidebar .nav-item:has(#messages-link)').classList.add('active');
-        
-        // Update header title
-        const headerTitle = document.querySelector('.header-title h1');
-        if (headerTitle) {
-            headerTitle.innerHTML = '<i class="fas fa-comments me-2"></i>Messages';
+    // 🔧 FIX: Load hospital avatar for chat display
+    async loadHospitalAvatar() {
+        try {
+            const response = await fetch('/api/settings/hospital-image');
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.imageUrl) {
+                    this.hospitalAvatar = data.imageUrl;
+                    console.log('✅ Hospital avatar loaded for professional chat');
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error loading hospital avatar:', error);
         }
     }
 
@@ -79,7 +85,7 @@ class MessagesPage {
         }
     }
 
-    // 🔧 FIX: Load patient avatars for hospital chat
+    // 🔧 FIX: Load patient avatars for professional chat display
     async loadPatientAvatars() {
         const promises = this.conversations.map(async (conversation) => {
             if (!this.patientAvatars.has(conversation.patientId)) {
@@ -90,17 +96,35 @@ class MessagesPage {
                         if (data.success) {
                             this.patientAvatars.set(conversation.patientId, {
                                 avatar: data.avatar,
-                                name: data.name
+                                name: data.name || conversation.patientName,
+                                email: data.email,
+                                phone: data.phone
                             });
+                            console.log(`✅ Loaded avatar for patient: ${data.name}`);
+                        } else {
+                            // Store placeholder info even if no avatar found
+                            this.patientAvatars.set(conversation.patientId, {
+                                avatar: null,
+                                name: conversation.patientName,
+                                email: conversation.patientEmail,
+                                phone: conversation.patientPhone
+                            });
+                            console.log(`📷 No avatar found for patient ${conversation.patientId}, using placeholder`);
                         }
                     }
                 } catch (error) {
                     console.log(`Could not load avatar for patient ${conversation.patientId}`);
+                    // Store minimal info to prevent re-fetching
+                    this.patientAvatars.set(conversation.patientId, {
+                        avatar: null,
+                        name: conversation.patientName
+                    });
                 }
             }
         });
         
         await Promise.all(promises);
+        console.log(`✅ Loaded ${this.patientAvatars.size} patient avatars`);
     }
 
     renderConversationsList() {
@@ -109,52 +133,49 @@ class MessagesPage {
 
         if (this.conversations.length === 0) {
             messagesList.innerHTML = `
-                <div class="empty-state">
-                    <i class="fas fa-comments"></i>
-                    <h6>No conversations yet</h6>
-                    <p>Conversations will appear here when patients book appointments</p>
+                <div class="empty-conversations">
+                    <div class="empty-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3>No conversations yet</h3>
+                    <p>Conversations will appear here when patients book appointments and send messages</p>
                 </div>
             `;
             return;
         }
 
-        // 🔧 FIX: Show patient avatars, not hospital images
+        // 🔧 FIX: Professional conversation list with proper avatars
         const conversationsHtml = this.conversations.map(conversation => {
             const timeAgo = this.getTimeAgo(new Date(conversation.lastMessageTime));
             const unreadBadge = conversation.hasUnreadMessages ? 
-                `<span class="badge bg-primary">${conversation.unreadCount}</span>` : '';
+                `<span class="unread-badge">${conversation.unreadCount}</span>` : '';
             
-            // Get patient avatar from cache
+            // Get patient info from cache
             const patientInfo = this.patientAvatars.get(conversation.patientId);
-            const patientAvatar = patientInfo?.avatar;
             const patientName = patientInfo?.name || conversation.patientName;
             
             return `
-                <div class="message-item ${conversation.hasUnreadMessages ? 'unread' : ''}" 
-                     data-conversation-id="${conversation.id}">
-                    <div class="message-avatar">
-                        ${this.renderPatientAvatar(patientAvatar, patientName)}
+                <div class="conversation-item ${conversation.hasUnreadMessages ? 'unread' : ''}" 
+                     data-conversation-id="${conversation.id}"
+                     onclick="messagesPage.openConversation('${conversation.id}')">
+                    
+                    <div class="patient-avatar-container">
+                        ${this.renderPatientAvatar(patientInfo?.avatar, patientName)}
+                        ${conversation.hasUnreadMessages ? '<div class="online-indicator"></div>' : ''}
                     </div>
-                    <div class="message-content">
-                        <div class="message-header">
-                            <h6 class="message-sender">${patientName}</h6>
-                            <span class="message-time">${timeAgo}</span>
+                    
+                    <div class="conversation-content">
+                        <div class="conversation-header">
+                            <h3 class="patient-name">${patientName}</h3>
+                            <span class="conversation-time">${timeAgo}</span>
+                        </div>
+                        
+                        <p class="last-message">${conversation.lastMessage}</p>
+                        
+                        <div class="conversation-meta">
+                            <span class="patient-id">ID: ${conversation.patientId.substring(0, 8)}...</span>
                             ${unreadBadge}
                         </div>
-                        <p class="message-preview">${conversation.lastMessage}</p>
-                        <div class="conversation-meta">
-                            <small class="text-muted">
-                                <i class="fas fa-user"></i> Patient ID: ${conversation.patientId.substring(0, 8)}...
-                            </small>
-                        </div>
-                    </div>
-                    <div class="message-actions">
-                        <button class="btn btn-sm btn-outline-primary" onclick="messagesPage.openConversation('${conversation.id}')" title="View conversation">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-danger ms-1" onclick="messagesPage.deleteConversation('${conversation.id}')" title="Delete conversation">
-                            <i class="fas fa-trash"></i>
-                        </button>
                     </div>
                 </div>
             `;
@@ -163,183 +184,135 @@ class MessagesPage {
         messagesList.innerHTML = conversationsHtml;
     }
 
-    // 🔧 FIX: Render patient avatar with fallback to initials
+    // 🔧 FIX: Professional patient avatar rendering with fallback
     renderPatientAvatar(avatarUrl, patientName) {
-        if (avatarUrl && avatarUrl.trim() !== '') {
-            if (avatarUrl.startsWith('data:image')) {
-                // Base64 image
-                return `<img src="${avatarUrl}" alt="${patientName}" class="patient-avatar" onerror="this.parentNode.innerHTML=this.parentNode.dataset.fallback">`;
-            } else if (avatarUrl.startsWith('http')) {
-                // Network image
-                return `<img src="${avatarUrl}" alt="${patientName}" class="patient-avatar" onerror="this.parentNode.innerHTML=this.parentNode.dataset.fallback">`;
-            }
+        if (avatarUrl && avatarUrl.trim() !== '' && avatarUrl !== 'null') {
+            return `<img src="${avatarUrl}" alt="${patientName}" class="patient-avatar-img" 
+                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                    <div class="patient-avatar-initials" style="display: none;">
+                        ${this.getPatientInitials(patientName)}
+                    </div>`;
         }
         
         // Fallback to initials
-        const initials = this.getPatientInitials(patientName);
-        return `
-            <div class="patient-avatar-initials" data-fallback="${this.getPatientInitials(patientName)}">
-                ${initials}
-            </div>
-        `;
+        return `<div class="patient-avatar-initials">
+                    ${this.getPatientInitials(patientName)}
+                </div>`;
     }
 
     getPatientInitials(name) {
-        if (!name || name.trim() === '') return 'P';
-        
+        if (!name) return 'P';
         const words = name.trim().split(' ');
         if (words.length >= 2) {
-            return `${words[0][0].toUpperCase()}${words[1][0].toUpperCase()}`;
-        } else {
-            return words[0][0].toUpperCase();
+            return (words[0][0] + words[1][0]).toUpperCase();
         }
+        return name.substring(0, 2).toUpperCase();
     }
 
-    updateStatistics() {
-        const totalMessages = this.conversations.length;
-        const unreadMessages = this.conversations.filter(c => c.hasUnreadMessages).length;
-        const totalUnreadCount = this.conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+    getTimeAgo(date) {
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
 
-        document.getElementById('totalMessages').textContent = totalMessages;
-        document.getElementById('unreadMessages').textContent = totalUnreadCount;
-        document.getElementById('sentMessages').textContent = totalMessages; // Approximation
-        document.getElementById('pendingReplies').textContent = unreadMessages;
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        return date.toLocaleDateString();
     }
 
     async openConversation(conversationId) {
         try {
-            console.log('💬 Opening conversation:', conversationId);
+            console.log('Opening conversation:', conversationId);
             
-            // Find the conversation
+            // Find conversation
             const conversation = this.conversations.find(c => c.id === conversationId);
             if (!conversation) {
-                console.error('Conversation not found');
+                console.error('Conversation not found:', conversationId);
                 return;
             }
-
+            
             this.currentConversation = conversation;
             
-            // Load messages for this conversation
-            await this.loadConversationMessages(conversationId);
-            
-            // Mark as read
-            if (conversation.hasUnreadMessages) {
-                await this.markConversationAsRead(conversationId);
+            // Load messages
+            const response = await fetch(`/api/chat/messages/${conversationId}`);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    conversation.messages = data.messages || [];
+                    this.showChatModal(conversation);
+                    
+                    // Mark as read
+                    await this.markConversationAsRead(conversationId);
+                }
             }
-            
-            // Show chat modal
-            this.showChatModal(conversation);
-            
         } catch (error) {
             console.error('Error opening conversation:', error);
         }
     }
 
-    async loadConversationMessages(conversationId) {
-        try {
-            const response = await fetch(`/api/chat/conversation/${conversationId}/messages`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    this.currentConversation.messages = data.messages || [];
-                }
-            }
-        } catch (error) {
-            console.error('Error loading conversation messages:', error);
-        }
-    }
-
-    async markConversationAsRead(conversationId) {
-        try {
-            const response = await fetch(`/api/chat/mark-as-read/${conversationId}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.ok) {
-                // Update local conversation state
-                const conversation = this.conversations.find(c => c.id === conversationId);
-                if (conversation) {
-                    conversation.hasUnreadMessages = false;
-                    conversation.unreadCount = 0;
-                }
-                
-                // Refresh the conversations list
-                this.renderConversationsList();
-                this.updateStatistics();
-            }
-        } catch (error) {
-            console.error('Error marking conversation as read:', error);
-        }
-    }
-
     showChatModal(conversation) {
-        // Create or update chat modal
-        let chatModal = document.getElementById('chatModal');
-        if (!chatModal) {
-            chatModal = this.createChatModal();
+        // Create modal if it doesn't exist
+        let modal = document.getElementById('chatModal');
+        if (!modal) {
+            modal = this.createChatModal();
+            document.body.appendChild(modal);
         }
 
         // Update modal content
-        this.updateChatModalContent(chatModal, conversation);
+        this.updateChatModalContent(modal, conversation);
         
         // Show modal
-        const modal = new bootstrap.Modal(chatModal);
-        modal.show();
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Focus on input
+        setTimeout(() => {
+            const input = modal.querySelector('#chatInput');
+            if (input) input.focus();
+        }, 300);
     }
 
     createChatModal() {
-        const modalHtml = `
-            <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-lg modal-dialog-scrollable">
-                    <div class="modal-content">
-                        <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title" id="chatModalLabel">
-                                <i class="fas fa-comments me-2"></i>
-                                <span id="chatPatientName">Chat</span>
-                            </h5>
-                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        const modal = document.createElement('div');
+        modal.className = 'modal fade chat-modal';
+        modal.id = 'chatModal';
+        modal.tabIndex = -1;
+        
+        modal.innerHTML = `
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="chatPatientName">
+                            <div class="chat-patient-initials">P</div>
+                            Chat with Patient
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="chat-messages-container" id="chatMessages">
+                            <!-- Messages will be rendered here -->
                         </div>
-                        <div class="modal-body p-0">
-                            <div class="chat-container">
-                                <div class="chat-messages" id="chatMessages">
-                                    <!-- Messages will be loaded here -->
+                        <div class="chat-input-container">
+                            <form class="chat-input-form" onsubmit="messagesPage.sendMessage(event)">
+                                <div class="chat-input-wrapper">
+                                    <textarea class="chat-input" id="chatInput" 
+                                             placeholder="Type your message..." 
+                                             rows="1"></textarea>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <div class="chat-input-container w-100">
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="chatMessageInput" 
-                                           placeholder="Type your message..." maxlength="500">
-                                    <button class="btn btn-primary" type="button" id="sendMessageBtn">
-                                        <i class="fas fa-paper-plane"></i>
-                                    </button>
-                                </div>
-                            </div>
+                                <button type="submit" class="chat-send-btn">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Send
+                                </button>
+                            </form>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-
-        document.body.insertAdjacentHTML('beforeend', modalHtml);
         
-        const modal = document.getElementById('chatModal');
-        
-        // Setup event listeners
-        const sendBtn = modal.querySelector('#sendMessageBtn');
-        const messageInput = modal.querySelector('#chatMessageInput');
-        
-        sendBtn.addEventListener('click', () => this.sendMessage());
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                this.sendMessage();
-            }
-        });
-
         return modal;
     }
 
@@ -347,13 +320,25 @@ class MessagesPage {
         // Update modal title with patient info
         const patientInfo = this.patientAvatars.get(conversation.patientId);
         const patientName = patientInfo?.name || conversation.patientName;
-        modal.querySelector('#chatPatientName').textContent = `Chat with ${patientName}`;
+        
+        const titleElement = modal.querySelector('#chatPatientName');
+        if (patientInfo?.avatar) {
+            titleElement.innerHTML = `
+                <img src="${patientInfo.avatar}" class="chat-patient-avatar" alt="${patientName}">
+                Chat with ${patientName}
+            `;
+        } else {
+            titleElement.innerHTML = `
+                <div class="chat-patient-initials">${this.getPatientInitials(patientName)}</div>
+                Chat with ${patientName}
+            `;
+        }
         
         // Render messages
         this.renderChatMessages(modal, conversation.messages || []);
     }
 
-    // 🔧 FIX: Professional chat message styling with avatars
+    // 🔧 FIX: Professional chat message rendering with proper avatars
     renderChatMessages(modal, messages) {
         const chatMessages = modal.querySelector('#chatMessages');
         if (!chatMessages) return;
@@ -361,8 +346,10 @@ class MessagesPage {
         if (messages.length === 0) {
             chatMessages.innerHTML = `
                 <div class="empty-chat">
-                    <i class="fas fa-comments text-muted"></i>
-                    <p class="text-muted mt-2">No messages yet. Start the conversation!</p>
+                    <div class="empty-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <p>No messages yet. Start the conversation!</p>
                 </div>
             `;
             return;
@@ -371,81 +358,84 @@ class MessagesPage {
         const messagesHtml = messages.map(message => {
             const isFromClinic = message.senderType === 'clinic';
             const messageTime = new Date(message.timestamp).toLocaleString();
-            const alignment = isFromClinic ? 'justify-content-end' : 'justify-content-start';
-            const bubbleClass = isFromClinic ? 'clinic-message' : 'patient-message';
+            const wrapperClass = isFromClinic ? 'hospital' : 'patient';
             
-            // Get avatar
-            let avatar = '';
+            // Get appropriate avatar with enhanced patient avatar loading
+            let avatarHtml = '';
             if (isFromClinic) {
-                // Hospital avatar
-                avatar = message.hospitalImage 
-                    ? `<img src="${message.hospitalImage}" class="message-avatar-img" alt="Hospital">`
-                    : `<div class="message-avatar-placeholder hospital"><i class="fas fa-hospital"></i></div>`;
-            } else {
-                // Patient avatar
-                const patientInfo = this.patientAvatars.get(this.currentConversation?.patientId);
-                if (patientInfo?.avatar) {
-                    avatar = `<img src="${patientInfo.avatar}" class="message-avatar-img" alt="Patient">`;
+                // Hospital avatar - positioned on the right
+                if (this.hospitalAvatar) {
+                    avatarHtml = `<img src="${this.hospitalAvatar}" class="message-avatar-img" alt="Hospital">`;
                 } else {
-                    const initials = this.getPatientInitials(message.senderName);
-                    avatar = `<div class="message-avatar-placeholder patient">${initials}</div>`;
+                    avatarHtml = `<div class="message-avatar-placeholder hospital">
+                                    <i class="fas fa-hospital"></i>
+                                  </div>`;
+                }
+            } else {
+                // Patient avatar - enhanced loading from Firebase profile
+                const patientInfo = this.patientAvatars.get(this.currentConversation?.patientId);
+                console.log('🔍 Patient avatar info for conversation:', this.currentConversation?.patientId, patientInfo);
+                
+                // Try multiple sources for patient avatar
+                let patientAvatarUrl = null;
+                if (patientInfo?.avatar) {
+                    patientAvatarUrl = patientInfo.avatar;
+                } else if (message.patientAvatar) {
+                    patientAvatarUrl = message.patientAvatar;
+                } else if (this.currentConversation?.patientAvatar) {
+                    patientAvatarUrl = this.currentConversation.patientAvatar;
+                }
+                
+                if (patientAvatarUrl) {
+                    avatarHtml = `<img src="${patientAvatarUrl}" class="message-avatar-img" alt="Patient" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                 <div class="message-avatar-placeholder patient" style="display: none;">${this.getPatientInitials(message.senderName || this.currentConversation?.patientName)}</div>`;
+                } else {
+                    const initials = this.getPatientInitials(message.senderName || this.currentConversation?.patientName || 'Patient');
+                    avatarHtml = `<div class="message-avatar-placeholder patient">${initials}</div>`;
                 }
             }
             
             return `
-                <div class="chat-message-wrapper d-flex ${alignment} mb-3">
-                    ${!isFromClinic ? `<div class="message-avatar me-2">${avatar}</div>` : ''}
-                    <div class="chat-message ${bubbleClass} ${isFromClinic ? 'ms-auto' : ''}">
-                        <div class="message-bubble">
-                            <div class="message-header">
-                                <small class="message-sender text-muted">${message.senderName}</small>
-                                <small class="message-time text-muted ms-2">${messageTime}</small>
-                            </div>
-                            <div class="message-text">${this.formatMessageText(message.content || message.message || '')}</div>
-                            ${message.appointmentId ? `
-                                <div class="message-meta mt-2">
-                                    <small class="text-muted">
-                                        <i class="fas fa-calendar-check"></i>
-                                        Appointment: ${message.appointmentId}
-                                    </small>
-                                </div>
-                            ` : ''}
-                        </div>
+                <div class="message-wrapper ${wrapperClass}">
+                    <div class="message-avatar">
+                        ${avatarHtml}
                     </div>
-                    ${isFromClinic ? `<div class="message-avatar ms-2">${avatar}</div>` : ''}
+                    <div class="message-bubble ${wrapperClass}">
+                        <div class="message-content">${this.formatMessage(message.message)}</div>
+                        <small class="message-time">${messageTime}</small>
+                    </div>
                 </div>
             `;
         }).join('');
 
         chatMessages.innerHTML = messagesHtml;
         
-        // Auto-scroll to bottom
-        setTimeout(() => {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 100);
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
-    formatMessageText(text) {
-        // Convert markdown-style formatting to HTML
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-    }
-
-    async sendMessage() {
-        if (!this.currentConversation) return;
-
-        const messageInput = document.getElementById('chatMessageInput');
-        const message = messageInput.value.trim();
+    formatMessage(message) {
+        // Handle appointment confirmation messages with better formatting
+        if (message.includes('**') || message.includes('✅')) {
+            return message
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/•/g, '&bull;')
+                .replace(/\n/g, '<br>');
+        }
         
-        if (!message) return;
+        // Handle regular messages
+        return message.replace(/\n/g, '<br>');
+    }
 
+    async sendMessage(event) {
+        event.preventDefault();
+        
+        const input = document.getElementById('chatInput');
+        const message = input.value.trim();
+        
+        if (!message || !this.currentConversation) return;
+        
         try {
-            // Disable input while sending
-            messageInput.disabled = true;
-            document.getElementById('sendMessageBtn').disabled = true;
-
             const response = await fetch('/api/chat/send-message', {
                 method: 'POST',
                 headers: {
@@ -457,141 +447,157 @@ class MessagesPage {
                     messageType: 'text'
                 })
             });
-
-            const result = await response.json();
-
-            if (result.success) {
-                // Clear input
-                messageInput.value = '';
-                
-                // Reload messages
-                await this.loadConversationMessages(this.currentConversation.id);
-                this.renderChatMessages(
-                    document.getElementById('chatModal'), 
-                    this.currentConversation.messages
-                );
-                
-                // Refresh conversations list
-                this.loadConversations();
-                
-                console.log('✅ Message sent successfully');
-            } else {
-                throw new Error(result.error || 'Failed to send message');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    // Clear input
+                    input.value = '';
+                    
+                    // Reload conversation to show new message
+                    await this.openConversation(this.currentConversation.id);
+                    
+                    // Reload conversations list
+                    this.loadConversations();
+                }
             }
         } catch (error) {
-            console.error('❌ Error sending message:', error);
-            alert('Failed to send message. Please try again.');
-        } finally {
-            // Re-enable input
-            messageInput.disabled = false;
-            document.getElementById('sendMessageBtn').disabled = false;
-            messageInput.focus();
+            console.error('Error sending message:', error);
         }
     }
 
-    // 🗑️ SUPPRIMER UNE CONVERSATION
-    async deleteConversation(conversationId) {
-        const conversation = this.conversations.find(c => c.id === conversationId);
-        if (!conversation) return;
-        
-        // Confirmation avec SweetAlert
-        const result = await Swal.fire({
-            title: 'Delete Conversation?',
-            text: `Are you sure you want to delete the conversation with ${conversation.patientName}? This action cannot be undone.`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, delete it!',
-            cancelButtonText: 'Cancel'
-        });
-
-        if (result.isConfirmed) {
-            try {
-                console.log('🗑️ Deleting conversation:', conversationId);
-                
-                const response = await fetch(`/api/chat/conversation/${conversationId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (response.ok) {
-                    // Supprimer de la liste locale
-                    this.conversations = this.conversations.filter(c => c.id !== conversationId);
-                    
-                    // Mettre à jour l'affichage
-                    this.renderConversationsList();
-                    this.updateStatistics();
-                    
-                    // Notification de succès
-                    Swal.fire({
-                        title: 'Deleted!',
-                        text: 'The conversation has been deleted.',
-                        icon: 'success',
-                        timer: 2000,
-                        showConfirmButton: false
-                    });
-                    
-                    console.log('✅ Conversation deleted successfully');
-                } else {
-                    throw new Error('Failed to delete conversation');
+    async markConversationAsRead(conversationId) {
+        try {
+            const response = await fetch('/api/chat/mark-read', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    conversationId: conversationId
+                })
+            });
+            
+            if (response.ok) {
+                // Update local conversation
+                const conversation = this.conversations.find(c => c.id === conversationId);
+                if (conversation) {
+                    conversation.hasUnreadMessages = false;
+                    conversation.unreadCount = 0;
                 }
-            } catch (error) {
-                console.error('❌ Error deleting conversation:', error);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Failed to delete the conversation. Please try again.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
+                
+                // Re-render conversations
+                this.renderConversationsList();
+                this.updateStatistics();
             }
+        } catch (error) {
+            console.error('Error marking conversation as read:', error);
         }
     }
 
-    // 🔁 Real-time updates every 10 seconds
+    async deleteConversation(conversationId) {
+        if (!confirm('Are you sure you want to delete this conversation?')) return;
+        
+        try {
+            const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+                method: 'DELETE'
+            });
+            
+            if (response.ok) {
+                this.loadConversations();
+            }
+        } catch (error) {
+            console.error('Error deleting conversation:', error);
+        }
+    }
+
+    filterConversations(filter) {
+        // Update active filter button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
+        
+        // Filter conversations
+        let filteredConversations = [...this.conversations];
+        
+        switch (filter) {
+            case 'unread':
+                filteredConversations = this.conversations.filter(c => c.hasUnreadMessages);
+                break;
+            case 'recent':
+                const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+                filteredConversations = this.conversations.filter(c => 
+                    new Date(c.lastMessageTime) > oneDayAgo
+                );
+                break;
+            case 'all':
+            default:
+                // Show all conversations
+                break;
+        }
+        
+        // Temporarily update conversations and re-render
+        const originalConversations = this.conversations;
+        this.conversations = filteredConversations;
+        this.renderConversationsList();
+        this.conversations = originalConversations;
+    }
+
+    searchConversations(query) {
+        if (!query.trim()) {
+            this.renderConversationsList();
+            return;
+        }
+        
+        const filteredConversations = this.conversations.filter(conversation => {
+            const patientInfo = this.patientAvatars.get(conversation.patientId);
+            const patientName = patientInfo?.name || conversation.patientName;
+            
+            return patientName.toLowerCase().includes(query.toLowerCase()) ||
+                   conversation.lastMessage.toLowerCase().includes(query.toLowerCase()) ||
+                   conversation.patientId.includes(query);
+        });
+        
+        // Temporarily update conversations and re-render
+        const originalConversations = this.conversations;
+        this.conversations = filteredConversations;
+        this.renderConversationsList();
+        this.conversations = originalConversations;
+    }
+
+    updateStatistics() {
+        const totalConversations = this.conversations.length;
+        const unreadConversations = this.conversations.filter(conv => conv.hasUnreadMessages).length;
+        const recentConversations = this.conversations.filter(conv => {
+            const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            return new Date(conv.lastMessageTime) > oneDayAgo;
+        }).length;
+        
+        // Update statistics display
+        const totalElement = document.getElementById('totalMessages');
+        const unreadElement = document.getElementById('unreadMessages');
+        const recentElement = document.getElementById('recentMessages');
+        
+        if (totalElement) totalElement.textContent = totalConversations;
+        if (unreadElement) unreadElement.textContent = unreadConversations;
+        if (recentElement) recentElement.textContent = recentConversations;
+    }
+
     startRealTimeUpdates() {
+        // Update conversations every 30 seconds
         this.updateInterval = setInterval(() => {
             this.loadConversations();
-        }, 10000); // Update every 10 seconds
+        }, 30000);
     }
 
-    composeNewMessage() {
-        // For now, show an info message
-        Swal.fire({
-            title: 'New Message',
-            text: 'New messages are automatically created when patients book appointments. You can respond to existing conversations.',
-            icon: 'info',
-            confirmButtonText: 'OK'
-        });
-    }
-
-    getTimeAgo(date) {
-        const now = new Date();
-        const diffInSeconds = Math.floor((now - date) / 1000);
-        
-        if (diffInSeconds < 60) return 'Just now';
-        if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-        if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-        if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`;
-        
-        return date.toLocaleDateString();
-    }
-
-    destroy() {
+    stopRealTimeUpdates() {
         if (this.updateInterval) {
             clearInterval(this.updateInterval);
+            this.updateInterval = null;
         }
     }
 }
 
-// Initialize messages page when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    window.messagesPage = new MessagesPage();
-});
-
-// Export for use in other modules
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = MessagesPage;
-} 
+// Initialize messages page
+const messagesPage = new MessagesPage(); 
