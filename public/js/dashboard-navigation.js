@@ -140,17 +140,72 @@ class DashboardNavigation {
 
     // Setup logout functionality
     setupLogout() {
-        const logoutLink = document.querySelector('a[href="/logout"]');
+        const logoutLinks = document.querySelectorAll('a[href="/logout"]');
+        logoutLinks.forEach(logoutLink => {
         if (logoutLink) {
             logoutLink.addEventListener('click', (e) => {
                 e.preventDefault();
+                    this.showLogoutConfirmation();
+                });
+            }
+        });
+    }
+
+    // Show logout confirmation popup
+    showLogoutConfirmation() {
+        Swal.fire({
+            title: 'Sign Out',
+            text: 'Are you sure you want to sign out of your account?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Sign Out',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true,
+            focusCancel: false,
+            allowOutsideClick: false,
+            allowEscapeKey: true,
+            customClass: {
+                popup: 'logout-confirmation-popup',
+                title: 'logout-confirmation-title',
+                content: 'logout-confirmation-content',
+                confirmButton: 'logout-confirm-btn',
+                cancelButton: 'logout-cancel-btn'
+            },
+            backdrop: `
+                rgba(0, 0, 0, 0.6)
+                center
+                no-repeat
+            `
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // User confirmed logout
                 this.performLogout();
+            }
+            // If cancelled or dismissed, do nothing - popup will close automatically
             });
-        }
     }
 
     // Perform logout
     performLogout() {
+        // Show loading state
+        Swal.fire({
+            title: 'Signing Out...',
+            text: 'Please wait while we sign you out',
+            icon: 'info',
+            allowOutsideClick: false,
+            allowEscapeKey: false,
+            showConfirmButton: false,
+            customClass: {
+                popup: 'logout-loading-popup'
+            },
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        // Perform logout request
         fetch('/api/auth/logout', {
             method: 'POST',
             headers: {
@@ -160,15 +215,48 @@ class DashboardNavigation {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                // Show success message briefly before redirect
+                Swal.fire({
+                    title: 'Signed Out Successfully',
+                    text: 'You have been signed out of your account',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    allowOutsideClick: false,
+                    allowEscapeKey: false,
+                    customClass: {
+                        popup: 'logout-success-popup'
+                    }
+                }).then(() => {
+                    // Redirect to login page
                 window.location.href = '/login';
+                });
             } else {
-                console.error('Logout failed:', data.message);
-                window.location.href = '/login';
+                // Show error message
+                Swal.fire({
+                    title: 'Sign Out Failed',
+                    text: data.message || 'An error occurred while signing out. Please try again.',
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#dc3545',
+                    customClass: {
+                        popup: 'logout-error-popup'
+                    }
+                });
             }
         })
         .catch(error => {
             console.error('Logout error:', error);
-            window.location.href = '/login';
+            Swal.fire({
+                title: 'Network Error',
+                text: 'Unable to connect to the server. Please check your internet connection and try again.',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#dc3545',
+                customClass: {
+                    popup: 'logout-error-popup'
+                }
+            });
         });
     }
 

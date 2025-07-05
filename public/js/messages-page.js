@@ -1,19 +1,108 @@
-// Messages Page Module
-const messagesPage = {
-    currentFilter: 'all',
-    allConversations: [],
-    currentUser: null,
-    currentConversation: null,
-    refreshInterval: null,
-    patientAvatars: new Map(), // Cache for patient avatars
-    hospitalAvatar: null, // Cache for hospital avatar
+/**
+ * Professional Messages Page Management
+ * Handles chat conversations, message display, and real-time messaging with Socket.IO
+ */
+class MessagesPage {
+    constructor() {
+        this.conversations = [];
+        this.currentConversation = null;
+        this.patientAvatars = new Map(); // Cache for patient avatars
+        this.hospitalAvatar = null; // Cache for hospital avatar
+        this.currentUser = null;
+        this.socket = null;
+        this.init();
+    }
 
     init() {
+        this.initSocket();
         this.bindEvents();
+        this.setupVisibilityHandler();
         this.loadHospitalAvatar();
         this.loadConversations();
-        this.startRealTimeUpdates();
-    },
+    }
+
+    setupVisibilityHandler() {
+        // Mark conversations as read when returning to messages page
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && window.location.pathname.includes('dashboard') && 
+                document.querySelector('.messages-container')) {
+                console.log('👁️ Messages page became visible - marking conversations as read');
+                setTimeout(() => {
+                    this.markAllVisibleConversationsAsRead();
+                }, 1000); // Small delay to ensure page is fully loaded
+            }
+        });
+
+        // Also mark as read when navigating to messages page
+        window.addEventListener('popstate', () => {
+            if (window.location.pathname.includes('dashboard') && 
+                document.querySelector('.messages-container')) {
+                console.log('🔄 Navigated to messages page - marking conversations as read');
+                setTimeout(() => {
+                    this.markAllVisibleConversationsAsRead();
+                }, 500);
+            }
+        });
+
+        // Mark as read when the messages page loads initially
+        setTimeout(() => {
+            if (document.querySelector('.messages-container')) {
+                console.log('🏁 Messages page loaded - marking conversations as read');
+                this.markAllVisibleConversationsAsRead();
+            }
+        }, 2000);
+    }
+
+    initSocket() {
+        console.log('🔌 Initializing Socket.IO connection...');
+        this.socket = io();
+        
+        this.socket.on('connect', () => {
+            console.log('✅ Socket.IO connected successfully!');
+            console.log('🆔 Socket ID:', this.socket.id);
+            console.log('🔗 Socket connected:', this.socket.connected);
+            console.log('🌐 Socket transport:', this.socket.io.engine.transport.name);
+            
+            // Join hospital room for real-time updates
+            if (this.currentUser && this.currentUser.uid) {
+                console.log('🏥 Joining hospital room:', this.currentUser.uid);
+                this.socket.emit('join-hospital', this.currentUser.uid);
+            }
+        });
+
+        this.socket.on('new-message', (data) => {
+            console.log('📨 New message received via Socket.IO:', data);
+            this.handleNewMessage(data);
+        });
+
+        this.socket.on('conversation-updated', (data) => {
+            console.log('🔄 Conversation updated via Socket.IO:', data);
+            this.handleConversationUpdate(data);
+        });
+
+        this.socket.on('conversation-deleted', (data) => {
+            console.log('🗑️ Conversation deleted via Socket.IO:', data);
+            this.handleConversationDeleted(data);
+        });
+
+        this.socket.on('disconnect', (reason) => {
+            console.log('🔌 Socket disconnected:', reason);
+            console.log('🔗 Socket connected:', this.socket.connected);
+        });
+        
+        this.socket.on('connect_error', (error) => {
+            console.error('❌ Socket connection error:', error);
+        });
+        
+        this.socket.on('error', (error) => {
+            console.error('❌ Socket error:', error);
+        });
+        
+        // Log all socket events for debugging
+        this.socket.onAny((event, ...args) => {
+            console.log(`🔊 Socket event "${event}":`, args);
+        });
+    }
 
     bindEvents() {
         // Filter buttons
@@ -22,7 +111,15 @@ const messagesPage = {
                 this.setActiveFilter(e.target.dataset.filter);
             });
         });
-    },
+
+        // Search functionality
+        const searchInput = document.getElementById('searchConversations');
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                this.filterConversations(e.target.value);
+            });
+        }
+    }
 
     setActiveFilter(filter) {
         this.currentFilter = filter;
@@ -35,7 +132,7 @@ const messagesPage = {
         
         // Filter and display conversations
         this.filterAndDisplayConversations();
-    },
+    }
 
     async loadHospitalAvatar() {
         try {
@@ -50,10 +147,10 @@ const messagesPage = {
         } catch (error) {
             console.error('❌ Error loading hospital avatar:', error);
         }
-    },
+    }
 
     async loadPatientAvatars() {
-        const promises = this.allConversations.map(async (conversation) => {
+        const promises = this.conversations.map(async (conversation) => {
             if (!this.patientAvatars.has(conversation.patientId)) {
                 try {
                     const response = await fetch(`/api/chat/patient-avatar/${conversation.patientId}`);
@@ -73,7 +170,7 @@ const messagesPage = {
         });
         
         await Promise.all(promises);
-    },
+    }
 
     async loadConversations() {
         this.showLoadingState();
@@ -83,7 +180,7 @@ const messagesPage = {
             const data = await response.json();
             
             if (data.success) {
-                this.allConversations = data.conversations;
+                this.conversations = data.conversations;
                 
                 await this.loadPatientAvatars();
                 
@@ -97,29 +194,36 @@ const messagesPage = {
             console.error('Error loading conversations:', error);
             this.showErrorState('Error loading conversations');
         }
-    },
+    }
+
+    filterConversations(searchTerm) {
+        const filteredConversations = this.conversations.filter(conv => 
+            conv.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        this.displayConversations(filteredConversations);
+    }
 
     filterAndDisplayConversations() {
-        let filteredConversations = this.allConversations;
+        let filteredConversations = this.conversations;
         
         switch (this.currentFilter) {
             case 'unread':
-                filteredConversations = this.allConversations.filter(conv => conv.hasUnreadMessages);
+                filteredConversations = this.conversations.filter(conv => conv.hasUnreadMessages);
                 break;
             case 'urgent':
-                // Filter conversations with appointment requests
-                filteredConversations = this.allConversations.filter(conv => 
+                filteredConversations = this.conversations.filter(conv => 
                     conv.lastMessage && conv.lastMessage.includes('New Appointment Request')
                 );
                 break;
             case 'all':
             default:
-                filteredConversations = this.allConversations;
+                filteredConversations = this.conversations;
                 break;
         }
         
         this.displayConversations(filteredConversations);
-    },
+    }
 
     displayConversations(conversations) {
         const container = document.getElementById('messagesList');
@@ -144,7 +248,7 @@ const messagesPage = {
         
         // Add event listeners to conversation cards
         this.addConversationEventListeners();
-    },
+    }
 
     createConversationCard(conversation) {
         const unreadClass = conversation.hasUnreadMessages ? 'unread' : '';
@@ -177,6 +281,9 @@ const messagesPage = {
                         <button class="btn btn-sm btn-outline-primary" onclick="messagesPage.openConversation('${conversation.id}')">
                             <i class="fas fa-comments"></i> Chat
                         </button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="messagesPage.deleteConversation('${conversation.id}')" title="Delete Conversation">
+                            <i class="fas fa-trash"></i>
+                        </button>
                         ${urgentClass ? `
                             <button class="btn btn-sm btn-success" onclick="messagesPage.approveAppointment('${conversation.id}')">
                                 <i class="fas fa-check"></i> Approve
@@ -188,53 +295,61 @@ const messagesPage = {
                     </div>
                 </div>
                 <div class="conversation-content">
-                    <p class="conversation-preview">${this.truncateText(conversation.lastMessage, 100)}</p>
+                    <p class="conversation-preview">${this.truncateText(conversation.lastMessage, 80)}</p>
                 </div>
             </div>
         `;
-    },
+    }
 
     renderPatientAvatar(avatarUrl, patientName) {
         if (avatarUrl && avatarUrl.trim() !== '') {
             if (avatarUrl.startsWith('data:image') || avatarUrl.startsWith('http')) {
-                // Valid image URL
-                return `<img src="${avatarUrl}" alt="${patientName}" class="patient-avatar" onerror="this.parentNode.innerHTML=this.parentNode.dataset.fallback">`;
+                return `<img src="${avatarUrl}" class="patient-avatar" alt="${patientName}">`;
             }
         }
         
         // Fallback to initials
-        const initials = this.getPatientInitials(patientName);
         return `
-            <div class="patient-avatar-initials" data-fallback="${initials}">
-                ${initials}
+            <div class="patient-avatar-initials">
+                ${this.getPatientInitials(patientName)}
             </div>
         `;
-    },
+    }
 
-    formatTime(timestamp) {
-        const now = new Date();
-        const diff = now - new Date(timestamp);
-        const hours = Math.floor(diff / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        
-        if (hours > 24) {
-            const days = Math.floor(hours / 24);
-            return `${days} day${days > 1 ? 's' : ''} ago`;
-        } else if (hours > 0) {
-            return `${hours}h ago`;
-        } else if (minutes > 0) {
-            return `${minutes}m ago`;
-        } else {
-            return 'Just now';
+    getPatientInitials(name) {
+        if (!name) return '?';
+        const words = name.trim().split(' ');
+        if (words.length >= 2) {
+            return (words[0][0] + words[1][0]).toUpperCase();
         }
-    },
+        return name[0].toUpperCase();
+    }
 
     truncateText(text, maxLength) {
-        if (text.length <= maxLength) return text;
-        return text.substring(0, maxLength) + '...';
-    },
+        if (!text) return '';
+        return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+    }
+
+    formatTime(timestamp) {
+        if (!timestamp) return '';
+        
+        const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+        
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+        
+        return date.toLocaleDateString();
+    }
 
     addConversationEventListeners() {
+        // Click to open conversation
         document.querySelectorAll('.conversation-card').forEach(card => {
             card.addEventListener('click', (e) => {
                 if (!e.target.closest('.conversation-actions')) {
@@ -243,7 +358,7 @@ const messagesPage = {
                 }
             });
         });
-    },
+    }
 
     async openConversation(conversationId) {
         try {
@@ -253,162 +368,280 @@ const messagesPage = {
             if (data.success) {
                 this.currentConversation = data.conversation;
                 this.showConversationModal(data.messages, data.conversation);
+                
+                // Mark conversation as read
+                await this.markConversationAsRead(conversationId);
+                
+                // Join conversation room for real-time updates
+                this.socket.emit('join-conversation', conversationId);
             } else {
-                console.error('Failed to load messages:', data.message);
-                alert('Failed to load messages');
+                this.showToast('Error loading conversation', 'error');
             }
         } catch (error) {
-            console.error('Error loading messages:', error);
-            alert('Error loading messages');
+            console.error('Error opening conversation:', error);
+            this.showToast('Error loading conversation', 'error');
         }
-    },
+    }
+
+    async markConversationAsRead(conversationId) {
+        try {
+            console.log(`📖 Marking conversation ${conversationId} as read`);
+            
+            await fetch(`/api/chat/conversations/${conversationId}/mark-read`, {
+                method: 'POST'
+            });
+            
+            // Update local conversation state
+            const conversation = this.conversations.find(c => c.id === conversationId);
+            if (conversation) {
+                conversation.hasUnreadMessages = false;
+                conversation.unreadCount = 0;
+                this.updateStatistics();
+                this.filterAndDisplayConversations();
+                console.log(`✅ Conversation ${conversationId} marked as read locally`);
+                
+                // Update global notification system
+                if (window.chatNotifications) {
+                    window.chatNotifications.markConversationAsRead(conversationId);
+                }
+            }
+        } catch (error) {
+            console.error('Error marking conversation as read:', error);
+        }
+    }
+
+    async markAllVisibleConversationsAsRead() {
+        try {
+            console.log('📖 Marking all visible conversations as read...');
+            
+            const unreadConversations = this.conversations.filter(c => c.hasUnreadMessages);
+            
+            if (unreadConversations.length === 0) {
+                console.log('✅ No unread conversations to mark');
+                return;
+            }
+            
+            console.log(`📖 Found ${unreadConversations.length} unread conversations to mark as read`);
+            
+            const promises = unreadConversations.map(conversation => 
+                this.markConversationAsRead(conversation.id)
+            );
+            
+            await Promise.all(promises);
+            console.log(`✅ Marked ${unreadConversations.length} conversations as read`);
+            
+        } catch (error) {
+            console.error('Error marking conversations as read:', error);
+            }
+        }
+
+    async deleteConversation(conversationId) {
+        const result = await Swal.fire({
+            title: 'Delete Conversation?',
+            text: 'This will permanently delete the conversation and all messages. This action cannot be undone.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, Delete',
+            cancelButtonText: 'Cancel'
+        });
+        
+        if (result.isConfirmed) {
+            try {
+                const response = await fetch(`/api/chat/conversations/${conversationId}`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Remove from local array
+                    this.conversations = this.conversations.filter(c => c.id !== conversationId);
+                    this.filterAndDisplayConversations();
+                    this.updateStatistics();
+                    
+                    this.showToast('Conversation deleted successfully', 'success');
+                    
+                    // Close modal if this conversation is currently open
+                    if (this.currentConversation && this.currentConversation.id === conversationId) {
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('chatModal'));
+                        if (modal) {
+                            modal.hide();
+                        }
+                    }
+                } else {
+                    this.showToast('Failed to delete conversation', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting conversation:', error);
+                this.showToast('Error deleting conversation', 'error');
+                }
+        }
+    }
 
     showConversationModal(messages, conversation) {
-        // Use the static modal from HTML
         const modal = document.getElementById('chatModal');
-        if (!modal) {
-            console.error('Chat modal not found in DOM');
+        const modalTitle = document.getElementById('chatModalLabel');
+        const chatMessages = document.getElementById('chatMessages');
+        
+        // Update modal title
+        modalTitle.innerHTML = `
+            <i class="fas fa-comments me-2"></i>
+            <span id="chatPatientName">${conversation.patientName}</span>
+        `;
+        
+        // Render messages
+        this.renderChatMessages(chatMessages, messages);
+        
+        // Show modal
+        const bsModal = new bootstrap.Modal(modal);
+        bsModal.show();
+        
+        // Bind send message event
+        this.bindSendMessageEvent(conversation.id);
+        
+        // Scroll to bottom
+        setTimeout(() => {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }, 100);
+    }
+
+    renderChatMessages(container, messages) {
+        if (!messages || messages.length === 0) {
+            container.innerHTML = `
+                <div class="empty-chat">
+                    <i class="fas fa-comments fa-3x text-muted mb-3"></i>
+                    <p>No messages yet. Start the conversation!</p>
+                </div>
+            `;
             return;
         }
 
-        // Update modal title with patient info
-        const patientNameSpan = modal.querySelector('#chatPatientName');
-        if (patientNameSpan) {
-            patientNameSpan.textContent = `Chat with ${conversation.patientName}`;
-        }
-
-        // Update messages content
-        const chatMessages = modal.querySelector('#chatMessages');
-        if (chatMessages) {
-            if (messages.length === 0) {
-                chatMessages.innerHTML = `
-                    <div class="empty-chat">
-                        <i class="fas fa-comments text-muted"></i>
-                        <p class="text-muted mt-2">No messages yet. Start the conversation!</p>
-                    </div>
-                `;
-            } else {
-                chatMessages.innerHTML = messages.map(message => this.createMessageBubble(message)).join('');
-                
-                // Auto-scroll to bottom
-                setTimeout(() => {
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }, 100);
-            }
-        }
-
-        // Setup event listeners for send button and input
-        const sendBtn = modal.querySelector('#sendMessageBtn');
-        const messageInput = modal.querySelector('#chatMessageInput');
+        const messagesHtml = messages.map(message => {
+            const isFromClinic = message.senderType === 'clinic' || message.senderType === 'hospital';
+            const messageClass = isFromClinic ? 'clinic-message' : 'patient-message';
+            const justifyClass = isFromClinic ? 'justify-content-end' : 'justify-content-start';
         
-        if (sendBtn && !sendBtn.hasAttribute('data-listener-added')) {
-            sendBtn.addEventListener('click', () => this.sendMessage(conversation.id));
-            sendBtn.setAttribute('data-listener-added', 'true');
-        }
-        
-        if (messageInput && !messageInput.hasAttribute('data-listener-added')) {
-            messageInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.sendMessage(conversation.id);
-                }
-            });
-            messageInput.setAttribute('data-listener-added', 'true');
-        }
-
-        // Show the modal
-        const modalInstance = new bootstrap.Modal(modal);
-        modalInstance.show();
-        
-        // Handle modal close
-        modal.addEventListener('hidden.bs.modal', () => {
-            this.currentConversation = null;
-            // Clear input
-            if (messageInput) {
-                messageInput.value = '';
-            }
-        }, { once: true });
-    },
-
-    createMessageBubble(message) {
-        const isFromClinic = message.senderType === 'clinic';
-        const messageTime = new Date(message.timestamp).toLocaleString();
-        const alignment = isFromClinic ? 'justify-content-end' : 'justify-content-start';
-        const bubbleClass = isFromClinic ? 'clinic-message' : 'patient-message';
-        
-        // Get avatar
-        let avatar = '';
+            // Avatar HTML
+            let avatarHtml = '';
         if (isFromClinic) {
-            // Hospital avatar - use the actual hospital image from message or cached avatar
-            if (message.hospitalImage) {
-                avatar = `<img src="${message.hospitalImage}" class="message-avatar-img" alt="Hospital">`;
-            } else if (this.hospitalAvatar) {
-                avatar = `<img src="${this.hospitalAvatar}" class="message-avatar-img" alt="Hospital">`;
+                // Hospital avatar - positioned on the right
+                if (this.hospitalAvatar) {
+                    avatarHtml = `<img src="${this.hospitalAvatar}" class="message-avatar-img" alt="Hospital">`;
             } else {
-                avatar = `<div class="message-avatar-placeholder hospital"><i class="fas fa-hospital"></i></div>`;
+                    avatarHtml = `<div class="message-avatar-placeholder hospital">
+                                    <i class="fas fa-hospital"></i>
+                                  </div>`;
             }
         } else {
-            // Patient avatar - try multiple ways to get the patient avatar
-            let patientAvatar = null;
-            
-            // First, try to get from message directly
-            if (message.patientImage) {
-                patientAvatar = message.patientImage;
-            } else if (this.currentConversation && this.patientAvatars.has(this.currentConversation.patientId)) {
-                // Then try to get from cached avatars using conversation patientId
-                const patientInfo = this.patientAvatars.get(this.currentConversation.patientId);
-                patientAvatar = patientInfo?.avatar;
-            }
-            
-            if (patientAvatar) {
-                avatar = `<img src="${patientAvatar}" class="message-avatar-img" alt="Patient">`;
+                // Patient avatar - enhanced loading from Firebase profile
+                const patientInfo = this.patientAvatars.get(this.currentConversation?.patientId);
+                
+                let patientAvatarUrl = null;
+                if (patientInfo?.avatar) {
+                    patientAvatarUrl = patientInfo.avatar;
+                } else if (message.patientAvatar) {
+                    patientAvatarUrl = message.patientAvatar;
+                } else if (message.senderProfileImage) {
+                    patientAvatarUrl = message.senderProfileImage;
+                } else if (this.currentConversation?.patientAvatar) {
+                    patientAvatarUrl = this.currentConversation.patientAvatar;
+                }
+
+                console.log('🖼️ Patient avatar URL:', patientAvatarUrl);
+                
+                if (patientAvatarUrl && (patientAvatarUrl.startsWith('data:image') || patientAvatarUrl.startsWith('http'))) {
+                    avatarHtml = `<img src="${patientAvatarUrl}" class="message-avatar-img" alt="Patient" 
+                                  onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                  <div class="message-avatar-placeholder patient" style="display: none;">
+                                      ${this.getPatientInitials(message.senderName || this.currentConversation?.patientName || 'Patient')}
+                                  </div>`;
             } else {
-                const initials = this.getPatientInitials(message.senderName);
-                avatar = `<div class="message-avatar-placeholder patient">${initials}</div>`;
+                    const initials = this.getPatientInitials(message.senderName || this.currentConversation?.patientName || 'Patient');
+                    avatarHtml = `<div class="message-avatar-placeholder patient">${initials}</div>`;
             }
         }
         
         return `
-            <div class="chat-message-wrapper d-flex ${alignment} mb-3">
-                ${!isFromClinic ? `<div class="message-avatar me-2">${avatar}</div>` : ''}
-                <div class="chat-message ${bubbleClass} ${isFromClinic ? 'ms-auto' : ''}">
+                <div class="chat-message-wrapper ${messageClass} ${justifyClass}">
+                    <div class="message-avatar">
+                        ${avatarHtml}
+                    </div>
+                    <div class="chat-message">
                     <div class="message-bubble">
                         <div class="message-header">
-                            <small class="message-sender text-muted">${message.senderName}</small>
-                            <small class="message-time text-muted ms-2">${messageTime}</small>
-                        </div>
-                        <div class="message-text">${this.formatMessageText(message.content || message.message || '')}</div>
-                        ${message.appointmentId ? `
-                            <div class="message-meta mt-2">
-                                <small class="text-muted">
-                                    <i class="fas fa-calendar-check"></i>
-                                    Appointment: ${message.appointmentId}
-                                </small>
+                                <span class="message-sender">${message.senderName}</span>
+                                <span class="message-time">${this.formatMessageTime(message.timestamp)}</span>
                             </div>
-                        ` : ''}
+                            <div class="message-text">${this.formatMessageText(message.message)}</div>
+                            ${message.metadata ? this.renderMessageMetadata(message.metadata) : ''}
+                        </div>
                     </div>
-                </div>
-                ${isFromClinic ? `<div class="message-avatar ms-2">${avatar}</div>` : ''}
             </div>
         `;
-    },
+        }).join('');
 
-    getPatientInitials(name) {
-        if (!name) return 'P';
-        const names = name.split(' ');
-        if (names.length >= 2) {
-            return (names[0][0] + names[1][0]).toUpperCase();
-        }
-        return name[0].toUpperCase();
-    },
+        container.innerHTML = messagesHtml;
+    }
+
+    formatMessageTime(timestamp) {
+        if (!timestamp) return '';
+        const date = timestamp instanceof Date ? timestamp : new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
 
     formatMessageText(text) {
-        // Convert markdown-style formatting to HTML
-        return text
-            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-            .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/\n/g, '<br>');
-    },
+        if (!text) return '';
+        // Convert line breaks to HTML
+        return text.replace(/\n/g, '<br>');
+    }
+
+    renderMessageMetadata(metadata) {
+        if (!metadata) return '';
+        
+        // Handle appointment request metadata
+        if (metadata.action === 'appointment_request') {
+            const status = metadata.status || 'pending';
+            const statusClass = status === 'pending' ? 'warning' : status === 'approved' ? 'success' : 'danger';
+            
+            return `
+                <div class="message-metadata appointment-request">
+                    <div class="metadata-content">
+                        <i class="fas fa-calendar-plus text-primary me-2"></i>
+                        <span class="metadata-text">Appointment Request</span>
+                        <span class="badge bg-${statusClass} ms-2">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Handle other metadata types if needed
+        return '';
+    }
+
+    bindSendMessageEvent(conversationId) {
+        const sendBtn = document.getElementById('sendMessageBtn');
+        const messageInput = document.getElementById('chatMessageInput');
+        
+        // Remove existing listeners
+        sendBtn.replaceWith(sendBtn.cloneNode(true));
+        messageInput.replaceWith(messageInput.cloneNode(true));
+        
+        // Get new references
+        const newSendBtn = document.getElementById('sendMessageBtn');
+        const newMessageInput = document.getElementById('chatMessageInput');
+        
+        const sendMessage = () => this.sendMessage(conversationId);
+        
+        newSendBtn.addEventListener('click', sendMessage);
+        newMessageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    }
 
     async sendMessage(conversationId) {
         const messageInput = document.getElementById('chatMessageInput');
@@ -417,107 +650,137 @@ const messagesPage = {
         if (!message) return;
         
         try {
-            // Disable input while sending
-            messageInput.disabled = true;
-            document.getElementById('sendMessageBtn').disabled = true;
+            console.log('🔄 Sending message to conversation:', conversationId);
+            console.log('📝 Message content:', message);
 
             const response = await fetch(`/api/chat/conversations/${conversationId}/messages`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ message })
+                body: JSON.stringify({
+                    message,
+                    messageType: 'text'
+                })
             });
             
             const data = await response.json();
+            console.log('📥 Server response:', data);
             
             if (data.success) {
                 messageInput.value = '';
-                // Refresh the conversation
-                this.openConversation(conversationId);
+                
+                // Emit via Socket.IO for real-time updates
+                this.socket.emit('send-message', {
+                    conversationId,
+                    message,
+                    senderId: this.currentUser?.uid,
+                    senderName: this.currentUser?.displayName || 'Hospital',
+                    senderType: 'clinic'
+                });
+                
+                // Update global notification system
+                if (window.chatNotifications) {
+                    window.chatNotifications.handleClinicMessage(conversationId);
+                }
+                
+                // Reload messages to show the new message
+                this.reloadCurrentConversation();
+                
+                this.showToast('Message sent successfully', 'success');
             } else {
-                alert('Failed to send message');
+                console.error('❌ Failed to send message:', data.message);
+                this.showToast(`Failed to send message: ${data.message}`, 'error');
             }
         } catch (error) {
-            console.error('Error sending message:', error);
-            alert('Error sending message');
-        } finally {
-            // Re-enable input
-            messageInput.disabled = false;
-            document.getElementById('sendMessageBtn').disabled = false;
-            messageInput.focus();
+            console.error('❌ Error sending message:', error);
+            this.showToast('Error sending message', 'error');
         }
-    },
+    }
+
+    async reloadCurrentConversation() {
+        if (!this.currentConversation) return;
+        
+        try {
+            const response = await fetch(`/api/chat/conversations/${this.currentConversation.id}/messages`);
+            const data = await response.json();
+            
+            if (data.success) {
+                const chatMessages = document.getElementById('chatMessages');
+                this.renderChatMessages(chatMessages, data.messages);
+                
+                // Scroll to bottom
+                setTimeout(() => {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 100);
+            }
+        } catch (error) {
+            console.error('Error reloading conversation:', error);
+        }
+    }
+
+    // Socket event handlers
+    handleNewMessage(data) {
+        // If the message is for the currently open conversation, update it
+        if (this.currentConversation && this.currentConversation.id === data.conversationId) {
+            this.reloadCurrentConversation();
+        }
+        
+        // Update global notification system
+        if (window.chatNotifications && data.senderType === 'patient') {
+            window.chatNotifications.handleNewMessage(data.conversationId, data.senderType);
+        }
+        
+        // Update the conversations list
+        this.loadConversations();
+    }
+
+    handleConversationUpdate(data) {
+        // Reload conversations to reflect updates
+        this.loadConversations();
+    }
+
+    handleConversationDeleted(data) {
+        // Remove from local array
+        this.conversations = this.conversations.filter(c => c.id !== data.conversationId);
+        this.filterAndDisplayConversations();
+        this.updateStatistics();
+        
+        // Close modal if this conversation is currently open
+        if (this.currentConversation && this.currentConversation.id === data.conversationId) {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('chatModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+    }
 
     async approveAppointment(conversationId) {
-        try {
-            // Find the appointment ID from the conversation
-            const conversation = this.allConversations.find(c => c.id === conversationId);
-            if (!conversation) return;
-            
-            // For now, we'll need to get the appointment ID from the conversation
-            // This is a simplified version - in a real implementation, you'd need to
-            // store the appointment ID in the conversation metadata
-            
-            const response = await fetch(`/api/chat/appointments/${conversationId}/approve`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                }
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert('Appointment approved successfully');
-                this.loadConversations(); // Refresh the list
-            } else {
-                alert('Failed to approve appointment');
-            }
-        } catch (error) {
-            console.error('Error approving appointment:', error);
-            alert('Error approving appointment');
-        }
-    },
+        // Implementation for appointment approval
+        this.showToast('Appointment approval feature coming soon', 'info');
+    }
 
     async rejectAppointment(conversationId) {
-        const reason = prompt('Please provide a reason for rejection:');
-        if (!reason) return;
-        
-        try {
-            const response = await fetch(`/api/chat/appointments/${conversationId}/reject`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ reason })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                alert('Appointment rejected successfully');
-                this.loadConversations(); // Refresh the list
-            } else {
-                alert('Failed to reject appointment');
-            }
-        } catch (error) {
-            console.error('Error rejecting appointment:', error);
-            alert('Error rejecting appointment');
+        // Implementation for appointment rejection
+        this.showToast('Appointment rejection feature coming soon', 'info');
         }
-    },
 
     updateStatistics() {
-        const totalConversations = this.allConversations.length;
-        const unreadConversations = this.allConversations.filter(conv => conv.hasUnreadMessages).length;
-        const urgentConversations = this.allConversations.filter(conv => 
-            conv.lastMessage && conv.lastMessage.includes('New Appointment Request')
+        const totalConversations = this.conversations.length;
+        const unreadConversations = this.conversations.filter(c => c.hasUnreadMessages).length;
+        const urgentConversations = this.conversations.filter(c => 
+            c.lastMessage && c.lastMessage.includes('New Appointment Request')
         ).length;
         
-        document.getElementById('totalMessages').textContent = totalConversations;
-        document.getElementById('unreadMessages').textContent = unreadConversations;
-        document.getElementById('pendingReplies').textContent = urgentConversations;
-    },
+        // Update stat cards if they exist
+        const totalStat = document.querySelector('[data-stat="total"]');
+        const unreadStat = document.querySelector('[data-stat="unread"]');
+        const urgentStat = document.querySelector('[data-stat="urgent"]');
+        
+        if (totalStat) totalStat.textContent = totalConversations;
+        if (unreadStat) unreadStat.textContent = unreadConversations;
+        if (urgentStat) urgentStat.textContent = urgentConversations;
+    }
 
     showLoadingState() {
         const container = document.getElementById('messagesList');
@@ -531,47 +794,46 @@ const messagesPage = {
                 <p class="loading-text">Loading conversations...</p>
             </div>
         `;
-    },
+    }
 
     showErrorState(message) {
         const container = document.getElementById('messagesList');
         container.innerHTML = `
-            <div class="error-state">
+            <div class="empty-state">
                 <i class="fas fa-exclamation-triangle fa-3x text-danger mb-3"></i>
                 <h5>Error</h5>
                 <p class="text-muted">${message}</p>
                 <button class="btn btn-primary" onclick="messagesPage.loadConversations()">
-                    <i class="fas fa-refresh me-2"></i>Retry
+                    <i class="fas fa-refresh"></i> Retry
                 </button>
             </div>
         `;
-    },
+    }
 
-    startRealTimeUpdates() {
-        // Refresh conversations every 30 seconds
-        this.refreshInterval = setInterval(() => {
-            this.loadConversations();
-        }, 30000);
-    },
-
-    stopRealTimeUpdates() {
-        if (this.refreshInterval) {
-            clearInterval(this.refreshInterval);
-            this.refreshInterval = null;
+    showToast(message, type = 'info') {
+        // Simple toast notification
+        const toast = document.createElement('div');
+        toast.className = `alert alert-${type === 'error' ? 'danger' : type} alert-dismissible fade show position-fixed`;
+        toast.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+        toast.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        // Auto remove after 3 seconds
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
         }
-    },
+        }, 3000);
+    }
 
     refresh() {
         this.loadConversations();
-    },
-
-    composeNewMessage() {
-        // This would open a modal to compose a new message
-        alert('New message feature coming soon!');
     }
-};
+}
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    messagesPage.init();
-}); 
+// Initialize the messages page
+const messagesPage = new MessagesPage(); 

@@ -180,7 +180,7 @@ class NotificationService {
 
     showAppointmentToastNotification(appointment) {
         if (!this.notificationContainer) return;
-        
+
         const toast = document.createElement('div');
         toast.className = 'notification-toast appointment show';
         
@@ -188,7 +188,7 @@ class NotificationService {
         
         toast.innerHTML = `
             <div class="notification-header">
-                <i class="fas fa-calendar-plus"></i>
+                    <i class="fas fa-calendar-plus"></i>
                 <span>New Appointment</span>
                 <button class="close-toast" onclick="this.parentElement.parentElement.remove()">×</button>
             </div>
@@ -203,13 +203,13 @@ class NotificationService {
                 </button>
             </div>
         `;
-        
+
         this.notificationContainer.appendChild(toast);
-        
+
         // Auto remove after 8 seconds
         setTimeout(() => {
             if (toast.parentNode) {
-                toast.remove();
+                        toast.remove();
             }
         }, 8000);
     }

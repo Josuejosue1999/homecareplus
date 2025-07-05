@@ -104,44 +104,40 @@ router.post("/register", async (req, res) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
-    // Créer le document clinique
+    // Générer un avatar par défaut (initiales avec couleur de fond)
+    const initials = clinicName.split(' ').map(word => word.charAt(0).toUpperCase()).join('').substring(0, 2);
+    const colors = ['#159BBD', '#28a745', '#dc3545', '#ffc107', '#6f42c1', '#fd7e14', '#20c997'];
+    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+    
+    // Créer un SVG avatar par défaut
+    const defaultAvatar = `data:image/svg+xml;base64,${Buffer.from(`
+      <svg width="120" height="120" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="60" cy="60" r="60" fill="${randomColor}"/>
+        <text x="60" y="75" font-family="Arial, sans-serif" font-size="36" font-weight="bold" 
+              fill="white" text-anchor="middle">${initials}</text>
+      </svg>
+    `).toString('base64')}`;
+    
+    // Créer le document clinique avec avatar par défaut
     await setDoc(doc(db, 'clinics', user.uid), {
       name: clinicName,
       clinicName: clinicName,
       email: email,
+      profileImageUrl: defaultAvatar,
+      profileImage: defaultAvatar, // Pour compatibilité
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      lastUpdated: new Date()
     });
     
-    // Créer une session
-    const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
-    // Stocker la session dans app.locals
-    if (!req.app.locals.sessions) {
-      req.app.locals.sessions = new Map();
-    }
-    
-    req.app.locals.sessions.set(sessionId, {
-      uid: user.uid,
-      email: user.email,
-      clinicName: clinicName
-    });
-    
-    // Cookie de session
-    res.cookie("sessionId", sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000 // 24 heures
-    });
+    // Ne pas créer de session automatiquement - forcer l'utilisateur à se connecter
+    // Déconnecter l'utilisateur après création du compte
+    await signOut(auth);
     
     res.json({
       success: true,
-      message: "Compte créé avec succès",
-      user: {
-        uid: user.uid,
-        email: user.email,
-        clinicName: clinicName
-      }
+      message: "Compte créé avec succès! Veuillez vous connecter.",
+      redirectToLogin: true // Indicateur pour la redirection
     });
     
   } catch (error) {

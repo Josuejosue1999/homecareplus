@@ -1,0 +1,206 @@
+/* Water Ripple Effect - Elegant Background Animation */
+.water-ripple-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: linear-gradient(135deg, 
+        rgba(21, 155, 189, 0.02) 0%, 
+        rgba(66, 165, 245, 0.03) 50%, 
+        rgba(21, 155, 189, 0.02) 100%);
+}
+
+.water-ripple-background::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(21, 155, 189, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(66, 165, 245, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(21, 155, 189, 0.05) 0%, transparent 50%);
+    animation: rippleMove 15s ease-in-out infinite;
+}
+
+.water-ripple-background::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 60% 60%, rgba(66, 165, 245, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 90% 10%, rgba(21, 155, 189, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 10% 90%, rgba(66, 165, 245, 0.05) 0%, transparent 50%);
+    animation: rippleMove 20s ease-in-out infinite reverse;
+}
+
+/* Ripple circles that respond to mouse movement */
+.ripple-circle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0);
+    background: radial-gradient(circle, rgba(21, 155, 189, 0.1) 0%, rgba(66, 165, 245, 0.05) 50%, transparent 100%);
+    animation: rippleExpand 2s ease-out forwards;
+}
+
+/* Interactive ripples on mouse move */
+.interactive-ripple {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    opacity: 0;
+    transform: scale(0);
+    background: radial-gradient(circle, rgba(21, 155, 189, 0.08) 0%, rgba(66, 165, 245, 0.04) 50%, transparent 100%);
+    animation: interactiveRipple 1.5s ease-out forwards;
+}
+
+/* Floating particles for added elegance */
+.water-particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: rgba(21, 155, 189, 0.3);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleFloat 8s ease-in-out infinite;
+}
+
+.water-particle:nth-child(odd) {
+    animation-delay: -2s;
+    background: rgba(66, 165, 245, 0.25);
+}
+
+.water-particle:nth-child(3n) {
+    animation-delay: -4s;
+    animation-duration: 10s;
+}
+
+.water-particle:nth-child(4n) {
+    animation-delay: -6s;
+    animation-duration: 12s;
+    background: rgba(21, 155, 189, 0.2);
+}
+
+/* Keyframe animations */
+@keyframes rippleMove {
+    0%, 100% {
+        transform: translateX(0) translateY(0) scale(1);
+    }
+    25% {
+        transform: translateX(-20px) translateY(-10px) scale(1.05);
+    }
+    50% {
+        transform: translateX(15px) translateY(-20px) scale(0.95);
+    }
+    75% {
+        transform: translateX(-10px) translateY(15px) scale(1.02);
+    }
+}
+
+@keyframes rippleExpand {
+    0% {
+        opacity: 0.6;
+        transform: scale(0);
+    }
+    50% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.5);
+    }
+}
+
+@keyframes interactiveRipple {
+    0% {
+        opacity: 0.4;
+        transform: scale(0);
+    }
+    50% {
+        opacity: 0.2;
+        transform: scale(0.6);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(1.2);
+    }
+}
+
+@keyframes particleFloat {
+    0%, 100% {
+        transform: translateY(0px) translateX(0px) scale(1);
+        opacity: 0.3;
+    }
+    25% {
+        transform: translateY(-30px) translateX(10px) scale(1.1);
+        opacity: 0.6;
+    }
+    50% {
+        transform: translateY(-15px) translateX(-20px) scale(0.9);
+        opacity: 0.4;
+    }
+    75% {
+        transform: translateY(-40px) translateX(15px) scale(1.05);
+        opacity: 0.5;
+    }
+}
+
+/* Subtle wave effect on the main container */
+.auth-container {
+    position: relative;
+}
+
+.auth-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        linear-gradient(45deg, transparent 49%, rgba(21, 155, 189, 0.02) 50%, transparent 51%),
+        linear-gradient(-45deg, transparent 49%, rgba(66, 165, 245, 0.02) 50%, transparent 51%);
+    background-size: 60px 60px;
+    animation: waveMove 25s linear infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes waveMove {
+    0% {
+        background-position: 0 0, 0 0;
+    }
+    100% {
+        background-position: 60px 60px, -60px 60px;
+    }
+}
+
+/* Ensure content stays above the ripple effects */
+.auth-left,
+.auth-right {
+    position: relative;
+    z-index: 2;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .water-ripple-background::before,
+    .water-ripple-background::after {
+        animation-duration: 20s, 25s;
+    }
+    
+    .water-particle {
+        width: 3px;
+        height: 3px;
+    }
+} 

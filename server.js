@@ -2,16 +2,26 @@ const express = require("express");
 const path = require("path");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const http = require("http");
+const { Server } = require("socket.io");
 require("dotenv").config();
 
 // Import Firebase configuration
-const { db, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment } = require("./config/firebase");
+const { db, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment, setDoc } = require("./config/firebase");
 
 // Import des routes et middleware
 const authRoutes = require("./routes/auth");
 const { requireAuth, redirectIfAuthenticated } = require("./middleware/auth");
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+    cors: {
+        origin: "*",
+        methods: ["GET", "POST"]
+    }
+});
+
 const PORT = process.env.PORT || 3000;
 
 // Middleware
@@ -80,31 +90,91 @@ app.post("/api/settings/profile", requireAuth, async (req, res) => {
     }
 });
 
+// API pour sauvegarder les informations de contact structurées
 app.post("/api/settings/contact", requireAuth, async (req, res) => {
     try {
-        const { phone, address, sector, latitude, longitude } = req.body;
-        const userId = req.user.uid;
-        const clinicDocRef = doc(db, 'clinics', userId);
-        await updateDoc(clinicDocRef, {
+        const { 
             phone,
-            address,
+            website, 
+            street, 
+            city, 
             sector,
-            latitude: latitude ? Number(latitude) : null,
-            longitude: longitude ? Number(longitude) : null,
+            country, 
+            address,
+            latitude, 
+            longitude 
+        } = req.body;
+        
+        const userId = req.user.uid;
+        console.log('📍 Updating contact info for user:', userId);
+        console.log('📍 Contact data:', { phone, street, city, sector, country, latitude, longitude });
+        
+        // Valider les champs requis - trim les espaces pour éviter les erreurs
+        const trimmedPhone = phone ? phone.trim() : '';
+        const trimmedStreet = street ? street.trim() : '';
+        const trimmedSector = sector ? sector.trim() : '';
+        const trimmedCountry = country ? country.trim() : '';
+        
+        // Vérifier s'il y a au moins un champ à mettre à jour
+        if (!trimmedPhone && !trimmedStreet && !trimmedSector && !website && !address && !latitude && !longitude && !trimmedCountry) {
+            return res.status(400).json({
+                success: false,
+                message: "Au moins un champ doit être fourni pour la mise à jour"
+            });
+        }
+
+        // Construire l'adresse complète si elle n'est pas fournie
+        let fullAddress = address;
+        if (!fullAddress) {
+            const addressParts = [];
+            if (trimmedStreet) addressParts.push(trimmedStreet);
+            if (trimmedSector) addressParts.push(trimmedSector);
+            if (trimmedCountry) addressParts.push(trimmedCountry);
+            fullAddress = addressParts.join(', ');
+        }
+
+        // Préparer les données de mise à jour - ne mettre à jour que les champs fournis
+        const updateData = {
             updatedAt: new Date()
-        });
+        };
+
+        // Ajouter seulement les champs fournis
+        if (trimmedPhone) updateData.phone = trimmedPhone;
+        if (trimmedStreet) updateData.street = trimmedStreet;
+        if (trimmedSector) updateData.sector = trimmedSector;
+        if (trimmedCountry) updateData.country = trimmedCountry;
+        if (website) updateData.website = website;
+        if (fullAddress) {
+            updateData.address = fullAddress;
+            updateData.location = fullAddress; // Pour compatibilité avec l'app mobile
+        }
+        
+        // Ajouter les coordonnées GPS si fournies
+        if (latitude && longitude) {
+            updateData.latitude = parseFloat(latitude);
+            updateData.longitude = parseFloat(longitude);
+        }
+
+        const clinicDocRef = doc(db, 'clinics', userId);
+        await updateDoc(clinicDocRef, updateData);
+        
+        console.log('✅ Contact info updated successfully');
+        
         res.json({
             success: true,
-            message: "Contact details updated successfully"
+            message: "Contact information updated successfully",
+            data: updateData
         });
     } catch (error) {
-        console.error("Contact update error:", error);
+        console.error("❌ Contact update error:", error);
         res.status(500).json({
             success: false,
-            message: "Failed to update contact details"
+            message: "Failed to update contact information"
         });
     }
 });
+
+
 
 app.post("/api/settings/services", requireAuth, async (req, res) => {
     try {
@@ -194,6 +264,136 @@ app.post("/api/settings/upload-documents", requireAuth, async (req, res) => {
     }
 });
 
+// Route pour sauvegarder l'image de profil (base64)
+app.post("/api/settings/profile-image", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const { profileImageUrl } = req.body;
+        
+        console.log('🖼️ Saving profile image for user:', userId);
+        console.log('Image data length:', profileImageUrl ? profileImageUrl.length : 0);
+        
+        // Validation des données d'entrée
+        if (!profileImageUrl) {
+            return res.status(400).json({
+                success: false,
+                message: "Aucune donnée d'image fournie"
+            });
+        }
+        
+        // Vérifier que c'est bien une image base64
+        if (!profileImageUrl.startsWith('data:image/')) {
+            return res.status(400).json({
+                success: false,
+                message: "Format d'image invalide. Données base64 attendues."
+            });
+        }
+        
+        // Extraire le type MIME
+        const mimeMatch = profileImageUrl.match(/data:image\/([^;]+)/);
+        if (!mimeMatch) {
+            return res.status(400).json({
+                success: false,
+                message: "Type MIME d'image invalide"
+            });
+        }
+        
+        const mimeType = mimeMatch[1].toLowerCase();
+        const allowedTypes = ['jpeg', 'jpg', 'png', 'webp'];
+        if (!allowedTypes.includes(mimeType)) {
+            return res.status(400).json({
+                success: false,
+                message: "Type d'image non supporté. Utilisez JPG, PNG ou WebP."
+            });
+        }
+        
+        // Vérifier la taille (limiter à 3MB pour les données base64)
+        const maxSize = 3 * 1024 * 1024; // 3MB
+        if (profileImageUrl.length > maxSize) {
+            return res.status(413).json({
+                success: false,
+                message: "Image trop volumineuse. Taille maximale : 3MB."
+            });
+        }
+        
+        // Valider que les données base64 sont correctes
+        try {
+            const base64Data = profileImageUrl.split(',')[1];
+            if (!base64Data) {
+                throw new Error('Données base64 invalides');
+            }
+            
+            // Vérifier que c'est du base64 valide
+            Buffer.from(base64Data, 'base64');
+        } catch (base64Error) {
+            console.error('Base64 validation error:', base64Error);
+            return res.status(400).json({
+                success: false,
+                message: "Données d'image corrompues ou invalides"
+            });
+        }
+        
+        console.log('✅ Image validation passed');
+        
+        // Mettre à jour le document de la clinique avec l'image base64
+        const clinicDocRef = doc(db, 'clinics', userId);
+        
+        // Vérifier si le document existe
+        const clinicDoc = await getDoc(clinicDocRef);
+        if (!clinicDoc.exists()) {
+            // Créer le document s'il n'existe pas
+            await setDoc(clinicDocRef, {
+                profileImageUrl: profileImageUrl,
+                profileImage: profileImageUrl, // Compatibilité
+                updatedAt: new Date(),
+                createdAt: new Date()
+            });
+        } else {
+            // Mettre à jour le document existant
+            await updateDoc(clinicDocRef, {
+                profileImageUrl: profileImageUrl,
+                profileImage: profileImageUrl, // Compatibilité
+                updatedAt: new Date(),
+                lastUpdated: new Date() // Compatibilité
+            });
+        }
+        
+        console.log('✅ Profile image saved successfully to Firestore');
+        
+        // Réponse de succès
+        res.json({
+            success: true,
+            message: "Image de profil sauvegardée avec succès",
+            imageUrl: profileImageUrl,
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error("❌ Profile image save error:", error);
+        
+        // Gestion d'erreurs spécifiques
+        let statusCode = 500;
+        let errorMessage = "Erreur interne du serveur";
+        
+        if (error.code === 'permission-denied') {
+            statusCode = 403;
+            errorMessage = "Permission refusée pour sauvegarder l'image";
+        } else if (error.code === 'unavailable') {
+            statusCode = 503;
+            errorMessage = "Service temporairement indisponible. Réessayez plus tard.";
+        } else if (error.message.includes('quota')) {
+            statusCode = 507;
+            errorMessage = "Quota de stockage dépassé";
+        }
+        
+        res.status(statusCode).json({
+            success: false,
+            message: errorMessage,
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
 // Route pour récupérer les données de la clinique (pour profil et paramètres)
 app.get("/api/settings/clinic-data", requireAuth, async (req, res) => {
     try {
@@ -276,9 +476,7 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
     try {
         const userId = req.user.uid;
         
-        console.log('=== CLINIC APPOINTMENTS API ===');
-        console.log(`User ID: ${userId}`);
-        console.log(`User clinic name: ${req.user.clinicName}`);
+        // Getting clinic appointments
         
         // Récupérer le nom exact de la clinique
         const clinicDocRef = doc(db, 'clinics', userId);
@@ -290,13 +488,9 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
             clinicName = clinicData.name || clinicData.clinicName || clinicName;
         }
         
-        console.log('Looking for appointments with hospital name:', clinicName);
-        
         // Récupérer TOUS les rendez-vous
         const allAppointmentsRef = collection(db, 'appointments');
         const allAppointmentsSnapshot = await getDocs(allAppointmentsRef);
-        
-        console.log('Total appointments in database:', allAppointmentsSnapshot.size);
         
         const appointments = [];
         const now = new Date();
@@ -306,12 +500,8 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
             const data = doc.data();
             const hospitalName = data.hospital || data.hospitalName || '';
             
-            console.log(`Appointment ${doc.id}: hospital="${hospitalName}" vs clinic="${clinicName}"`);
-            
-            // Correspondance exacte du nom de la clinique
+            // Correspondance exacte du nom de la clinique (optimized - no excessive logging)
             if (hospitalName === clinicName) {
-                console.log(`✓ MATCH FOUND for appointment ${doc.id}`);
-                
                 // Convertir la date
                 let appointmentDate = data.appointmentDate || data.date || data.createdAt;
                 if (appointmentDate && appointmentDate.toDate) {
@@ -328,7 +518,6 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
                     appointmentDate < nextWeek &&
                     (data.status === 'pending' || data.status === 'confirmed')) {
                     
-                    console.log(`✓ Adding appointment ${doc.id} to results`);
                     appointments.push({
                         id: doc.id,
                         patientName: data.patientName || data.patient || 'Unknown Patient',
@@ -344,15 +533,11 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
                         createdAt: data.createdAt?.toDate?.() || new Date(),
                         updatedAt: data.updatedAt?.toDate?.() || new Date()
                     });
-                } else {
-                    console.log(`✗ Appointment ${doc.id} - date or status not matching`);
                 }
-            } else {
-                console.log(`✗ Appointment ${doc.id} - hospital name doesn't match`);
             }
         });
         
-        console.log(`Found ${appointments.length} appointments for ${clinicName}`);
+        // Found appointments for clinic
         
         // Trier par date
         appointments.sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -385,9 +570,7 @@ app.get("/api/appointments/:appointmentId", requireAuth, async (req, res) => {
         const appointmentId = req.params.appointmentId;
         const userId = req.user.uid;
         
-        console.log('=== GET APPOINTMENT DETAILS ===');
-        console.log(`Appointment ID: ${appointmentId}`);
-        console.log(`User ID: ${userId}`);
+        // Getting appointment details (optimized logging)
         
         // Récupérer le nom exact de la clinique
         const clinicDocRef = doc(db, 'clinics', userId);
@@ -413,7 +596,7 @@ app.get("/api/appointments/:appointmentId", requireAuth, async (req, res) => {
         const appointmentData = appointmentDoc.data();
         const hospitalName = appointmentData.hospital || appointmentData.hospitalName || '';
         
-        console.log(`Appointment hospital: "${hospitalName}" vs clinic: "${clinicName}"`);
+        // Checking hospital permissions
         
         // Vérifier que le rendez-vous appartient à cette clinique
         if (hospitalName !== clinicName) {
@@ -647,14 +830,76 @@ app.use((err, req, res, next) => {
     });
 });
 
+// Socket.IO connection handling
+io.on('connection', (socket) => {
+    console.log('🔌 User connected:', socket.id);
+    
+    // Join hospital room for real-time updates
+    socket.on('join-hospital', (hospitalId) => {
+        socket.join(`hospital-${hospitalId}`);
+        console.log(`🏥 Hospital ${hospitalId} joined room`);
+    });
+    
+    // Handle new message sending
+    socket.on('send-message', async (data) => {
+        try {
+            const { conversationId, message, senderId, senderName, senderType } = data;
+            
+            // Broadcast message to conversation participants
+            socket.to(`conversation-${conversationId}`).emit('new-message', {
+                conversationId,
+                message,
+                senderId,
+                senderName,
+                senderType,
+                timestamp: new Date()
+            });
+            
+            // Notify hospital of new message
+            if (senderType === 'patient') {
+                const conversationRef = doc(db, 'chat_conversations', conversationId);
+                const conversationDoc = await getDoc(conversationRef);
+                if (conversationDoc.exists()) {
+                    const conversationData = conversationDoc.data();
+                    socket.to(`hospital-${conversationData.clinicId}`).emit('conversation-updated', {
+                        conversationId,
+                        hasNewMessage: true
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Socket message error:', error);
+        }
+    });
+    
+    // Join conversation room
+    socket.on('join-conversation', (conversationId) => {
+        socket.join(`conversation-${conversationId}`);
+        console.log(`💬 Joined conversation: ${conversationId}`);
+    });
+    
+    // Leave conversation room
+    socket.on('leave-conversation', (conversationId) => {
+        socket.leave(`conversation-${conversationId}`);
+        console.log(`👋 Left conversation: ${conversationId}`);
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('🔌 User disconnected:', socket.id);
+    });
+});
+
 // Start server
-app.listen(PORT, () => {
-    console.log("Server running on http://localhost:" + PORT);
-    console.log("Dashboard: http://localhost:" + PORT + "/dashboard");
-    console.log("Settings: http://localhost:" + PORT + "/settings");
-    console.log("Demo Login: admin@homecare.com / admin123");
-    console.log("Register: http://localhost:" + PORT + "/register");
-});// Graceful shutdown
+server.listen(PORT, () => {
+    console.log("🚀 Server running on http://localhost:" + PORT);
+    console.log("📊 Dashboard: http://localhost:" + PORT + "/dashboard");
+    console.log("⚙️  Settings: http://localhost:" + PORT + "/settings");
+    console.log("🔐 Demo Login: admin@homecare.com / admin123");
+    console.log("📝 Register: http://localhost:" + PORT + "/register");
+    console.log("🔌 Socket.IO enabled for real-time chat");
+});
+
+// Graceful shutdown
 process.on("SIGINT", () => {
     console.log("Shutting down server gracefully...");
     process.exit(0);
@@ -665,58 +910,59 @@ process.on("SIGINT", () => {
 
 // === CHAT API ENDPOINTS ===
 
-// Route pour récupérer les conversations de la clinique
+// Cache pour les conversations pour éviter les requêtes répétitives
+const conversationsCache = new Map();
+const CACHE_DURATION = 30000; // 30 secondes
+
+// Fonction pour invalider le cache
+function invalidateCache(userId, conversationId = null) {
+    // Invalider le cache des conversations
+    conversationsCache.delete(`conversations_${userId}`);
+    
+    // Invalider le cache des messages si conversationId est fourni
+    if (conversationId) {
+        messagesCache.delete(`messages_${conversationId}`);
+    }
+    
+    console.log('🗑️ Cache invalidated for user:', userId);
+}
+
+// Route pour récupérer les conversations de la clinique (optimisée)
 app.get("/api/chat/conversations", requireAuth, async (req, res) => {
     try {
         const userId = req.user.uid;
+        const cacheKey = `conversations_${userId}`;
         
-        console.log('=== GET CLINIC CONVERSATIONS ===');
-        console.log(`Clinic ID: ${userId}`);
-        
-        // Get clinic information first
-        const clinicDocRef = doc(db, 'clinics', userId);
-        const clinicDoc = await getDoc(clinicDocRef);
-        
-        let clinicName = req.user.clinicName || "Clinic";
-        if (clinicDoc.exists()) {
-            const clinicData = clinicDoc.data();
-            clinicName = clinicData.name || clinicData.clinicName || clinicName;
+        // Vérifier le cache d'abord
+        if (conversationsCache.has(cacheKey)) {
+            const cached = conversationsCache.get(cacheKey);
+            if (Date.now() - cached.timestamp < CACHE_DURATION) {
+                console.log('📦 Returning cached conversations');
+                return res.json({
+                    success: true,
+                    conversations: cached.data
+                });
+            }
         }
         
-        console.log(`Clinic Name: ${clinicName}`);
+        // Fetching fresh conversations data
         
-        // Get conversations by both clinicId and clinicName to handle all cases
+        // Get clinic information from user session (avoid extra DB call)
+        let clinicName = req.user.clinicName || "Clinic";
+        
+        // Optimized query - only use clinicId for better performance
         const conversationsRef = collection(db, 'chat_conversations');
-        
-        try {
-            // Query 1: Conversations with matching clinicId
-            const conversationsQuery1 = query(
+        const conversationsQuery = query(
                 conversationsRef,
                 where('clinicId', '==', userId)
             );
             
-            // Query 2: Conversations with matching clinicName (for legacy data)
-            const conversationsQuery2 = query(
-                conversationsRef,
-                where('clinicName', '==', clinicName)
-            );
-            
-            const [snapshot1, snapshot2] = await Promise.all([
-                getDocs(conversationsQuery1),
-                getDocs(conversationsQuery2)
-            ]);
-            
-            console.log(`Query 1 (clinicId): ${snapshot1.docs.length} conversations`);
-            console.log(`Query 2 (clinicName): ${snapshot2.docs.length} conversations`);
-            
-            // Combine and deduplicate conversations
-            const conversationMap = new Map();
-            
-            // Process conversations by clinicId
-            snapshot1.docs.forEach(doc => {
+        const snapshot = await getDocs(conversationsQuery);
+        // Found conversations: ${snapshot.docs.length}
+        
+        const conversations = snapshot.docs.map(doc => {
                 const data = doc.data();
-                console.log(`Processing conversation by ID: ${doc.id} - Patient: ${data.patientName}`);
-                conversationMap.set(doc.id, {
+            return {
                     id: doc.id,
                     patientId: data.patientId,
                     clinicId: data.clinicId,
@@ -725,83 +971,34 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
                     hospitalImage: data.hospitalImage,
                     lastMessageTime: data.lastMessageTime?.toDate?.() || new Date(),
                     lastMessage: data.lastMessage,
-                    hasUnreadMessages: data.hasUnreadMessages || false,
-                    unreadCount: data.unreadCount || 0,
-                    createdAt: data.createdAt?.toDate?.() || new Date(),
-                    updatedAt: data.updatedAt?.toDate?.() || new Date()
-                });
-            });
-            
-            // Process conversations by clinicName (only if not already added)
-            snapshot2.docs.forEach(doc => {
-                if (!conversationMap.has(doc.id)) {
-                    const data = doc.data();
-                    console.log(`Processing conversation by name: ${doc.id} - Patient: ${data.patientName}`);
-                    conversationMap.set(doc.id, {
-                        id: doc.id,
-                        patientId: data.patientId,
-                        clinicId: data.clinicId,
-                        patientName: data.patientName,
-                        clinicName: data.clinicName,
-                        hospitalImage: data.hospitalImage,
-                        lastMessageTime: data.lastMessageTime?.toDate?.() || new Date(),
-                        lastMessage: data.lastMessage,
-                        hasUnreadMessages: data.hasUnreadMessages || false,
-                        unreadCount: data.unreadCount || 0,
+                    lastSenderType: data.lastSenderType || 'patient',
+                    
+                    // FIXED LOGIC: Use clinic-specific unread counters
+                    hasUnreadMessages: data.clinicHasUnread || data.hasUnreadMessages || false,
+                    unreadCount: data.clinicUnreadCount || data.unreadCount || 0,
+                    
+                    // Include both counters for debugging
+                    clinicUnreadCount: data.clinicUnreadCount || 0,
+                    patientUnreadCount: data.patientUnreadCount || 0,
+                    
                         createdAt: data.createdAt?.toDate?.() || new Date(),
                         updatedAt: data.updatedAt?.toDate?.() || new Date()
-                    });
-                }
+            };
             });
-            
-            const conversations = Array.from(conversationMap.values());
             
             // Sort by last message time
             conversations.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
             
-            console.log(`Total unique conversations found: ${conversations.length}`);
+        // Cache the result
+        conversationsCache.set(cacheKey, {
+            data: conversations,
+            timestamp: Date.now()
+        });
             
             res.json({
                 success: true,
                 conversations: conversations
             });
-            
-        } catch (queryError) {
-            console.error("Firestore query error:", queryError);
-            
-            // Fallback: try to get all conversations and filter client-side
-            console.log("Trying fallback approach...");
-            const allConversationsSnapshot = await getDocs(conversationsRef);
-            const allConversations = [];
-            
-            allConversationsSnapshot.docs.forEach(doc => {
-                const data = doc.data();
-                if (data.clinicId === userId || data.clinicName === clinicName) {
-                    allConversations.push({
-                        id: doc.id,
-                        patientId: data.patientId,
-                        clinicId: data.clinicId,
-                        patientName: data.patientName,
-                        clinicName: data.clinicName,
-                        hospitalImage: data.hospitalImage,
-                        lastMessageTime: data.lastMessageTime?.toDate?.() || new Date(),
-                        lastMessage: data.lastMessage,
-                        hasUnreadMessages: data.hasUnreadMessages || false,
-                        unreadCount: data.unreadCount || 0,
-                        createdAt: data.createdAt?.toDate?.() || new Date(),
-                        updatedAt: data.updatedAt?.toDate?.() || new Date()
-                    });
-                }
-            });
-            
-            allConversations.sort((a, b) => b.lastMessageTime - a.lastMessageTime);
-            console.log(`Fallback found ${allConversations.length} conversations`);
-            
-            res.json({
-                success: true,
-                conversations: allConversations
-            });
-        }
         
     } catch (error) {
         console.error("Get conversations error:", error);
@@ -813,15 +1010,28 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
     }
 });
 
-// Route pour récupérer les messages d'une conversation
+// Cache pour les messages
+const messagesCache = new Map();
+
+// Route pour récupérer les messages d'une conversation (optimisée)
 app.get("/api/chat/conversations/:conversationId/messages", requireAuth, async (req, res) => {
     try {
         const conversationId = req.params.conversationId;
         const userId = req.user.uid;
+        const cacheKey = `messages_${conversationId}`;
         
-        console.log('=== GET CONVERSATION MESSAGES ===');
-        console.log(`Conversation ID: ${conversationId}`);
-        console.log(`Clinic ID: ${userId}`);
+        // Vérifier le cache d'abord
+        if (messagesCache.has(cacheKey)) {
+            const cached = messagesCache.get(cacheKey);
+            if (Date.now() - cached.timestamp < CACHE_DURATION) {
+                console.log('📦 Returning cached messages');
+                // Marquer comme lus même avec le cache
+                await _markConversationMessagesAsRead(conversationId, userId);
+                return res.json(cached.data);
+            }
+        }
+        
+        // Fetching fresh messages data
         
         // Vérifier que la conversation appartient à cette clinique
         const conversationRef = doc(db, 'chat_conversations', conversationId);
@@ -842,7 +1052,7 @@ app.get("/api/chat/conversations/:conversationId/messages", requireAuth, async (
             });
         }
         
-        // Récupérer les messages (without orderBy to avoid index issues)
+        // Récupérer les messages (optimized query)
         const messagesRef = collection(db, 'chat_messages');
         const messagesQuery = query(
             messagesRef,
@@ -851,10 +1061,9 @@ app.get("/api/chat/conversations/:conversationId/messages", requireAuth, async (
         
         const messagesSnapshot = await getDocs(messagesQuery);
         
-        const messages = [];
-        for (const doc of messagesSnapshot.docs) {
+        const messages = messagesSnapshot.docs.map(doc => {
             const data = doc.data();
-            messages.push({
+            return {
                 id: doc.id,
                 conversationId: data.conversationId,
                 senderId: data.senderId,
@@ -871,18 +1080,13 @@ app.get("/api/chat/conversations/:conversationId/messages", requireAuth, async (
                 appointmentDate: data.appointmentDate?.toDate?.() || null,
                 appointmentTime: data.appointmentTime,
                 metadata: data.metadata
+            };
             });
-        }
         
         // Sort messages by timestamp
         messages.sort((a, b) => a.timestamp - b.timestamp);
         
-        console.log(`Found ${messages.length} messages`);
-        
-        // Marquer les messages comme lus
-        await _markConversationMessagesAsRead(conversationId, userId);
-        
-        res.json({
+        const responseData = {
             success: true,
             messages: messages,
             conversation: {
@@ -891,7 +1095,18 @@ app.get("/api/chat/conversations/:conversationId/messages", requireAuth, async (
                 clinicName: conversationData.clinicName,
                 hospitalImage: conversationData.hospitalImage
             }
+        };
+        
+        // Cache the result
+        messagesCache.set(cacheKey, {
+            data: responseData,
+            timestamp: Date.now()
         });
+        
+        // Marquer les messages comme lus
+        await _markConversationMessagesAsRead(conversationId, userId);
+        
+        res.json(responseData);
         
     } catch (error) {
         console.error("Get messages error:", error);
@@ -1024,7 +1239,7 @@ app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async 
             message: message.trim(),
             messageType: messageType,
             timestamp: serverTimestamp(),
-            isRead: false,
+            isRead: false, // Hospital messages start as unread for patient
             hospitalName: clinicName,
             hospitalImage: hospitalImage,
             ...(appointmentId && { appointmentId }),
@@ -1036,14 +1251,29 @@ app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async 
         const messageRef = await addDoc(collection(db, 'chat_messages'), messageData);
         console.log(`✅ Message created with ID: ${messageRef.id}`);
         
-        // Mettre à jour la conversation
+        // FIXED LOGIC: Update conversation with separate unread counters
         await updateDoc(conversationRef, {
             lastMessageTime: serverTimestamp(),
             lastMessage: message.trim(),
+            lastSenderType: 'clinic', // Track who sent the last message
+            
+            // Patient-side unread (clinic sent message TO patient)
+            patientUnreadCount: increment(1), // Patient has new unread message
+            patientHasUnread: true,
+            
+            // Clinic-side unread (reset since clinic just sent a message)
+            clinicUnreadCount: 0, // Clinic has no unread messages
+            clinicHasUnread: false,
+            
+            // Legacy fields for backward compatibility
             hasUnreadMessages: true,
             unreadCount: increment(1),
+            
             updatedAt: serverTimestamp()
         });
+        
+        // Invalider le cache pour que les nouvelles données soient récupérées
+        invalidateCache(userId, conversationId);
         
         console.log('✅ Conversation updated successfully');
         console.log('✅ Message sent successfully');
@@ -1203,33 +1433,155 @@ app.post("/api/chat/appointments/:appointmentId/:action", requireAuth, async (re
     }
 });
 
-// Helper function to mark conversation messages as read
-async function _markConversationMessagesAsRead(conversationId, clinicId) {
+// API endpoint to delete conversation
+app.delete('/api/chat/conversations/:conversationId', requireAuth, async (req, res) => {
     try {
-        const messagesRef = collection(db, 'chat_messages');
-        const messagesQuery = query(
-            messagesRef,
-            where('conversationId', '==', conversationId),
-            where('senderId', '!=', clinicId),
-            where('isRead', '==', false)
-        );
+        const { conversationId } = req.params;
+        const userId = req.user.uid;
         
+        console.log(`=== DELETING CONVERSATION ===`);
+        console.log(`Conversation ID: ${conversationId}`);
+        console.log(`User ID: ${userId}`);
+        
+        // Vérifier que la conversation existe et appartient à cet utilisateur
+        const conversationRef = doc(db, 'chat_conversations', conversationId);
+        const conversationDoc = await getDoc(conversationRef);
+        
+        if (!conversationDoc.exists()) {
+            return res.status(404).json({
+                success: false,
+                message: 'Conversation not found'
+            });
+        }
+        
+        const conversationData = conversationDoc.data();
+        
+        // Vérifier que l'utilisateur a accès à cette conversation
+        if (conversationData.clinicId !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied to this conversation'
+            });
+        }
+        
+        // Delete all messages in the conversation
+        const messagesRef = collection(db, 'chat_messages');
+        const messagesQuery = query(messagesRef, where('conversationId', '==', conversationId));
         const messagesSnapshot = await getDocs(messagesQuery);
         
         const batch = writeBatch(db);
         messagesSnapshot.docs.forEach(doc => {
-            batch.update(doc.ref, { isRead: true });
+            batch.delete(doc.ref);
         });
         
-        if (messagesSnapshot.docs.length > 0) {
+        // Delete the conversation document
+        batch.delete(conversationRef);
+        
+        await batch.commit();
+        
+        console.log(`✅ Conversation ${conversationId} and ${messagesSnapshot.docs.length} messages deleted`);
+        
+        // Emit socket event to update UI
+        io.to(`hospital-${userId}`).emit('conversation-deleted', { conversationId });
+        
+        res.json({
+            success: true,
+            message: 'Conversation deleted successfully'
+        });
+        
+    } catch (error) {
+        console.error("Error deleting conversation:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to delete conversation',
+            error: error.message
+        });
+    }
+});
+
+// Helper function to handle patient message (when patient sends to clinic)
+async function _handlePatientMessage(conversationId, patientId, messageData) {
+    try {
+        // Create message
+        const messageRef = await addDoc(collection(db, 'chat_messages'), {
+            ...messageData,
+            conversationId: conversationId,
+            senderId: patientId,
+            senderType: 'patient',
+            timestamp: serverTimestamp(),
+            isRead: false // Clinic needs to read this
+        });
+        
+        // Update conversation with correct unread logic
+        const conversationRef = doc(db, 'chat_conversations', conversationId);
+        await updateDoc(conversationRef, {
+            lastMessageTime: serverTimestamp(),
+            lastMessage: messageData.message,
+            lastSenderType: 'patient',
+            
+            // Clinic-side unread (patient sent message TO clinic)
+            clinicUnreadCount: increment(1), // Clinic has new unread message
+            clinicHasUnread: true,
+            
+            // Patient-side unread (reset since patient just sent a message)
+            patientUnreadCount: 0, // Patient has no unread messages
+            patientHasUnread: false,
+            
+            // Legacy fields for backward compatibility
+            hasUnreadMessages: true,
+            unreadCount: increment(1),
+            
+            updatedAt: serverTimestamp()
+        });
+        
+        console.log('📱 Patient message processed successfully');
+        return messageRef.id;
+        
+    } catch (error) {
+        console.error("Error handling patient message:", error);
+        throw error;
+    }
+}
+
+// Helper function to mark conversation messages as read (fixed logic)
+async function _markConversationMessagesAsRead(conversationId, clinicId) {
+    try {
+        // Get all messages in this conversation
+        const messagesRef = collection(db, 'chat_messages');
+        const messagesQuery = query(
+            messagesRef,
+            where('conversationId', '==', conversationId)
+        );
+        
+        const messagesSnapshot = await getDocs(messagesQuery);
+        
+        // FIXED LOGIC: Only mark messages as read that were SENT TO the current user
+        // If clinic is reading: mark patient messages as read
+        // If patient is reading: mark clinic messages as read
+        const messagesToUpdate = messagesSnapshot.docs.filter(doc => {
+            const data = doc.data();
+            // Clinic reading patient messages
+            return data.senderType === 'patient' && !data.isRead;
+        });
+        
+        if (messagesToUpdate.length > 0) {
+        const batch = writeBatch(db);
+            messagesToUpdate.forEach(doc => {
+                batch.update(doc.ref, { 
+                    isRead: true,
+                    readAt: serverTimestamp(),
+                    readBy: clinicId
+                });
+        });
+        
             await batch.commit();
-            console.log(`Marked ${messagesSnapshot.docs.length} messages as read`);
+            console.log(`📖 Marked ${messagesToUpdate.length} patient messages as read by clinic`);
         }
         
-        // Mettre à jour la conversation
+        // Update conversation - reset unread count for clinic side only
         await updateDoc(doc(db, 'chat_conversations', conversationId), {
-            hasUnreadMessages: false,
-            unreadCount: 0,
+            clinicUnreadCount: 0,
+            clinicHasUnread: false,
             updatedAt: serverTimestamp()
         });
         
@@ -1238,11 +1590,61 @@ async function _markConversationMessagesAsRead(conversationId, clinicId) {
     }
 }
 
+// API endpoint to mark conversation as read
+app.post('/api/chat/conversations/:conversationId/mark-read', requireAuth, async (req, res) => {
+    try {
+        const { conversationId } = req.params;
+        const userId = req.user.uid;
+        
+        console.log(`=== MARKING CONVERSATION AS READ ===`);
+        console.log(`Conversation ID: ${conversationId}`);
+        console.log(`User ID: ${userId}`);
+        
+        // Vérifier que la conversation existe et appartient à cet utilisateur
+        const conversationRef = doc(db, 'chat_conversations', conversationId);
+        const conversationDoc = await getDoc(conversationRef);
+        
+        if (!conversationDoc.exists()) {
+            return res.status(404).json({
+                success: false,
+                message: 'Conversation not found'
+            });
+        }
+        
+        const conversationData = conversationDoc.data();
+        
+        // Vérifier que l'utilisateur a accès à cette conversation
+        if (conversationData.clinicId !== userId) {
+            return res.status(403).json({
+                success: false,
+                message: 'Access denied to this conversation'
+            });
+        }
+        
+        // Marquer les messages comme lus
+        await _markConversationMessagesAsRead(conversationId, userId);
+        
+        console.log(`✅ Conversation ${conversationId} marked as read`);
+        
+        res.json({
+            success: true,
+            message: 'Conversation marked as read'
+        });
+        
+    } catch (error) {
+        console.error("Error marking conversation as read:", error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to mark conversation as read',
+            error: error.message
+        });
+    }
+});
+
 // Fonction pour créer un message de confirmation de rendez-vous
 async function createAppointmentConfirmationMessage(appointmentData, clinicName, clinicId) {
   try {
-    console.log('=== CREATING APPOINTMENT CONFIRMATION MESSAGE ===');
-    console.log('Appointment data:', JSON.stringify(appointmentData, null, 2));
+    console.log('📝 Creating appointment confirmation message');
     
     const patientId = appointmentData.patientId;
     const patientName = appointmentData.patientName;
@@ -1259,11 +1661,7 @@ async function createAppointmentConfirmationMessage(appointmentData, clinicName,
       appointmentId = appointmentData.appointmentId;
     }
     
-    console.log('Patient ID:', patientId);
-    console.log('Patient Name:', patientName);
-    console.log('Hospital Name:', hospitalName);
-    console.log('Department:', department);
-    console.log('Appointment ID:', appointmentId);
+    // Reduced logging for better performance
 
     // Gérer le champ date (Timestamp ou Date)
     let appointmentDateObj;
@@ -1284,14 +1682,13 @@ async function createAppointmentConfirmationMessage(appointmentData, clinicName,
       if (clinicDoc.exists()) {
         const clinicData = clinicDoc.data();
         hospitalImage = clinicData.profileImageUrl || clinicData.imageUrl || null;
-        console.log('🏥 Hospital image found:', hospitalImage ? 'Yes' : 'No');
+        // Hospital image processed
       }
     } catch (error) {
       console.log('⚠️ Could not fetch hospital image:', error.message);
     }
 
     // Créer ou obtenir la conversation
-    console.log('Looking for existing conversation...');
     const conversationQuery = await getDocs(
       query(
         collection(db, 'chat_conversations'),
@@ -1303,7 +1700,7 @@ async function createAppointmentConfirmationMessage(appointmentData, clinicName,
     let conversationId;
     if (conversationQuery.empty) {
       console.log('No existing conversation found, creating new one...');
-      // Créer une nouvelle conversation
+      // FIXED LOGIC: Créer une nouvelle conversation avec compteurs séparés
       const conversationData = {
         patientId: patientId,
         clinicId: clinicId,
@@ -1312,8 +1709,20 @@ async function createAppointmentConfirmationMessage(appointmentData, clinicName,
         hospitalImage: hospitalImage, // Ajouter l'image de l'hôpital
         lastMessageTime: serverTimestamp(),
         lastMessage: 'Appointment confirmed',
+        lastSenderType: 'clinic',
+        
+        // Patient-side unread (clinic sent message TO patient)
+        patientUnreadCount: 1, // Patient has new unread message
+        patientHasUnread: true,
+        
+        // Clinic-side unread (clinic just sent, so no unread for clinic)
+        clinicUnreadCount: 0, // Clinic has no unread messages
+        clinicHasUnread: false,
+        
+        // Legacy fields for backward compatibility
         hasUnreadMessages: true,
         unreadCount: 1,
+        
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -1363,12 +1772,24 @@ async function createAppointmentConfirmationMessage(appointmentData, clinicName,
     await addDoc(collection(db, 'chat_messages'), messageData);
     console.log('✅ Confirmation message created in conversation', conversationId);
 
-    // Mettre à jour la conversation
+    // FIXED LOGIC: Mettre à jour la conversation avec compteurs séparés
     await updateDoc(doc(db, 'chat_conversations', conversationId), {
       lastMessageTime: serverTimestamp(),
       lastMessage: 'Appointment confirmed',
+      lastSenderType: 'clinic',
+      
+      // Patient-side unread (clinic sent message TO patient)
+      patientUnreadCount: increment(1), // Patient has new unread message
+      patientHasUnread: true,
+      
+      // Clinic-side unread (clinic just sent, so no unread for clinic)
+      clinicUnreadCount: 0, // Clinic has no unread messages
+      clinicHasUnread: false,
+      
+      // Legacy fields for backward compatibility
       hasUnreadMessages: true,
       unreadCount: increment(1),
+      
       updatedAt: serverTimestamp(),
     });
 

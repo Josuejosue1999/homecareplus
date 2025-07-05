@@ -11,6 +11,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Animate.css for animations -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -661,20 +664,6 @@
                                                             <label for="breakEnd">Lunch Break End</label>
                                                             <input type="time" class="form-control" id="breakEnd" value="13:00">
                                                         </div>
-                                                        <h5><i class="fas fa-calendar-check text-primary me-2"></i>Appointment Settings</h5>
-                                                        <div class="form-group">
-                                                            <label for="appointmentInterval">Time between appointments (minutes)</label>
-                                                            <select class="form-control" id="appointmentInterval">
-                                                                <option value="15">15 minutes</option>
-                                                                <option value="30" selected>30 minutes</option>
-                                                                <option value="45">45 minutes</option>
-                                                                <option value="60">1 hour</option>
-                                                            </select>
-                                                        </div>
-                                                        <div class="form-group">
-                                                            <label for="maxAppointments">Maximum appointments per day</label>
-                                                            <input type="number" class="form-control" id="maxAppointments" value="20" min="1" max="50">
-                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div class="form-actions">
@@ -1156,7 +1145,7 @@
                                 <i class="fas fa-inbox"></i>
                             </div>
                             <div class="stat-content">
-                                <h3 id="totalMessages">0</h3>
+                                <h3 data-stat="total">0</h3>
                                 <p>Total Messages</p>
                             </div>
                         </div>
@@ -1167,7 +1156,7 @@
                                 <i class="fas fa-envelope"></i>
                             </div>
                             <div class="stat-content">
-                                <h3 id="unreadMessages">0</h3>
+                                <h3 data-stat="unread">0</h3>
                                 <p>Unread</p>
                             </div>
                         </div>
@@ -1178,7 +1167,7 @@
                                 <i class="fas fa-reply"></i>
                             </div>
                             <div class="stat-content">
-                                <h3 id="sentMessages">0</h3>
+                                <h3 data-stat="sent">0</h3>
                                 <p>Sent</p>
                             </div>
                         </div>
@@ -1189,8 +1178,8 @@
                                 <i class="fas fa-clock"></i>
                             </div>
                             <div class="stat-content">
-                                <h3 id="pendingReplies">0</h3>
-                                <p>Pending Replies</p>
+                                <h3 data-stat="urgent">0</h3>
+                                <p>Urgent</p>
                             </div>
                         </div>
                     </div>
@@ -1249,12 +1238,12 @@
     <div class="modal fade" id="chatModal" tabindex="-1" aria-labelledby="chatModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
+                <div class="modal-header">
                     <h5 class="modal-title" id="chatModalLabel">
                         <i class="fas fa-comments me-2"></i>
                         <span id="chatPatientName">Chat</span>
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-0">
                     <div class="chat-container">
@@ -1284,6 +1273,9 @@
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
+    <!-- Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    
     <!-- Custom JS -->
     <script src="/js/dashboard.js"></script>
     <script src="/js/dashboard-appointments.js"></script>
@@ -1291,9 +1283,9 @@
     <script src="/js/appointment-details.js"></script>
     <script src="/js/appointments-page.js"></script>
     <script src="/js/messages-page.js"></script>
-    <script src="/js/messages-page-enhanced.js"></script>
     <script src="/js/settings-page.js"></script>
     <script src="/js/notification-service.js"></script>
+    <script src="/js/chat-notifications.js"></script>
     
     
     <script>

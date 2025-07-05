@@ -71,6 +71,11 @@ dev_dependencies:
 flutter:
   assets:
     - assets/animation.json
+    - assets/upcoming.json
+    - assets/cal.json
+    - assets/book.json
+    - assets/sms.json
+    - assets/location.json
     - assets/logo.glb
     - assets/welcome1.png
     - assets/welcome2.png

@@ -3,70 +3,588 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Health Center Dashboard</title>
+    <title>Login - HomeCare Plus</title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <%- include('partials/auth-styles') %>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Water Ripple Effect -->
+    <link rel="stylesheet" href="/css/water-ripple.css">
+    
+    <style>
+        :root {
+            --primary-color: #159BBD;
+            --primary-dark: #0D5C73;
+            --primary-darker: #0A4A5E;
+            --primary-darkest: #083D4F;
+            --secondary-color: #42A5F5;
+            --accent-color: #E3F2FD;
+            --text-dark: #1A1A1A;
+            --text-light: #666666;
+            --text-lighter: #999999;
+            --white: #FFFFFF;
+            --light-gray: #F8FAFC;
+            --border-color: #E5E7EB;
+            --shadow-light: rgba(21, 155, 189, 0.1);
+            --shadow-medium: rgba(21, 155, 189, 0.2);
+            --shadow-dark: rgba(21, 155, 189, 0.3);
+            --gradient-primary: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+            --gradient-accent: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Ubuntu', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .auth-container {
+            display: flex;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Left Side - Professional Content */
+        .auth-left {
+            flex: 1;
+            background: var(--gradient-primary);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .auth-left::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('/videos/back.mp4') center/cover;
+            opacity: 0.1;
+            z-index: 1;
+        }
+
+        .auth-left::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, 
+                rgba(21, 155, 189, 0.9) 0%, 
+                rgba(13, 92, 115, 0.95) 50%, 
+                rgba(10, 74, 94, 0.9) 100%);
+            z-index: 2;
+        }
+
+        .auth-content {
+            position: relative;
+            z-index: 3;
+            text-align: center;
+            color: white;
+            padding: 2rem;
+            max-width: 500px;
+        }
+
+        .auth-logo {
+            font-size: 3rem;
+            color: white;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+
+        .auth-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .auth-features {
+            text-align: left;
+            margin-top: 2rem;
+        }
+
+        .auth-feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+            opacity: 0;
+            animation: slideInLeft 0.6s ease forwards;
+        }
+
+        .auth-feature:nth-child(1) { animation-delay: 0.3s; }
+        .auth-feature:nth-child(2) { animation-delay: 0.5s; }
+        .auth-feature:nth-child(3) { animation-delay: 0.7s; }
+
+        .auth-feature i {
+            font-size: 1.2rem;
+            margin-right: 1rem;
+            color: #ffd700;
+        }
+
+        /* Right Side - Login Form */
+        .auth-right {
+            flex: 1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .auth-right::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            background: var(--gradient-accent);
+            border-radius: 50%;
+            opacity: 0.1;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .auth-right::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 150px;
+            height: 150px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            opacity: 0.05;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+
+        .login-form-container {
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            z-index: 3;
+        }
+
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .form-header h2 {
+            color: var(--text-dark);
+            font-weight: 700;
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-header p {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--light-gray);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background: white;
+            box-shadow: 0 0 0 3px var(--shadow-light);
+        }
+
+        .form-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-lighter);
+            font-size: 1.1rem;
+            transition: color 0.3s ease;
+        }
+
+        .form-control:focus + .form-icon {
+            color: var(--primary-color);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-login::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-login:hover::before {
+            left: 100%;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px var(--shadow-medium);
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .form-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .form-footer a:hover {
+            color: var(--primary-dark);
+        }
+
+        .divider {
+            margin: 2rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        .divider::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            background: white;
+            padding: 0 1rem;
+            color: var(--text-lighter);
+            font-size: 0.9rem;
+        }
+
+        .back-home {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            z-index: 10;
+        }
+
+        .back-home a {
+            display: flex;
+            align-items: center;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-home a:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-5px);
+        }
+
+        .back-home i {
+            margin-right: 0.5rem;
+        }
+
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .auth-container {
+                flex-direction: column;
+            }
+
+            .auth-left {
+                flex: 0 0 40%;
+                min-height: 40vh;
+            }
+
+            .auth-right {
+                flex: 1;
+                padding: 1rem;
+            }
+
+            .auth-title {
+                font-size: 2rem;
+            }
+
+            .auth-content {
+                padding: 1rem;
+            }
+
+            .auth-features {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .auth-left {
+                flex: 0 0 30%;
+                min-height: 30vh;
+            }
+
+            .form-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .back-home {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <!-- Animated Background -->
-    <div class="animated-bg"></div>
-
-    <!-- Auth Container -->
     <div class="auth-container">
-        <div class="auth-card">
-            <!-- Healthcare Icon -->
-            <div class="healthcare-icon">
+        <!-- Back to Home Button -->
+        <div class="back-home">
+            <a href="/">
+                <i class="fas fa-arrow-left"></i>
+                Back to Home
+            </a>
+        </div>
+
+        <!-- Left Side - Professional Content -->
+        <div class="auth-left">
+            <div class="auth-content">
+                <div class="auth-logo">
                 <i class="fas fa-heartbeat"></i>
             </div>
-
-            <!-- Title -->
-            <h2 class="text-center mb-4" style="color: var(--gray-800); font-weight: 700;">
-                Connexion
-            </h2>
-            <p class="text-center mb-4" style="color: var(--gray-600);">
-                Connectez-vous à votre tableau de bord
-            </p>
-
-            <!-- Login Form -->
-            <form id="loginForm">
-                <div class="form-group">
-                    <label for="email" class="form-label">
-                        <i class="fas fa-envelope me-2"></i>Email
-                    </label>
-                    <input type="email" id="email" name="email" class="form-control" required>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">
+                    Access your professional healthcare management dashboard and continue providing exceptional patient care.
+                </p>
+                
+                <div class="auth-features">
+                    <div class="auth-feature">
+                        <i class="fas fa-shield-alt"></i>
+                        <span>Secure & HIPAA Compliant</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Advanced Analytics & Insights</span>
+                    </div>
+                    <div class="auth-feature">
+                        <i class="fas fa-mobile-alt"></i>
+                        <span>Mobile Responsive Platform</span>
+                    </div>
+                </div>
+            </div>
                 </div>
 
-                <div class="form-group">
-                    <label for="password" class="form-label">
-                        <i class="fas fa-lock me-2"></i>Mot de passe
-                    </label>
-                    <input type="password" id="password" name="password" class="form-control" required>
+        <!-- Right Side - Login Form -->
+        <div class="auth-right">
+            <div class="login-form-container">
+                <div class="form-header">
+                    <h2>Sign In</h2>
+                    <p>Enter your credentials to access your dashboard</p>
                 </div>
 
-                <button type="submit" class="btn btn-primary" data-original-text="Se connecter">
-                    <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                        <i class="fas fa-envelope form-icon"></i>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                        <i class="fas fa-lock form-icon"></i>
+                    </div>
+
+                    <button type="submit" class="btn btn-login">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        Sign In to Dashboard
                 </button>
             </form>
 
-            <!-- Links -->
-            <div class="text-center mt-4">
-                <p style="color: var(--gray-600);">
-                    Pas encore de compte? 
-                    <a href="/register" style="color: var(--primary-color); text-decoration: none; font-weight: 600;">
-                        Créer un compte
-                    </a>
-                </p>
-                <a href="/" style="color: var(--gray-500); text-decoration: none; font-size: 0.9rem;">
-                    <i class="fas fa-arrow-left me-1"></i>Retour à l'accueil
-                </a>
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <div class="form-footer">
+                    <p>Don't have an account? <a href="/register">Create one here</a></p>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/auth.js"></script>
+    <script src="/js/water-ripple.js"></script>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Missing Information',
+                    text: 'Please fill in all fields',
+                    confirmButtonColor: '#159BBD'
+                });
+                return;
+            }
+
+            // Show loading
+            Swal.fire({
+                title: 'Signing In...',
+                text: 'Please wait while we verify your credentials',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Welcome Back!',
+                        text: 'Login successful. Redirecting to your dashboard...',
+                        timer: 1500,
+                        showConfirmButton: false,
+                        confirmButtonColor: '#159BBD'
+                    }).then(() => {
+                        window.location.href = '/dashboard';
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Login Failed',
+                        text: data.message || 'Invalid email or password',
+                        confirmButtonColor: '#159BBD'
+                    });
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Connection Error',
+                    text: 'Unable to connect to the server. Please try again.',
+                    confirmButtonColor: '#159BBD'
+                });
+            }
+        });
+
+        // Add input focus effects
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.classList.add('focused');
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.classList.remove('focused');
+            });
+        });
+    </script>
 </body>
 </html> 

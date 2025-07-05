@@ -342,12 +342,12 @@ class _ProfessionalWelcomeScreenState extends State<ProfessionalWelcomeScreen>
                     builder: (context, child) {
                       return Transform.scale(
                         scale: _buttonScale.value,
-                      child: SizedBox(
-                        width: double.infinity,
+                        child: SizedBox(
+                          width: double.infinity,
                           height: 60,
-                        child: ElevatedButton(
+                          child: ElevatedButton(
                             onPressed: _navigateToChoose,
-                          style: ElevatedButton.styleFrom(
+                            style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.white,
                               foregroundColor: const Color(0xFF159BBD),
                               elevation: 12,
@@ -368,13 +368,13 @@ class _ProfessionalWelcomeScreenState extends State<ProfessionalWelcomeScreen>
                         ),
                       );
                     },
-                      ),
-                    ),
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 

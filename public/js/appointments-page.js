@@ -319,12 +319,12 @@ const appointmentsPage = {
                     <span class="contact-info">${appointment.phone || 'N/A'}</span>
                 </td>
                 <td class="actions-cell">
-                    <button class="action-btn view-btn" onclick="AppointmentsManager.viewAppointment('${appointment.id}')" 
-                            title="Voir les détails">
+                    <button class="action-btn view-btn" onclick="appointmentsPage.viewAppointment('${appointment.id}')" 
+                            title="View Details">
                         <i class="fas fa-eye"></i>
                     </button>
-                    <button class="action-btn cancel-btn" onclick="AppointmentsManager.cancelAppointment('${appointment.id}')" 
-                            title="Annuler le rendez-vous">
+                    <button class="action-btn cancel-btn" onclick="appointmentsPage.cancelAppointment('${appointment.id}')" 
+                            title="Cancel Appointment">
                         <i class="fas fa-times"></i>
                     </button>
                 </td>
@@ -445,8 +445,8 @@ const appointmentsPage = {
             return;
         }
         
-        if (typeof AppointmentDetails !== 'undefined' && AppointmentDetails.showAppointmentDetails) {
-            AppointmentDetails.showAppointmentDetails(appointmentId);
+        if (typeof AppointmentDetails !== 'undefined' && AppointmentDetails.showDetails) {
+            AppointmentDetails.showDetails(appointmentId);
         } else {
             this.showAppointmentModal(appointment);
         }
@@ -455,14 +455,14 @@ const appointmentsPage = {
     async cancelAppointment(appointmentId) {
         try {
             const result = await Swal.fire({
-                title: 'Annuler le rendez-vous',
-                text: 'Êtes-vous sûr de vouloir annuler ce rendez-vous ?',
+                title: 'Cancel Appointment',
+                text: 'Are you sure you want to cancel this appointment?',
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc3545',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Oui, annuler',
-                cancelButtonText: 'Non, garder',
+                confirmButtonText: 'Yes, Cancel',
+                cancelButtonText: 'No, Keep',
                 reverseButtons: true
             });
 
@@ -484,14 +484,14 @@ const appointmentsPage = {
                     
                     // Show success message
                     await Swal.fire({
-                        title: 'Annulé !',
-                        text: 'Le rendez-vous a été annulé avec succès.',
+                        title: 'Cancelled!',
+                        text: 'The appointment has been cancelled successfully.',
                         icon: 'success',
                         timer: 2000,
                         showConfirmButton: false
                     });
                 } else {
-                    throw new Error('Rendez-vous non trouvé');
+                    throw new Error('Appointment not found');
                 }
                 
                 this.hideLoadingState();
@@ -501,8 +501,8 @@ const appointmentsPage = {
             this.hideLoadingState();
             
             await Swal.fire({
-                title: 'Erreur',
-                text: 'Une erreur est survenue lors de l\'annulation du rendez-vous.',
+                title: 'Error',
+                text: 'An error occurred while cancelling the appointment.',
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
@@ -832,12 +832,12 @@ const appointmentsPage = {
 
     getStatusText(status) {
         const textMap = {
-            'pending': 'En attente',
-            'confirmed': 'Confirmé',
-            'cancelled': 'Annulé',
-            'completed': 'Terminé'
+            'pending': 'Pending',
+            'confirmed': 'Confirmed',
+            'cancelled': 'Cancelled',
+            'completed': 'Completed'
         };
-        return textMap[status] || 'En attente';
+        return textMap[status] || 'Pending';
     },
 
     formatDate(date) {

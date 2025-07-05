@@ -322,37 +322,57 @@ const AppointmentDetails = {
     },
 
     confirmApprove() {
-        Swal.fire({
-            title: 'Confirm Approval',
-            text: 'Are you sure you want to approve this appointment?',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#28a745',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, Approve',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.approveAppointment();
-            }
-        });
+        // Hide the modal first to avoid z-index issues
+        this.modal.hide();
+        
+        setTimeout(() => {
+            Swal.fire({
+                title: 'Confirm Approval',
+                text: 'Are you sure you want to approve this appointment?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Approve',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.approveAppointment();
+                } else {
+                    // Show the modal again if cancelled
+                    this.modal.show();
+                }
+            });
+        }, 300);
     },
 
     confirmReject() {
-        Swal.fire({
-            title: 'Confirm Rejection',
-            text: 'Are you sure you want to reject this appointment?',
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#dc3545',
-            cancelButtonColor: '#6c757d',
-            confirmButtonText: 'Yes, Reject',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                this.rejectAppointment();
-            }
-        });
+        // Hide the modal first to avoid z-index issues
+        this.modal.hide();
+        
+        setTimeout(() => {
+            Swal.fire({
+                title: 'Confirm Rejection',
+                text: 'Are you sure you want to reject this appointment?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, Reject',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    this.rejectAppointment();
+                } else {
+                    // Show the modal again if cancelled
+                    this.modal.show();
+                }
+            });
+        }, 300);
     },
 
     async approveAppointment() {

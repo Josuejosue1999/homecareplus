@@ -24,7 +24,7 @@ class MessagesPage {
         const refreshBtn = document.getElementById('refreshMessages');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', () => this.loadConversations());
-        }
+    }
 
         // Filter buttons
         const filterBtns = document.querySelectorAll('.filter-btn');
@@ -34,7 +34,7 @@ class MessagesPage {
                 this.filterConversations(filter);
             });
         });
-
+        
         // Search functionality
         const searchInput = document.getElementById('conversationSearch');
         if (searchInput) {
@@ -42,8 +42,8 @@ class MessagesPage {
                 this.searchConversations(e.target.value);
             });
         }
-    }
-
+        }
+        
     // 🔧 FIX: Load hospital avatar for chat display
     async loadHospitalAvatar() {
         try {
@@ -135,7 +135,7 @@ class MessagesPage {
             messagesList.innerHTML = `
                 <div class="empty-conversations">
                     <div class="empty-icon">
-                        <i class="fas fa-comments"></i>
+                    <i class="fas fa-comments"></i>
                     </div>
                     <h3>No conversations yet</h3>
                     <p>Conversations will appear here when patients book appointments and send messages</p>
@@ -207,7 +207,7 @@ class MessagesPage {
             return (words[0][0] + words[1][0]).toUpperCase();
         }
         return name.substring(0, 2).toUpperCase();
-    }
+        }
 
     getTimeAgo(date) {
         const now = new Date();
@@ -233,7 +233,7 @@ class MessagesPage {
                 console.error('Conversation not found:', conversationId);
                 return;
             }
-            
+
             this.currentConversation = conversation;
             
             // Load messages
@@ -283,12 +283,12 @@ class MessagesPage {
         
         modal.innerHTML = `
             <div class="modal-dialog modal-lg">
-                <div class="modal-content">
+                    <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="chatPatientName">
                             <div class="chat-patient-initials">P</div>
                             Chat with Patient
-                        </h5>
+                            </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
@@ -303,16 +303,16 @@ class MessagesPage {
                                              rows="1"></textarea>
                                 </div>
                                 <button type="submit" class="chat-send-btn">
-                                    <i class="fas fa-paper-plane"></i>
+                                        <i class="fas fa-paper-plane"></i>
                                     Send
-                                </button>
+                                    </button>
                             </form>
                         </div>
                     </div>
                 </div>
             </div>
         `;
-        
+
         return modal;
     }
 
@@ -399,7 +399,7 @@ class MessagesPage {
                 <div class="message-wrapper ${wrapperClass}">
                     <div class="message-avatar">
                         ${avatarHtml}
-                    </div>
+                            </div>
                     <div class="message-bubble ${wrapperClass}">
                         <div class="message-content">${this.formatMessage(message.message)}</div>
                         <small class="message-time">${messageTime}</small>
@@ -411,25 +411,25 @@ class MessagesPage {
         chatMessages.innerHTML = messagesHtml;
         
         // Scroll to bottom
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 
     formatMessage(message) {
         // Handle appointment confirmation messages with better formatting
         if (message.includes('**') || message.includes('✅')) {
             return message
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
                 .replace(/•/g, '&bull;')
-                .replace(/\n/g, '<br>');
-        }
-        
+            .replace(/\n/g, '<br>');
+    }
+
         // Handle regular messages
         return message.replace(/\n/g, '<br>');
     }
 
     async sendMessage(event) {
         event.preventDefault();
-        
+
         const input = document.getElementById('chatInput');
         const message = input.value.trim();
         
@@ -447,18 +447,18 @@ class MessagesPage {
                     messageType: 'text'
                 })
             });
-            
+
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    // Clear input
+                // Clear input
                     input.value = '';
-                    
+                
                     // Reload conversation to show new message
                     await this.openConversation(this.currentConversation.id);
-                    
+                
                     // Reload conversations list
-                    this.loadConversations();
+                this.loadConversations();
                 }
             }
         } catch (error) {
@@ -497,13 +497,13 @@ class MessagesPage {
 
     async deleteConversation(conversationId) {
         if (!confirm('Are you sure you want to delete this conversation?')) return;
-        
-        try {
+
+            try {
             const response = await fetch(`/api/chat/conversations/${conversationId}`, {
                 method: 'DELETE'
-            });
-            
-            if (response.ok) {
+                });
+
+                if (response.ok) {
                 this.loadConversations();
             }
         } catch (error) {
@@ -517,7 +517,7 @@ class MessagesPage {
             btn.classList.remove('active');
         });
         document.querySelector(`[data-filter="${filter}"]`).classList.add('active');
-        
+                    
         // Filter conversations
         let filteredConversations = [...this.conversations];
         

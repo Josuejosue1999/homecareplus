@@ -2828,7 +2828,7 @@
         padding: 15px;
         max-height: 350px;
     }
-}
+} 
 
 /* Dashboard Redesign Styles - Enhanced Visual Design */
 
@@ -5843,3 +5843,195 @@
         justify-content: center;
     }
 }
+
+/* ========================================
+   LOGOUT CONFIRMATION POPUP STYLES
+======================================== */
+
+/* Logout Confirmation Popup */
+.logout-confirmation-popup {
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+    border: none !important;
+    overflow: hidden !important;
+    max-width: 420px !important;
+    width: 90% !important;
+    font-family: 'Inter', 'Ubuntu', sans-serif !important;
+}
+
+.logout-confirmation-title {
+    color: #1a1a1a !important;
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    text-align: center !important;
+}
+
+.logout-confirmation-content {
+    color: #4a5568 !important;
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+    margin-bottom: 1.5rem !important;
+    text-align: center !important;
+}
+
+/* Logout Buttons */
+.logout-confirm-btn {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 0.95rem !important;
+    padding: 12px 24px !important;
+    transition: all 0.3s ease !important;
+    text-transform: none !important;
+    letter-spacing: 0.025em !important;
+    min-width: 120px !important;
+}
+
+.logout-confirm-btn:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 8px 20px rgba(220, 53, 69, 0.3) !important;
+}
+
+.logout-cancel-btn {
+    background: #6c757d !important;
+    border: none !important;
+    border-radius: 8px !important;
+    color: white !important;
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    padding: 12px 24px !important;
+    transition: all 0.3s ease !important;
+    text-transform: none !important;
+    letter-spacing: 0.025em !important;
+    min-width: 120px !important;
+}
+
+.logout-cancel-btn:hover {
+    background: #5a6268 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(108, 117, 125, 0.25) !important;
+}
+
+/* Loading Popup */
+.logout-loading-popup {
+    border-radius: 16px !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
+    max-width: 380px !important;
+    width: 90% !important;
+}
+
+.logout-loading-popup .swal2-title {
+    color: #1a1a1a !important;
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+}
+
+.logout-loading-popup .swal2-content {
+    color: #4a5568 !important;
+    font-size: 0.95rem !important;
+}
+
+/* Success Popup */
+.logout-success-popup {
+    border-radius: 16px !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
+    max-width: 380px !important;
+    width: 90% !important;
+}
+
+.logout-success-popup .swal2-title {
+    color: #28a745 !important;
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+}
+
+.logout-success-popup .swal2-content {
+    color: #4a5568 !important;
+    font-size: 0.95rem !important;
+}
+
+/* Error Popup */
+.logout-error-popup {
+    border-radius: 16px !important;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2) !important;
+    max-width: 420px !important;
+    width: 90% !important;
+}
+
+.logout-error-popup .swal2-title {
+    color: #dc3545 !important;
+    font-size: 1.3rem !important;
+    font-weight: 600 !important;
+}
+
+.logout-error-popup .swal2-content {
+    color: #4a5568 !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+}
+
+.logout-error-popup .swal2-confirm {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 10px 20px !important;
+    transition: all 0.3s ease !important;
+}
+
+.logout-error-popup .swal2-confirm:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 16px rgba(220, 53, 69, 0.3) !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .logout-confirmation-popup,
+    .logout-loading-popup,
+    .logout-success-popup,
+    .logout-error-popup {
+        max-width: 340px !important;
+        margin: 0 auto !important;
+    }
+    
+    .logout-confirmation-title {
+        font-size: 1.3rem !important;
+    }
+    
+    .logout-confirm-btn,
+    .logout-cancel-btn {
+        font-size: 0.9rem !important;
+        padding: 10px 20px !important;
+        min-width: 100px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .logout-confirmation-popup,
+    .logout-loading-popup,
+    .logout-success-popup,
+    .logout-error-popup {
+        max-width: 300px !important;
+        margin: 0 auto !important;
+    }
+    
+    .logout-confirmation-title {
+        font-size: 1.2rem !important;
+    }
+    
+    .logout-confirmation-content {
+        font-size: 0.9rem !important;
+    }
+    
+    .logout-confirm-btn,
+    .logout-cancel-btn {
+        font-size: 0.85rem !important;
+        padding: 8px 16px !important;
+        min-width: 90px !important;
+    }
+} 

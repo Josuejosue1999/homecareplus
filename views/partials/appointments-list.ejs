@@ -1,36 +1,36 @@
-<!-- Section des rendez-vous -->
+<!-- Appointments Section -->
 <div class="appointments-section">
     <div class="section-header">
         <h2 class="section-title">
             <i class="fas fa-calendar-alt me-2"></i>
-            Rendez-vous du jour
+            Today's Appointments
         </h2>
         <div class="section-actions">
             <button class="btn btn-outline-primary btn-sm" onclick="refreshAppointments()">
                 <i class="fas fa-sync-alt me-1"></i>
-                Actualiser
+                Refresh
             </button>
         </div>
     </div>
 
-    <!-- Filtres -->
+    <!-- Filters -->
     <div class="filters-row mb-3">
         <div class="btn-group" role="group">
             <button type="button" class="btn btn-outline-primary active" data-filter="all">
-                Tous (<span id="count-all">12</span>)
+                All (<span id="count-all">12</span>)
             </button>
             <button type="button" class="btn btn-outline-warning" data-filter="pending">
-                En attente (<span id="count-pending">4</span>)
+                Pending (<span id="count-pending">4</span>)
             </button>
             <button type="button" class="btn btn-outline-success" data-filter="confirmed">
-                Confirmés (<span id="count-confirmed">8</span>)
+                Confirmed (<span id="count-confirmed">8</span>)
             </button>
         </div>
     </div>
 
-    <!-- Liste des rendez-vous -->
+    <!-- Appointments List -->
     <div class="appointments-list" id="appointmentsList">
-        <!-- Rendez-vous 1 -->
+        <!-- Appointment 1 -->
         <div class="appointment-card" data-status="confirmed" data-appointment-id="1">
             <div class="appointment-time">
                 <div class="time-primary">09:00</div>
@@ -42,15 +42,15 @@
                     <p class="patient-details">
                         <i class="fas fa-phone me-1"></i>+33 6 12 34 56 78
                         <span class="separator">•</span>
-                        <i class="fas fa-user me-1"></i>Consultation générale
+                        <i class="fas fa-user me-1"></i>General Consultation
                     </p>
                 </div>
                 <div class="appointment-actions">
                     <span class="status-badge status-confirmed">
-                        <i class="fas fa-check-circle me-1"></i>Confirmé
+                        <i class="fas fa-check-circle me-1"></i>Confirmed
                     </span>
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('1')">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointmentDetails('1')">
                             <i class="fas fa-eye"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-success" onclick="startAppointment('1')">
@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        <!-- Rendez-vous 2 -->
+        <!-- Appointment 2 -->
         <div class="appointment-card" data-status="pending" data-appointment-id="2">
             <div class="appointment-time">
                 <div class="time-primary">10:30</div>
@@ -73,12 +73,12 @@
                     <p class="patient-details">
                         <i class="fas fa-phone me-1"></i>+33 6 98 76 54 32
                         <span class="separator">•</span>
-                        <i class="fas fa-user me-1"></i>Suivi cardiologique
+                        <i class="fas fa-user me-1"></i>Cardiology Follow-up
                     </p>
                 </div>
                 <div class="appointment-actions">
                     <span class="status-badge status-pending">
-                        <i class="fas fa-clock me-1"></i>En attente
+                        <i class="fas fa-clock me-1"></i>Pending
                     </span>
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-success" onclick="confirmAppointment('2')">
@@ -87,7 +87,7 @@
                         <button class="btn btn-sm btn-danger" onclick="declineAppointment('2')">
                             <i class="fas fa-times"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('2')">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointmentDetails('2')">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
@@ -95,7 +95,7 @@
             </div>
         </div>
 
-        <!-- Rendez-vous 3 -->
+        <!-- Appointment 3 -->
         <div class="appointment-card" data-status="confirmed" data-appointment-id="3">
             <div class="appointment-time">
                 <div class="time-primary">14:00</div>
@@ -107,15 +107,15 @@
                     <p class="patient-details">
                         <i class="fas fa-phone me-1"></i>+33 6 11 22 33 44
                         <span class="separator">•</span>
-                        <i class="fas fa-user me-1"></i>Examen gynécologique
+                        <i class="fas fa-user me-1"></i>Gynecological Exam
                     </p>
                 </div>
                 <div class="appointment-actions">
                     <span class="status-badge status-confirmed">
-                        <i class="fas fa-check-circle me-1"></i>Confirmé
+                        <i class="fas fa-check-circle me-1"></i>Confirmed
                     </span>
                     <div class="action-buttons">
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('3')">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointmentDetails('3')">
                             <i class="fas fa-eye"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-success" onclick="startAppointment('3')">
@@ -126,7 +126,7 @@
             </div>
         </div>
 
-        <!-- Rendez-vous 4 -->
+        <!-- Appointment 4 -->
         <div class="appointment-card" data-status="pending" data-appointment-id="4">
             <div class="appointment-time">
                 <div class="time-primary">16:15</div>
@@ -143,7 +143,7 @@
                 </div>
                 <div class="appointment-actions">
                     <span class="status-badge status-pending">
-                        <i class="fas fa-clock me-1"></i>En attente
+                        <i class="fas fa-clock me-1"></i>Pending
                     </span>
                     <div class="action-buttons">
                         <button class="btn btn-sm btn-success" onclick="confirmAppointment('4')">
@@ -152,7 +152,7 @@
                         <button class="btn btn-sm btn-danger" onclick="declineAppointment('4')">
                             <i class="fas fa-times"></i>
                         </button>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointment('4')">
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewAppointmentDetails('4')">
                             <i class="fas fa-eye"></i>
                         </button>
                     </div>
@@ -161,12 +161,12 @@
         </div>
     </div>
 
-    <!-- Message si aucun rendez-vous -->
+    <!-- No appointments message -->
     <div class="no-appointments" id="noAppointments" style="display: none;">
         <div class="text-center py-5">
             <i class="fas fa-calendar-times fa-3x text-muted mb-3"></i>
-            <h4 class="text-muted">Aucun rendez-vous aujourd'hui</h4>
-            <p class="text-muted">Profitez de ce temps libre pour organiser votre planning</p>
+            <h4 class="text-muted">No appointments today</h4>
+            <p class="text-muted">Take advantage of this free time to organize your schedule</p>
         </div>
     </div>
 </div> 

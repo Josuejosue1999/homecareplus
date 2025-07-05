@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'dart:convert';
+import 'package:lottie/lottie.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
@@ -436,31 +437,36 @@ class _MainDashboardState extends State<MainDashboard> {
           child: Column(
             children: [
               // Header Section
-              Padding(
-                padding: const EdgeInsets.all(16.0),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          greeting,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            greeting,
+                            style: const TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                              letterSpacing: 0.5,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          userName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
+                          const SizedBox(height: 6),
+                          Text(
+                            userName,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withOpacity(0.9),
+                              letterSpacing: 0.3,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     NotificationBadge(
                       onPressed: () async {
@@ -495,72 +501,108 @@ class _MainDashboardState extends State<MainDashboard> {
                             children: [
                               // Quick Actions
                               Container(
-                                padding: const EdgeInsets.all(20),
+                                padding: const EdgeInsets.all(24),
                                 decoration: BoxDecoration(
                                   gradient: LinearGradient(
                                     begin: Alignment.topLeft,
                                     end: Alignment.bottomRight,
                                     colors: [
-                                      const Color(0xFF159BBD).withOpacity(0.05),
-                                      const Color(0xFF0D5C73).withOpacity(0.03),
+                                      const Color(0xFF159BBD).withOpacity(0.06),
+                                      const Color(0xFF0D5C73).withOpacity(0.04),
+                                      Colors.white.withOpacity(0.8),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                      spreadRadius: 2,
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.white,
+                                      blurRadius: 10,
+                                      offset: const Offset(0, -4),
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
                                   border: Border.all(
-                                    color: const Color(0xFF159BBD).withOpacity(0.1),
-                                    width: 1,
+                                    color: const Color(0xFF159BBD).withOpacity(0.12),
+                                    width: 1.2,
                                   ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    const Text(
-                                      'Quick Actions',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF159BBD),
-                                      ),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF159BBD).withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: const Icon(
+                                            Icons.flash_on_rounded,
+                                            color: Color(0xFF159BBD),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        const Text(
+                                          'Quick Actions',
+                                          style: TextStyle(
+                                            fontSize: 22,
+                                            fontWeight: FontWeight.w800,
+                                            color: Color(0xFF159BBD),
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(height: 20),
+                                    const SizedBox(height: 24),
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                       children: [
-                                        _buildActionCard(
-                                          icon: Icons.calendar_today,
-                                          title: 'Appointments',
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
-                                            );
-                                          },
-                                          textSize: 9,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        _buildActionCard(
-                                          icon: Icons.add,
-                                          title: 'Book',
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
-                                            );
-                                          },
-                                          textSize: 12,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        ChatNotificationBadge(
+                                        Expanded(
                                           child: _buildActionCard(
-                                            icon: Icons.message,
-                                            title: 'Messages',
+                                            lottieAsset: 'assets/cal.json',
+                                            title: 'Appointments',
                                             onTap: () {
                                               Navigator.push(
                                                 context,
-                                                MaterialPageRoute(builder: (context) => const ChatPage()),
+                                                MaterialPageRoute(builder: (context) => const AppointmentsPage()),
                                               );
                                             },
-                                            textSize: 12,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: _buildActionCard(
+                                            lottieAsset: 'assets/book.json',
+                                            title: 'Book',
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: ChatNotificationBadge(
+                                            child: _buildActionCard(
+                                              lottieAsset: 'assets/sms.json',
+                                              title: 'Messages',
+                                              onTap: () {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(builder: (context) => const ChatPage()),
+                                                );
+                                              },
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -575,15 +617,33 @@ class _MainDashboardState extends State<MainDashboard> {
                               Container(
                                 padding: const EdgeInsets.all(20),
                                 decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(20),
+                                  gradient: LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Colors.white,
+                                      const Color(0xFF159BBD).withOpacity(0.02),
+                                    ],
+                                  ),
+                                  borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: const Color(0xFF159BBD).withOpacity(0.08),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 8),
+                                      spreadRadius: 2,
+                                    ),
+                                    BoxShadow(
+                                      color: Colors.white,
                                       blurRadius: 10,
-                                      offset: const Offset(0, 5),
+                                      offset: const Offset(0, -4),
+                                      spreadRadius: 0,
                                     ),
                                   ],
+                                  border: Border.all(
+                                    color: const Color(0xFF159BBD).withOpacity(0.06),
+                                    width: 1,
+                                  ),
                                 ),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -591,26 +651,52 @@ class _MainDashboardState extends State<MainDashboard> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const Text(
-                                          'Upcoming Appointments',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF159BBD),
-                                          ),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding: const EdgeInsets.all(8),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                              ),
+                                              child: const Icon(
+                                                Icons.schedule_rounded,
+                                                color: Color(0xFF159BBD),
+                                                size: 20,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            const Text(
+                                              'Upcoming Appointments',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w800,
+                                                color: Color(0xFF159BBD),
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
-                                            );
-                                          },
-                                          child: const Text(
-                                            'See All',
-                                            style: TextStyle(
-                                              color: Color(0xFF159BBD),
-                                              fontWeight: FontWeight.w600,
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFF159BBD).withOpacity(0.08),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: TextButton(
+                                            onPressed: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                                              );
+                                            },
+                                            child: const Text(
+                                              'See All',
+                                              style: TextStyle(
+                                                color: Color(0xFF159BBD),
+                                                fontWeight: FontWeight.w700,
+                                                fontSize: 11,
+                                                letterSpacing: 0.2,
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -765,20 +851,34 @@ class _MainDashboardState extends State<MainDashboard> {
                                               final status = data['status'] ?? 'pending';
                                               
                                               return Container(
-                                                margin: const EdgeInsets.only(bottom: 12),
-                                                padding: const EdgeInsets.all(16),
+                                                margin: const EdgeInsets.only(bottom: 16),
+                                                padding: const EdgeInsets.all(18),
                                                 decoration: BoxDecoration(
                                                   gradient: LinearGradient(
                                                     begin: Alignment.topLeft,
                                                     end: Alignment.bottomRight,
                                                     colors: [
-                                                      const Color(0xFF159BBD).withOpacity(0.05),
-                                                      const Color(0xFF0D5C73).withOpacity(0.03),
+                                                      Colors.white,
+                                                      const Color(0xFF159BBD).withOpacity(0.01),
                                                     ],
                                                   ),
-                                                  borderRadius: BorderRadius.circular(15),
+                                                  borderRadius: BorderRadius.circular(20),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: const Color(0xFF159BBD).withOpacity(0.06),
+                                                      blurRadius: 15,
+                                                      offset: const Offset(0, 6),
+                                                      spreadRadius: 1,
+                                                    ),
+                                                    BoxShadow(
+                                                      color: Colors.white,
+                                                      blurRadius: 8,
+                                                      offset: const Offset(0, -2),
+                                                      spreadRadius: 0,
+                                                    ),
+                                                  ],
                                                   border: Border.all(
-                                                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                    color: const Color(0xFF159BBD).withOpacity(0.04),
                                                     width: 1,
                                                   ),
                                                 ),
@@ -786,11 +886,30 @@ class _MainDashboardState extends State<MainDashboard> {
                                                   children: [
                                                     // Image de l'hôpital
                                                     Container(
-                                                      width: 50,
-                                                      height: 50,
+                                                      width: 56,
+                                                      height: 56,
                                                       decoration: BoxDecoration(
-                                                        borderRadius: BorderRadius.circular(10),
-                                                        color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                        borderRadius: BorderRadius.circular(16),
+                                                        gradient: LinearGradient(
+                                                          begin: Alignment.topLeft,
+                                                          end: Alignment.bottomRight,
+                                                          colors: [
+                                                            const Color(0xFF159BBD).withOpacity(0.08),
+                                                            const Color(0xFF159BBD).withOpacity(0.04),
+                                                          ],
+                                                        ),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                            blurRadius: 8,
+                                                            offset: const Offset(0, 3),
+                                                            spreadRadius: 1,
+                                                          ),
+                                                        ],
+                                                        border: Border.all(
+                                                          color: const Color(0xFF159BBD).withOpacity(0.06),
+                                                          width: 1,
+                                                        ),
                                                       ),
                                                       child: FutureBuilder<Widget>(
                                                         future: _buildHospitalImageForAppointmentWithFallback(data['hospitalImage'], data['hospitalName']),
@@ -812,7 +931,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                           Text(
                                                             data['hospitalName'] ?? 'Unknown Hospital',
                                                             style: const TextStyle(
-                                                              fontSize: 14,
+                                                              fontSize: 13,
                                                               fontWeight: FontWeight.bold,
                                                               color: Color(0xFF159BBD),
                                                             ),
@@ -874,27 +993,50 @@ class _MainDashboardState extends State<MainDashboard> {
                                                     
                                                     // Statut du rendez-vous
                                                     Container(
-                                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                                       decoration: BoxDecoration(
-                                                        color: status == 'confirmed' 
-                                                            ? Colors.green.withOpacity(0.1)
-                                                            : Colors.orange.withOpacity(0.1),
-                                                        borderRadius: BorderRadius.circular(8),
+                                                        gradient: LinearGradient(
+                                                          begin: Alignment.topCenter,
+                                                          end: Alignment.bottomCenter,
+                                                          colors: status == 'confirmed' 
+                                                              ? [
+                                                                  const Color(0xFF4CAF50),
+                                                                  const Color(0xFF388E3C),
+                                                                ]
+                                                              : [
+                                                                  const Color(0xFFFF9800),
+                                                                  const Color(0xFFF57C00),
+                                                                ],
+                                                        ),
+                                                        borderRadius: BorderRadius.circular(12),
+                                                        boxShadow: [
+                                                          BoxShadow(
+                                                            color: (status == 'confirmed' 
+                                                                ? const Color(0xFF4CAF50)
+                                                                : const Color(0xFFFF9800)).withOpacity(0.3),
+                                                            blurRadius: 8,
+                                                            offset: const Offset(0, 3),
+                                                            spreadRadius: 1,
+                                                          ),
+                                                          BoxShadow(
+                                                            color: Colors.white.withOpacity(0.8),
+                                                            blurRadius: 4,
+                                                            offset: const Offset(0, -1),
+                                                            spreadRadius: 0,
+                                                          ),
+                                                        ],
                                                         border: Border.all(
-                                                          color: status == 'confirmed' 
-                                                              ? Colors.green.withOpacity(0.3)
-                                                              : Colors.orange.withOpacity(0.3),
+                                                          color: Colors.white.withOpacity(0.2),
                                                           width: 1,
                                                         ),
                                                       ),
                                                       child: Text(
                                                         status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
-                                                        style: TextStyle(
-                                                          fontSize: 10,
-                                                          fontWeight: FontWeight.bold,
-                                                          color: status == 'confirmed' 
-                                                              ? Colors.green[700]
-                                                              : Colors.orange[700],
+                                                        style: const TextStyle(
+                                                          fontSize: 9,
+                                                          fontWeight: FontWeight.w800,
+                                                          color: Colors.white,
+                                                          letterSpacing: 0.5,
                                                         ),
                                                       ),
                                                     ),
@@ -914,20 +1056,34 @@ class _MainDashboardState extends State<MainDashboard> {
                                             final status = data['status'] ?? 'pending';
                                             
                                             return Container(
-                                              margin: const EdgeInsets.only(bottom: 12),
-                                              padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
+                                              margin: const EdgeInsets.only(bottom: 16),
+                                              padding: const EdgeInsets.all(18),
+                                              decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
                                                   colors: [
-                                                    const Color(0xFF159BBD).withOpacity(0.05),
-                                                    const Color(0xFF0D5C73).withOpacity(0.03),
+                                                    Colors.white,
+                                                    const Color(0xFF159BBD).withOpacity(0.01),
                                                   ],
                                                 ),
-                                        borderRadius: BorderRadius.circular(15),
+                                                borderRadius: BorderRadius.circular(20),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: const Color(0xFF159BBD).withOpacity(0.06),
+                                                    blurRadius: 15,
+                                                    offset: const Offset(0, 6),
+                                                    spreadRadius: 1,
+                                                  ),
+                                                  BoxShadow(
+                                                    color: Colors.white,
+                                                    blurRadius: 8,
+                                                    offset: const Offset(0, -2),
+                                                    spreadRadius: 0,
+                                                  ),
+                                                ],
                                                 border: Border.all(
-                                                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                  color: const Color(0xFF159BBD).withOpacity(0.04),
                                                   width: 1,
                                                 ),
                                               ),
@@ -935,11 +1091,30 @@ class _MainDashboardState extends State<MainDashboard> {
                                                 children: [
                                                   // Image de l'hôpital
                                                   Container(
-                                                    width: 50,
-                                                    height: 50,
+                                                    width: 56,
+                                                    height: 56,
                                                     decoration: BoxDecoration(
-                                                    borderRadius: BorderRadius.circular(10),
-                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(16),
+                                                      gradient: LinearGradient(
+                                                        begin: Alignment.topLeft,
+                                                        end: Alignment.bottomRight,
+                                                        colors: [
+                                                          const Color(0xFF159BBD).withOpacity(0.08),
+                                                          const Color(0xFF159BBD).withOpacity(0.04),
+                                                        ],
+                                                      ),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                          blurRadius: 8,
+                                                          offset: const Offset(0, 3),
+                                                          spreadRadius: 1,
+                                                        ),
+                                                      ],
+                                                      border: Border.all(
+                                                        color: const Color(0xFF159BBD).withOpacity(0.06),
+                                                        width: 1,
+                                                      ),
                                                     ),
                                                     child: FutureBuilder<Widget>(
                                                       future: _buildHospitalImageForAppointmentWithFallback(data['hospitalImage'], data['hospitalName']),
@@ -955,13 +1130,13 @@ class _MainDashboardState extends State<MainDashboard> {
                                                   
                                                   // Informations du rendez-vous
                                                   Expanded(
-                                      child: Column(
+                                                      child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
+                                                        children: [
                                                         Text(
                                                           data['hospitalName'] ?? 'Unknown Hospital',
                                                           style: const TextStyle(
-                                                            fontSize: 14,
+                                                            fontSize: 13,
                                                             fontWeight: FontWeight.bold,
                                                             color: Color(0xFF159BBD),
                                                           ),
@@ -1023,27 +1198,50 @@ class _MainDashboardState extends State<MainDashboard> {
                                                   
                                                   // Statut du rendez-vous
                                                   Container(
-                                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                                     decoration: BoxDecoration(
-                                                      color: status == 'confirmed' 
-                                                          ? Colors.green.withOpacity(0.1)
-                                                          : Colors.orange.withOpacity(0.1),
-                                                      borderRadius: BorderRadius.circular(8),
+                                                      gradient: LinearGradient(
+                                                        begin: Alignment.topCenter,
+                                                        end: Alignment.bottomCenter,
+                                                        colors: status == 'confirmed' 
+                                                            ? [
+                                                                const Color(0xFF4CAF50),
+                                                                const Color(0xFF388E3C),
+                                                              ]
+                                                            : [
+                                                                const Color(0xFFFF9800),
+                                                                const Color(0xFFF57C00),
+                                                              ],
+                                                      ),
+                                                      borderRadius: BorderRadius.circular(12),
+                                                      boxShadow: [
+                                                        BoxShadow(
+                                                          color: (status == 'confirmed' 
+                                                              ? const Color(0xFF4CAF50)
+                                                              : const Color(0xFFFF9800)).withOpacity(0.3),
+                                                          blurRadius: 8,
+                                                          offset: const Offset(0, 3),
+                                                          spreadRadius: 1,
+                                                        ),
+                                                        BoxShadow(
+                                                          color: Colors.white.withOpacity(0.8),
+                                                          blurRadius: 4,
+                                                          offset: const Offset(0, -1),
+                                                          spreadRadius: 0,
+                                                        ),
+                                                      ],
                                                       border: Border.all(
-                                                        color: status == 'confirmed' 
-                                                            ? Colors.green.withOpacity(0.3)
-                                                            : Colors.orange.withOpacity(0.3),
+                                                        color: Colors.white.withOpacity(0.2),
                                                         width: 1,
                                                       ),
                                                     ),
                                                     child: Text(
                                                         status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
-                                                      style: TextStyle(
-                                                        fontSize: 10,
-                                                        fontWeight: FontWeight.bold,
-                                                        color: status == 'confirmed' 
-                                                            ? Colors.green[700]
-                                                            : Colors.orange[700],
+                                                      style: const TextStyle(
+                                                        fontSize: 9,
+                                                        fontWeight: FontWeight.w800,
+                                                        color: Colors.white,
+                                                        letterSpacing: 0.5,
                                                       ),
                                                     ),
                                                   ),
@@ -1256,46 +1454,83 @@ class _MainDashboardState extends State<MainDashboard> {
   }
 
   Widget _buildActionCard({
-    required IconData icon,
+    IconData? icon,
+    String? lottieAsset,
     required String title,
     required VoidCallback onTap,
-    double textSize = 12,
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 100,
-        height: 100,
-        padding: const EdgeInsets.all(10),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        height: 120,
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(15),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              const Color(0xFF159BBD).withOpacity(0.03),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: const Color(0xFF159BBD).withOpacity(0.12),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: Colors.white,
               blurRadius: 10,
-              offset: const Offset(0, 5),
+              offset: const Offset(0, -3),
+              spreadRadius: 1,
             ),
           ],
+          border: Border.all(
+            color: const Color(0xFF159BBD).withOpacity(0.08),
+            width: 1.2,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 26,
-              color: const Color(0xFF159BBD),
-            ),
-            const SizedBox(height: 6),
+            if (lottieAsset != null)
+              SizedBox(
+                width: 42,
+                height: 42,
+                child: Lottie.asset(
+                  lottieAsset,
+                  fit: BoxFit.contain,
+                ),
+              )
+            else if (icon != null)
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  size: 24,
+                  color: const Color(0xFF159BBD),
+                ),
+              ),
+            const SizedBox(height: 12),
             Text(
               title,
-              style: TextStyle(
-                fontSize: textSize,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF159BBD),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF159BBD),
+                letterSpacing: 0.2,
               ),
               textAlign: TextAlign.center,
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ],

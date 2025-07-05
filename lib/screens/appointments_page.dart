@@ -82,87 +82,115 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
               const Color(0xFF159BBD),
-              const Color(0xFF0D5C73),
-              const Color(0xFF0D5C73).withOpacity(0.8),
-              Colors.white,
+              const Color(0xFF0D7A94),
+              const Color(0xFF0A5F73),
+              const Color(0xFF085A6B),
             ],
-            stops: const [0.0, 0.3, 0.6, 0.8],
+            stops: const [0.0, 0.4, 0.7, 1.0],
           ),
         ),
         child: SafeArea(
           child: Column(
             children: [
-              // Header PRO
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-                child: Row(
-                  children: [
-                    // Bouton de retour
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => const MainDashboard()),
-                          );
-                        },
-                      ),
+              // Professional Header Section
+              Container(
+                margin: const EdgeInsets.only(left: 20, right: 20, top: 20, bottom: 10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.white.withOpacity(0.95),
+                      Colors.white.withOpacity(0.85),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  borderRadius: BorderRadius.circular(25),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.6),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF159BBD).withOpacity(0.15),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-                    const SizedBox(width: 16),
-                    
-                    // Titre et sous-titre
-                    Expanded(
-                      child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                          const Text(
-                          'My Appointments',
-                            style: TextStyle(
-                              fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                          const SizedBox(height: 4),
-                        Text(
-                          greeting + ', ' + userName,
-                          style: const TextStyle(
-                              fontSize: 14,
-                            color: Colors.white70,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
-                    ),
-                    
-                    // Bouton profil
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.person, color: Colors.white, size: 24),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ProfilePage()),
-                          );
-                        },
-                      ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.08),
+                      blurRadius: 15,
+                      offset: const Offset(0, 4),
                     ),
                   ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                  child: Row(
+                    children: [
+                      // Modern Back Button
+                      Container(
+                        height: 44,
+                        width: 44,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF159BBD),
+                              const Color(0xFF0D5C73),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(14),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF159BBD).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (context) => const MainDashboard()),
+                              );
+                            },
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                      
+                      // Title Section
+                      const Expanded(
+                        child: Text(
+                          'My Appointments',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: Color(0xFF159BBD),
+                            letterSpacing: 0.3,
+                            height: 1.2,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      
+                      // Balance space (same width as back button)
+                      const SizedBox(width: 44),
+                    ],
+                  ),
                 ),
               ),
               // Appointments List
@@ -247,32 +275,120 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                       if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                         return Center(
                           child: Padding(
-                            padding: const EdgeInsets.all(20),
+                            padding: const EdgeInsets.all(32),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  'No appointments found',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.grey[600],
+                                // Modern Empty State Illustration
+                                Container(
+                                  width: 120,
+                                  height: 120,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF159BBD).withOpacity(0.1),
+                                        const Color(0xFF159BBD).withOpacity(0.05),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.event_note_rounded,
+                                    size: 60,
+                                    color: const Color(0xFF159BBD).withOpacity(0.6),
                                   ),
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'You haven\'t booked any appointments yet',
+                                const SizedBox(height: 24),
+                                
+                                // Title
+                                const Text(
+                                  'No Appointments Yet',
                                   style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey[500],
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w800,
+                                    color: Color(0xFF159BBD),
+                                    letterSpacing: 0.3,
                                   ),
-                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 12),
+                                
+                                // Description
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                                  child: Text(
+                                    'You haven\'t booked any appointments yet. Start by exploring our healthcare providers.',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey[600],
+                                      height: 1.5,
+                                      letterSpacing: 0.2,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                                const SizedBox(height: 32),
+                                
+                                // Call to Action Button
+                                Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        const Color(0xFF159BBD),
+                                        const Color(0xFF0D7A94),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    borderRadius: BorderRadius.circular(16),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF159BBD).withOpacity(0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.transparent,
+                                      foregroundColor: Colors.white,
+                                      shadowColor: Colors.transparent,
+                                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.add_circle_outline_rounded,
+                                          size: 20,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Book Appointment',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 0.3,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
@@ -338,165 +454,345 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
                           final status = data['status'] ?? 'pending';
                           
                           return Container(
+                            margin: const EdgeInsets.only(bottom: 4),
                             decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white,
+                                  Colors.white.withOpacity(0.98),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(20),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                                  color: isUpcoming 
+                                      ? const Color(0xFF159BBD).withOpacity(0.15)
+                                      : Colors.black.withOpacity(0.08),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 6),
+                                  spreadRadius: 0,
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                  spreadRadius: 0,
                                 ),
                               ],
                               border: Border.all(
-                                color: isUpcoming ? const Color(0xFF159BBD).withOpacity(0.18) : Colors.grey.withOpacity(0.13),
-                                width: 1.2,
+                                color: isUpcoming 
+                                    ? const Color(0xFF159BBD).withOpacity(0.2)
+                                    : Colors.grey.withOpacity(0.1),
+                                width: 1.5,
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                  // Hospital Image
-                                  Container(
-                                      width: 60,
-                                      height: 60,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(10),
-                                      color: const Color(0xFF159BBD).withOpacity(0.1),
-                                    ),
-                                    child: _buildHospitalImage(data['hospitalImage']),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  
-                                  // Appointment Details
-                                Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                            child: Container(
+                              padding: const EdgeInsets.all(20),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20),
+                                gradient: isUpcoming 
+                                    ? LinearGradient(
+                                        colors: [
+                                          const Color(0xFF159BBD).withOpacity(0.02),
+                                          Colors.transparent,
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      )
+                                    : null,
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Header Row with Hospital Info
+                                  Row(
+                                    children: [
+                                      // Enhanced Hospital Image
+                                      Container(
+                                        width: 70,
+                                        height: 70,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color(0xFF159BBD).withOpacity(0.1),
+                                              const Color(0xFF159BBD).withOpacity(0.05),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          border: Border.all(
+                                            color: const Color(0xFF159BBD).withOpacity(0.1),
+                                            width: 1,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF159BBD).withOpacity(0.1),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: _buildHospitalImage(data['hospitalImage']),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      
+                                      // Hospital Details
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                          data['hospitalName'] ?? 'Unknown Hospital',
+                                              data['hospitalName'] ?? 'Unknown Hospital',
                                               style: const TextStyle(
-                                            fontSize: 16,
-                                                fontWeight: FontWeight.bold,
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.w800,
                                                 color: Color(0xFF159BBD),
+                                                letterSpacing: 0.3,
                                               ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                borderRadius: BorderRadius.circular(12),
+                                                border: Border.all(
+                                                  color: const Color(0xFF159BBD).withOpacity(0.2),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                data['department'] ?? 'General',
+                                                style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: Color(0xFF159BBD),
+                                                  fontWeight: FontWeight.w600,
+                                                  letterSpacing: 0.2,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          data['department'] ?? 'General',
-                                          style: TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.grey[600],
-                                            fontWeight: FontWeight.w500,
+                                      ),
+                                      
+                                      // Status Badge
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: status == 'confirmed' 
+                                                ? [
+                                                    Colors.green.withOpacity(0.15),
+                                                    Colors.green.withOpacity(0.1),
+                                                  ]
+                                                : [
+                                                    Colors.orange.withOpacity(0.15),
+                                                    Colors.orange.withOpacity(0.1),
+                                                  ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
                                           ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(
+                                            color: status == 'confirmed' 
+                                                ? Colors.green.withOpacity(0.3)
+                                                : Colors.orange.withOpacity(0.3),
+                                            width: 1,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: (status == 'confirmed' ? Colors.green : Colors.orange).withOpacity(0.1),
+                                              blurRadius: 6,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
                                         ),
-                                        const SizedBox(height: 6),
-                                        Row(
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(
-                                              Icons.calendar_today,
+                                              status == 'confirmed' ? Icons.check_circle : Icons.schedule,
                                               size: 14,
-                                              color: Colors.grey[600],
+                                              color: status == 'confirmed' 
+                                                  ? Colors.green[700]
+                                                  : Colors.orange[700],
                                             ),
                                             const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
+                                            Text(
+                                              status == 'confirmed' ? 'CONFIRMED' : 'PENDING',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.w700,
+                                                color: status == 'confirmed' 
+                                                    ? Colors.green[700]
+                                                    : Colors.orange[700],
+                                                letterSpacing: 0.3,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  
+                                  const SizedBox(height: 16),
+                                  
+                                  // Appointment Details Section
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.04),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: Colors.grey.withOpacity(0.1),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        // Date Info
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.calendar_today_rounded,
+                                                      size: 16,
+                                                      color: const Color(0xFF159BBD),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    'Date',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.grey[600],
+                                                      letterSpacing: 0.2,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
                                                 DateFormat('EEE, MMM dd, yyyy').format(appointmentDate ?? DateTime.now()),
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.black87,
+                                                  letterSpacing: 0.2,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
-                                            ),
-                                          ],
+                                            ],
+                                          ),
                                         ),
-                                        const SizedBox(height: 2),
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.access_time,
-                                              size: 14,
-                                              color: Colors.grey[600],
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
+                                        
+                                        // Time Info
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Container(
+                                                    padding: const EdgeInsets.all(6),
+                                                    decoration: BoxDecoration(
+                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Icon(
+                                                      Icons.access_time_rounded,
+                                                      size: 16,
+                                                      color: const Color(0xFF159BBD),
+                                                    ),
+                                                  ),
+                                                  const SizedBox(width: 8),
+                                                  Text(
+                                                    'Time',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: FontWeight.w600,
+                                                      color: Colors.grey[600],
+                                                      letterSpacing: 0.2,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 6),
+                                              Text(
                                                 data['appointmentTime'] ?? 'TBD',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.grey[600],
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: Colors.black87,
+                                                  letterSpacing: 0.2,
                                                 ),
                                                 overflow: TextOverflow.ellipsis,
                                               ),
+                                            ],
+                                          ),
+                                        ),
+                                        
+                                        // Delete Button
+                                        Container(
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                Colors.red.withOpacity(0.1),
+                                                Colors.red.withOpacity(0.05),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
                                             ),
-                                          ],
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: Colors.red.withOpacity(0.2),
+                                              width: 1,
+                                            ),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: Colors.red.withOpacity(0.1),
+                                                blurRadius: 6,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: IconButton(
+                                            icon: const Icon(
+                                              Icons.delete_outline_rounded,
+                                              color: Colors.red,
+                                              size: 20,
+                                            ),
+                                            onPressed: () {
+                                              _showDeleteConfirmation(context, doc.id, data['hospitalName'] ?? 'Unknown Hospital');
+                                            },
+                                            padding: const EdgeInsets.all(12),
+                                            constraints: const BoxConstraints(
+                                              minWidth: 44,
+                                              minHeight: 44,
+                                            ),
+                                          ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                  
-                                  // Status
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: status == 'confirmed' 
-                                          ? Colors.green.withOpacity(0.1)
-                                          : Colors.orange.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: status == 'confirmed' 
-                                            ? Colors.green.withOpacity(0.3)
-                                            : Colors.orange.withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                                child: Text(
-                                      status == 'confirmed' ? 'CONF' : 'PENDING',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.bold,
-                                        color: status == 'confirmed' 
-                                            ? Colors.green[700]
-                                            : Colors.orange[700],
-                                                  ),
-                                                ),
-                                              ),
-                                  
-                                  const SizedBox(width: 8),
-                                  
-                                  // Delete Button
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(8),
-                                      border: Border.all(
-                                        color: Colors.red.withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline,
-                                        color: Colors.red,
-                                        size: 20,
-                                      ),
-                                      onPressed: () {
-                                        _showDeleteConfirmation(context, doc.id, data['hospitalName'] ?? 'Unknown Hospital');
-                                      },
-                                      padding: const EdgeInsets.all(8),
-                                      constraints: const BoxConstraints(
-                                        minWidth: 36,
-                                        minHeight: 36,
-                                    ),
-                                  ),
-                                ),
-                              ],
+                                ],
                               ),
                             ),
                           );
@@ -549,53 +845,135 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
 
   Widget _buildHospitalImage(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
-      return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+      return Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              const Color(0xFF159BBD).withOpacity(0.2),
+              const Color(0xFF159BBD).withOpacity(0.1),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: const Icon(
+          Icons.local_hospital_rounded, 
+          size: 36, 
+          color: Color(0xFF159BBD)
+        ),
+      );
     }
     
     // Check if it's a base64 image (starts with data:image)
     if (imageUrl.startsWith('data:image')) {
       try {
         return ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           child: Image.memory(
             base64Decode(imageUrl.split(',')[1]),
-            width: 60,
-            height: 60,
+            width: 70,
+            height: 70,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF159BBD).withOpacity(0.2),
+                      const Color(0xFF159BBD).withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.local_hospital_rounded, 
+                  size: 36, 
+                  color: Color(0xFF159BBD)
+                ),
+              );
             },
           ),
         );
       } catch (e) {
         print('Error decoding base64 image: $e');
-        return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF159BBD).withOpacity(0.2),
+                const Color(0xFF159BBD).withOpacity(0.1),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(
+            Icons.local_hospital_rounded, 
+            size: 36, 
+            color: Color(0xFF159BBD)
+          ),
+        );
       }
     }
     
     // Check if it's a network URL
     if (imageUrl.startsWith('http')) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         child: Image.network(
           imageUrl,
-          width: 60,
-          height: 60,
+          width: 70,
+          height: 70,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF159BBD).withOpacity(0.2),
+                    const Color(0xFF159BBD).withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.local_hospital_rounded, 
+                size: 36, 
+                color: Color(0xFF159BBD)
+              ),
+            );
           },
           loadingBuilder: (context, child, loadingProgress) {
             if (loadingProgress == null) {
               return child;
             }
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / 
-                      loadingProgress.expectedTotalBytes!
-                    : null,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF159BBD).withOpacity(0.1),
+                    const Color(0xFF159BBD).withOpacity(0.05),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                  strokeWidth: 2,
+                ),
               ),
             );
           },
@@ -606,14 +984,31 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     // Check if it's an asset
     if (imageUrl.startsWith('assets/')) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         child: Image.asset(
           imageUrl,
-          width: 60,
-          height: 60,
+          width: 70,
+          height: 70,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+            return Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    const Color(0xFF159BBD).withOpacity(0.2),
+                    const Color(0xFF159BBD).withOpacity(0.1),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.local_hospital_rounded, 
+                size: 36, 
+                color: Color(0xFF159BBD)
+              ),
+            );
           },
         ),
       );
@@ -623,25 +1018,76 @@ class _AppointmentsPageState extends State<AppointmentsPage> {
     if (imageUrl.startsWith('/')) {
       try {
         return ClipRRect(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           child: Image.file(
             File(imageUrl),
-            width: 60,
-            height: 60,
+            width: 70,
+            height: 70,
             fit: BoxFit.cover,
             errorBuilder: (context, error, stackTrace) {
-              return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      const Color(0xFF159BBD).withOpacity(0.2),
+                      const Color(0xFF159BBD).withOpacity(0.1),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(
+                  Icons.local_hospital_rounded, 
+                  size: 36, 
+                  color: Color(0xFF159BBD)
+                ),
+              );
             },
           ),
         );
       } catch (e) {
         print('Error loading local file: $e');
-        return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+        return Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                const Color(0xFF159BBD).withOpacity(0.2),
+                const Color(0xFF159BBD).withOpacity(0.1),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: const Icon(
+            Icons.local_hospital_rounded, 
+            size: 36, 
+            color: Color(0xFF159BBD)
+          ),
+        );
       }
     }
     
     // Default fallback
-    return const Icon(Icons.local_hospital, size: 30, color: Color(0xFF159BBD));
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.2),
+            const Color(0xFF159BBD).withOpacity(0.1),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: const Icon(
+        Icons.local_hospital_rounded, 
+        size: 36, 
+        color: Color(0xFF159BBD)
+      ),
+    );
   }
 
   void _showDeleteConfirmation(BuildContext context, String appointmentId, String hospitalName) {
