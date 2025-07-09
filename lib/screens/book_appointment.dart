@@ -11,6 +11,7 @@ import 'dart:async';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
 import '../widgets/professional_bottom_nav.dart';
+import 'package:lottie/lottie.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final String hospitalName;
@@ -34,7 +35,7 @@ class BookAppointmentPage extends StatefulWidget {
   State<BookAppointmentPage> createState() => _BookAppointmentPageState();
 }
 
-class _BookAppointmentPageState extends State<BookAppointmentPage> {
+class _BookAppointmentPageState extends State<BookAppointmentPage> with TickerProviderStateMixin {
   int _selectedIndex = 2;
   String? selectedDepartment;
   DateTime? selectedDate;
@@ -46,6 +47,18 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   String reasonOfBooking = '';
   String notes = '';
   int meetingDuration = 30; // Default duration, will be updated from clinic settings
+
+  // Animation controllers for moving bubbles
+  late AnimationController _bubble1Controller;
+  late AnimationController _bubble2Controller;
+  late AnimationController _bubble3Controller;
+  late AnimationController _bubble4Controller;
+  
+  // Animations for bubble positions
+  late Animation<Offset> _bubble1Animation;
+  late Animation<Offset> _bubble2Animation;
+  late Animation<Offset> _bubble3Animation;
+  late Animation<Offset> _bubble4Animation;
 
   // Controllers pour les champs de texte
   late TextEditingController _reasonOfBookingController;
@@ -86,6 +99,66 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     _loadClinicMeetingDuration();
     // NOUVEAU: Initialiser l'écoute en temps réel
     _initializeRealtimeListener();
+    _initializeBubbleAnimations();
+  }
+
+  void _initializeBubbleAnimations() {
+    // Initialize animation controllers with different durations
+    _bubble1Controller = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    );
+    _bubble2Controller = AnimationController(
+      duration: const Duration(seconds: 12),
+      vsync: this,
+    );
+    _bubble3Controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    );
+    _bubble4Controller = AnimationController(
+      duration: const Duration(seconds: 15),
+      vsync: this,
+    );
+
+    // Set up floating animations
+    _bubble1Animation = Tween<Offset>(
+      begin: const Offset(0.1, 0.8),
+      end: const Offset(0.9, 0.2),
+    ).animate(CurvedAnimation(
+      parent: _bubble1Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble2Animation = Tween<Offset>(
+      begin: const Offset(0.8, 0.9),
+      end: const Offset(0.2, 0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble2Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble3Animation = Tween<Offset>(
+      begin: const Offset(0.3, 0.1),
+      end: const Offset(0.7, 0.9),
+    ).animate(CurvedAnimation(
+      parent: _bubble3Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble4Animation = Tween<Offset>(
+      begin: const Offset(0.9, 0.3),
+      end: const Offset(0.1, 0.7),
+    ).animate(CurvedAnimation(
+      parent: _bubble4Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start animations with repeat
+    _bubble1Controller.repeat(reverse: true);
+    _bubble2Controller.repeat(reverse: true);
+    _bubble3Controller.repeat(reverse: true);
+    _bubble4Controller.repeat(reverse: true);
   }
 
   @override
@@ -93,6 +166,10 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
     _reasonOfBookingController.dispose();
     // NOUVEAU: Annuler l'écoute en temps réel
     _appointmentsListener?.cancel();
+    _bubble1Controller.dispose();
+    _bubble2Controller.dispose();
+    _bubble3Controller.dispose();
+    _bubble4Controller.dispose();
     super.dispose();
   }
 
@@ -262,34 +339,53 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         isLoading = true;
       });
 
-      // NOUVEAU: Récupérer les créneaux déjà réservés pour le feedback visuel
-      final bookedSlots = await _getBookedTimeSlots(date);
+      print('=== GENERATING TIME SLOTS FOR DATE ===');
+      print('Date: ${DateFormat('yyyy-MM-dd').format(date)}');
+      print('Hospital: ${widget.hospitalName}');
 
-      // Récupérer l'ID de la clinique
-      final clinicId = await _getClinicId(widget.hospitalName);
-      if (clinicId != null) {
-        // Utiliser le nouveau système d'horaires
-        final slots = await AppointmentService.getAvailableTimeSlots(clinicId, date);
-        setState(() {
-          dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
-          bookedTimeSlots = bookedSlots;
-          isLoading = false;
-        });
-        print('✓ Generated ${slots.length} available time slots for ${DateFormat('yyyy-MM-dd').format(date)}');
-        print('✓ Found ${bookedSlots.length} booked time slots');
+      // Step 1: Generate all possible time slots based on hospital schedule
+      final dayName = DateFormat('EEEE').format(date);
+      List<String> allPossibleSlots = [];
+      
+      if (dayTimeSlots.containsKey(dayName)) {
+        allPossibleSlots = dayTimeSlots[dayName]!;
       } else {
-        // Fallback vers l'ancien système
-        final slots = _generateDefaultTimeSlots();
-        setState(() {
-          dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
-          bookedTimeSlots = bookedSlots;
-          isLoading = false;
-        });
-        print('⚠ Using fallback time slots: ${slots.length} slots');
+        allPossibleSlots = _generateDefaultTimeSlots();
       }
+
+      print('Generated ${allPossibleSlots.length} possible time slots');
+
+      // Step 2: Check which slots are already booked
+      Set<String> bookedSlots = {};
+      
+      for (final timeSlot in allPossibleSlots) {
+        final isAvailable = await AppointmentService.isTimeSlotAvailable(
+          widget.hospitalName,
+          date,
+          timeSlot,
+        );
+        
+        if (!isAvailable) {
+          bookedSlots.add(timeSlot);
+        }
+      }
+
+      print('Found ${bookedSlots.length} booked time slots');
+
+      // Step 3: Update UI state
+      setState(() {
+        dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = allPossibleSlots;
+        bookedTimeSlots = bookedSlots;
+        isLoading = false;
+      });
+
+      print('✓ Time slots generation completed');
+      print('✓ Available slots: ${allPossibleSlots.length - bookedSlots.length}');
+      print('✓ Booked slots: ${bookedSlots.length}');
+      
     } catch (e) {
       print('Error generating time slots: $e');
-      // Fallback vers l'ancien système
+      // Fallback to default slots
       final slots = _generateDefaultTimeSlots();
       setState(() {
         dayTimeSlots[DateFormat('yyyy-MM-dd').format(date)] = slots;
@@ -302,29 +398,56 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
   // Récupérer l'ID de la clinique par son nom
   Future<String?> _getClinicId(String clinicName) async {
     try {
+      print('=== GETTING CLINIC ID ===');
+      print('Looking for clinic: "$clinicName"');
+      
+      // Première tentative: correspondance exacte
       final clinicDocs = await FirebaseFirestore.instance
           .collection('clinics')
           .where('name', isEqualTo: clinicName)
           .get();
       
       if (clinicDocs.docs.isNotEmpty) {
-        return clinicDocs.docs.first.id;
+        final clinicId = clinicDocs.docs.first.id;
+        print('✅ Found exact match for clinic "$clinicName": $clinicId');
+        return clinicId;
       }
       
-      // Essayer une correspondance partielle
+      print('⚠️ No exact match found, trying partial match...');
+      
+      // Deuxième tentative: correspondance partielle
       final allClinicDocs = await FirebaseFirestore.instance.collection('clinics').get();
+      print('📋 Total clinics in database: ${allClinicDocs.docs.length}');
+      
       for (final doc in allClinicDocs.docs) {
         final data = doc.data();
         final name = data['name'] ?? '';
+        print('🔍 Checking clinic: "$name" (ID: ${doc.id})');
+        
+        // Correspondance case-insensitive et partielle
+        if (name.toLowerCase().trim() == clinicName.toLowerCase().trim()) {
+          print('✅ Found case-insensitive exact match: "$name" -> ${doc.id}');
+          return doc.id;
+        }
+        
         if (name.toLowerCase().contains(clinicName.toLowerCase()) ||
             clinicName.toLowerCase().contains(name.toLowerCase())) {
+          print('✅ Found partial match: "$clinicName" matches "$name" -> ${doc.id}');
           return doc.id;
         }
       }
       
+      print('❌ No clinic found for name: "$clinicName"');
+      print('💡 Available clinic names:');
+      for (final doc in allClinicDocs.docs) {
+        final data = doc.data();
+        final name = data['name'] ?? '';
+        print('   - "$name" (ID: ${doc.id})');
+      }
+      
       return null;
     } catch (e) {
-      print('Error getting clinic ID: $e');
+      print('❌ Error getting clinic ID: $e');
       return null;
     }
   }
@@ -337,26 +460,13 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         return {};
       }
 
-      final startOfDay = DateTime(date.year, date.month, date.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
-
-      final appointments = await FirebaseFirestore.instance
-          .collection('appointments')
-          .where('clinicId', isEqualTo: clinicId)
-          .where('appointmentDate', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('appointmentDate', isLessThan: Timestamp.fromDate(endOfDay))
-          .where('status', whereIn: ['pending', 'confirmed'])
-          .get();
-
-      final Set<String> bookedSlots = {};
-      for (final doc in appointments.docs) {
-        final data = doc.data();
-        final time = data['appointmentTime'] ?? '';
-        if (time.isNotEmpty) {
-          bookedSlots.add(time);
-        }
-      }
-
+      // Récupérer les créneaux disponibles et calculer les créneaux réservés par différence
+      final availableSlots = await AppointmentService.getAvailableTimeSlots(clinicId, date);
+      final allPossibleSlots = _generateDefaultTimeSlots();
+      
+      // Les créneaux réservés sont ceux qui ne sont pas dans les disponibles
+      final bookedSlots = allPossibleSlots.where((slot) => !availableSlots.contains(slot)).toSet();
+      
       return bookedSlots;
     } catch (e) {
       print('Error getting booked time slots: $e');
@@ -441,9 +551,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a department'),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red),);
       return;
     }
 
@@ -451,9 +559,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a date'),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red),);
       return;
     }
 
@@ -461,9 +567,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please select a time'),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red),);
       return;
     }
 
@@ -471,9 +575,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please describe your reason for booking'),
-          backgroundColor: Colors.red,
-        ),
-      );
+          backgroundColor: Colors.red),);
       return;
     }
 
@@ -491,18 +593,33 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 ),
                 SizedBox(width: 20),
                 Text('Checking availability...'),
-              ],
-            ),
-          );
+              ]),);
         },
       );
 
+      // Récupérer l'ID de la clinique pour la validation
+      final clinicId = await _getClinicId(widget.hospitalName);
+      print('🏥 Clinic ID for "${widget.hospitalName}": $clinicId');
+      
       // Vérifier si le créneau est encore disponible
-      final isAvailable = await AppointmentService.isTimeSlotAvailable(
-        widget.hospitalName, 
-        selectedDate!, 
-        selectedTime!
-      );
+      bool isAvailable = false;
+      if (clinicId != null) {
+        isAvailable = await AppointmentService.isTimeSlotAvailable(
+          clinicId,
+          selectedDate!, 
+          selectedTime!
+        );
+        print('✅ Time slot availability check: $isAvailable');
+      } else {
+        print('⚠️ Clinic ID is null, checking by hospital name instead...');
+        // Si on ne trouve pas l'ID de la clinique, vérifier par nom d'hôpital
+        isAvailable = await AppointmentService.isTimeSlotAvailable(
+          widget.hospitalName,
+          selectedDate!,
+          selectedTime!
+        );
+        print('✅ Time slot availability check by hospital name: $isAvailable');
+      }
 
       // Fermer le dialogue de vérification
       if (context.mounted) {
@@ -511,15 +628,13 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
 
       if (!isAvailable) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Sorry, this time slot has already been booked by another patient. Please select a different time.'),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 4),
-            ),
-          );
-          // Rafraîchir les créneaux disponibles
+          // Rafraîchir silencieusement les créneaux disponibles pour mettre à jour l'affichage
           await _generateTimeSlotsForDate(selectedDate!);
+          
+          // Réinitialiser la sélection de temps puisque le créneau n'est plus disponible
+          setState(() {
+            selectedTime = null;
+          });
         }
         return;
       }
@@ -537,9 +652,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                 ),
                 SizedBox(width: 20),
                 Text('Booking your appointment...'),
-              ],
-            ),
-          );
+              ]),);
         },
       );
 
@@ -574,9 +687,9 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         patientName = user.displayName ?? 'Patient Name Not Available';
       }
 
-      // Créer l'objet Appointment
+      // Créer le rendez-vous avec la méthode standard
       final appointment = Appointment(
-        id: '', // Sera généré par Firestore
+        id: '',
         patientId: user.uid,
         patientName: patientName,
         patientEmail: patientEmail,
@@ -584,37 +697,39 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
         hospitalName: widget.hospitalName,
         hospitalImage: widget.hospitalImage,
         hospitalLocation: widget.hospitalLocation,
-        department: selectedDepartment!,
+        department: selectedDepartment ?? 'General Consultation',
         appointmentDate: selectedDate!,
         appointmentTime: selectedTime!,
         reasonOfBooking: reasonOfBooking.trim(),
-        meetingDuration: meetingDuration, // Use clinic's configured duration
         status: 'pending',
         createdAt: DateTime.now(),
       );
-
-      // Sauvegarder dans Firebase avec vérification du nom du patient
-      await AppointmentService.createAppointmentWithPatientCheck(appointment);
+      
+      final appointmentId = await AppointmentService.createAppointment(appointment);
 
       // Fermer le dialogue de progression
       if (context.mounted) {
         Navigator.of(context).pop();
       }
 
-      // Afficher une popup de confirmation simplifiée
+      // 🎉 NEW: Show professional success popup
       if (context.mounted) {
-        showDialog(
+        await showDialog(
           context: context,
           barrierDismissible: false,
           builder: (BuildContext context) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(20),
               ),
-              title: Row(
+              contentPadding: const EdgeInsets.all(24),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
+                  // Success Icon
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    width: 80,
+                    height: 80,
                     decoration: BoxDecoration(
                       color: Colors.green.withOpacity(0.1),
                       shape: BoxShape.circle,
@@ -622,73 +737,61 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                     child: const Icon(
                       Icons.check_circle,
                       color: Colors.green,
-                      size: 24,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Text(
-                      'Success!',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              content: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Your appointment has been successfully booked.',
+                      size: 50),),
+                  const SizedBox(height: 20),
+                  
+                  // Success Title
+                  const Text(
+                    'Appointment Booked Successfully!',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.green,
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 8),
+                  const SizedBox(height: 12),
+                  
+                  // Success Message
                   Text(
-                    'You will receive a confirmation email shortly.',
+                    'Your appointment has been booked at ${widget.hospitalName}.\n\nYou will receive a confirmation once the clinic approves your request.',
                     style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey,
+                      fontSize: 14,
+                      color: Colors.grey[600],
                     ),
+                    textAlign: TextAlign.center,
                   ),
-                ],
-              ),
-              actions: [
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pop(); // Fermer la popup
-                      // Rediriger vers la page d'accueil
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-                          builder: (context) => const MainDashboard(),
+                  const SizedBox(height: 24),
+                  
+                  // OK Button
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); // Close dialog
+                        // Navigate to main dashboard
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (context) => const MainDashboard(),
+                          ),
+                          (route) => false,
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF159BBD),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF159BBD),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        elevation: 2,
                       ),
-                    ),
-                    child: const Text(
-                      'OK',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
+                      child: const Text(
+                        'OK',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold),)),),
+                ]),);
           },
         );
       }
@@ -704,9 +807,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
           SnackBar(
             content: Text('Error booking appointment: $e'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-          ),
-        );
+            duration: const Duration(seconds: 3)),);
       }
     }
   }
@@ -736,38 +837,114 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
               const Color(0xFF0D5C73).withOpacity(0.8),
               Colors.white,
             ],
-            stops: const [0.0, 0.3, 0.6, 0.8],
-          ),
-        ),
+            stops: const [0.0, 0.3, 0.6, 0.8]),),
         child: SafeArea(
           child: Column(
             children: [
-              // Header Section
-              Padding(
+              // Header Section with Animated Bubbles
+              Container(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
+                child: Stack(
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () {
-                        Navigator.pop(context);
+                    // Animated Bubbles Background
+                    // Bubble 1
+                    AnimatedBuilder(
+                      animation: _bubble1Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble1Animation.value.dy * 80,
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.15),
+                                  Colors.white.withOpacity(0.05),
+                                ]),)),);
                       },
                     ),
-                    const Expanded(
-                      child: Text(
-                        'Book Your Appointment',
-                        style: TextStyle(
-                          fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                    // Bubble 2
+                    AnimatedBuilder(
+                      animation: _bubble2Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble2Animation.value.dy * 80,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.2),
+                                  Colors.white.withOpacity(0.08),
+                                ]),)),);
+                      },
                     ),
-                    const SizedBox(width: 48), // Pour équilibrer avec la flèche
-                  ],
-                ),
-              ),
+                    // Bubble 3
+                    AnimatedBuilder(
+                      animation: _bubble3Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble3Animation.value.dy * 80,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.1),
+                                  Colors.white.withOpacity(0.03),
+                                ]),)),);
+                      },
+                    ),
+                    // Bubble 4
+                    AnimatedBuilder(
+                      animation: _bubble4Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble4Animation.value.dy * 80,
+                          child: Container(
+                            width: 35,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.25),
+                                  Colors.white.withOpacity(0.1),
+                                ]),)),);
+                      },
+                    ),
+                    // Header Content
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                        ),
+                        const Expanded(
+                          child: Text(
+                            'Book Your Appointment',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                            textAlign: TextAlign.center),),
+                        const SizedBox(width: 48), // Pour équilibrer avec la flèche
+                      ],
+                    ),
+                  ]),),
               // Main Content
               Expanded(
                 child: Container(
@@ -775,9 +952,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                     color: Colors.white,
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
+                      topRight: Radius.circular(30)),),
                   child: SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -807,9 +982,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                   color: Colors.grey.withOpacity(0.05),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
-                                    color: Colors.grey.withOpacity(0.1),
-                                  ),
-                                ),
+                                    color: Colors.grey.withOpacity(0.1)),),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -820,50 +993,62 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                   style: const TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF159BBD),
-                                  ),
-                                      ),
-                                    ),
+                                    color: Color(0xFF159BBD))),),
                                     const SizedBox(height: 16),
+                                    
+                                    // Available Hours
+                                    Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: Lottie.asset(
+                                            'assets/cal.json',
+                                            width: 20,
+                                            height: 20,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(
+                                                Icons.access_time,
+                                                color: Color(0xFF159BBD),
+                                                size: 20,
+                                              );
+                                            }),),
+                                        const SizedBox(width: 8),
+                                        const Text(
+                                          'Available Hours: 24/7',
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.grey),),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 12),
                                     
                                     // Location
                                     Row(
                                       children: [
-                                        const Icon(
-                                          Icons.location_on,
-                                          color: Color(0xFF159BBD),
-                                          size: 20,
-                                        ),
+                                        SizedBox(
+                                          width: 20,
+                                          height: 20,
+                                          child: Lottie.asset(
+                                            'assets/location.json',
+                                            width: 20,
+                                            height: 20,
+                                            fit: BoxFit.contain,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return const Icon(
+                                                Icons.location_on,
+                                                color: Color(0xFF159BBD),
+                                                size: 20,
+                                              );
+                                            }),),
                                         const SizedBox(width: 8),
                                         Expanded(
                                           child: Text(
                                             widget.hospitalLocation,
                                             style: const TextStyle(
                                               fontSize: 14,
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 12),
-                                    
-                                    // Available Hours
-                                    Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.access_time,
-                                          color: Color(0xFF159BBD),
-                                          size: 20,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        const Text(
-                                          'Available Hours: 24/7',
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            color: Colors.grey,
-                                          ),
-                                        ),
+                                              color: Colors.grey)),),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
@@ -886,9 +1071,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                                 'Available Services:',
                                                 style: TextStyle(
                                                   fontSize: 14,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
+                                                  color: Colors.grey),),
                                               const SizedBox(height: 4),
                                               Wrap(
                                                 spacing: 4,
@@ -907,20 +1090,13 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                                       facility,
                                                       style: const TextStyle(
                                                         fontSize: 11,
-                                                        color: Color(0xFF159BBD),
-                                                      ),
-                                                    ),
-                                                  );
+                                                        color: Color(0xFF159BBD))),);
                                                 }).toList(),
                                               ),
-                                            ],
-                                          ),
-                                        ),
+                                            ]),),
                                       ],
                                     ),
-                                  ],
-                                ),
-                              ),
+                                  ]),),
                               const SizedBox(height: 20),
                               // Department Selection
                               Text(
@@ -928,9 +1104,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
+                                  color: Colors.grey[800]),),
                               const SizedBox(height: 8),
                               Container(
                                 decoration: BoxDecoration(
@@ -962,9 +1136,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                         setState(() {
                                           selectedDepartment = newValue;
                                         });
-                                    },
-                                ),
-                              ),
+                                    }),),
                               const SizedBox(height: 20),
 
                               // Date and Time Selection
@@ -973,9 +1145,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.grey[800],
-                                ),
-                              ),
+                                  color: Colors.grey[800]),),
                               const SizedBox(height: 8),
                               
                               // Date Selection
@@ -998,9 +1168,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                           style: TextStyle(
                                             fontSize: 14,
                                             fontWeight: FontWeight.w600,
-                                            color: Colors.grey[700],
-                                          ),
-                                        ),
+                                            color: Colors.grey[700]),),
                                       ],
                                     ),
                                     const SizedBox(height: 12),
@@ -1021,13 +1189,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                                 'Loading available dates...',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.orange[700],
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      )
+                                                  color: Colors.orange[700])),),
+                                          ]),)
                                     else
                                       SizedBox(
                                         height: 100,
@@ -1071,34 +1234,21 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                                       style: TextStyle(
                                                         fontSize: 12,
                                                         fontWeight: FontWeight.w600,
-                                                        color: isSelected ? Colors.white : Colors.grey[600],
-                                                      ),
-                                                    ),
+                                                        color: isSelected ? Colors.white : Colors.grey[600]),),
                                                     Text(
                                                       date.day.toString(),
                                                       style: TextStyle(
                                                         fontSize: 18,
                                                         fontWeight: FontWeight.bold,
-                                                        color: isSelected ? Colors.white : Colors.grey[800],
-                                                      ),
-                                                    ),
+                                                        color: isSelected ? Colors.white : Colors.grey[800]),),
                                                     Text(
                                                       dayName.substring(0, 3),
                                                       style: TextStyle(
                                                         fontSize: 10,
-                                                        color: isSelected ? Colors.white70 : Colors.grey[500],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
+                                                        color: isSelected ? Colors.white70 : Colors.grey[500]),),
+                                                  ])),);
+                                          }),),
+                                  ]),),
                               const SizedBox(height: 16),
 
                               // Time Selection
@@ -1115,16 +1265,24 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                     children: [
                                       Row(
                                         children: [
-                                          const Icon(Icons.access_time, color: Color(0xFF159BBD)),
+                                          SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: Lottie.asset(
+                                              'assets/cal.json',
+                                              width: 20,
+                                              height: 20,
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (context, error, stackTrace) {
+                                                return const Icon(Icons.access_time, color: Color(0xFF159BBD));
+                                              }),),
                                           const SizedBox(width: 8),
                                           Text(
                                             'Available Times',
                                             style: TextStyle(
                                               fontSize: 14,
                                               fontWeight: FontWeight.w600,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
+                                              color: Colors.grey[700]),),
                                           const Spacer(),
                                           Container(
                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -1137,10 +1295,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                               style: const TextStyle(
                                                 fontSize: 12,
                                                 fontWeight: FontWeight.w500,
-                                                color: Color(0xFF159BBD),
-                                              ),
-                                            ),
-                                          ),
+                                                color: Color(0xFF159BBD))),),
                                         ],
                                       ),
                                       const SizedBox(height: 12),
@@ -1150,10 +1305,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                           child: Padding(
                                             padding: EdgeInsets.all(20),
                                             child: CircularProgressIndicator(
-                                              color: Color(0xFF159BBD),
-                                            ),
-                                          ),
-                                        )
+                                              color: Color(0xFF159BBD))),)
                                       else if (selectedDate != null)
                                         _buildTimeSlotsGrid()
                                       else
@@ -1169,14 +1321,8 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                               'Please select a date to see available times',
                                               style: TextStyle(
                                                 color: Colors.grey,
-                                                fontSize: 14,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                ),
-                              ),
+                                                fontSize: 14),)),),
+                                    ]),),
                               const SizedBox(height: 20),
                               // Reason for Booking
                               Text(
@@ -1184,9 +1330,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.grey[700],
-                                ),
-                              ),
+                                  color: Colors.grey[700]),),
                               const SizedBox(height: 8),
                               TextField(
                                 controller: _reasonOfBookingController,
@@ -1208,9 +1352,7 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                   ),
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.circular(8),
-                                    borderSide: const BorderSide(color: Color(0xFF159BBD)),
-                                  ),
-                                ),
+                                    borderSide: const BorderSide(color: Color(0xFF159BBD))),),
                                 maxLines: 3,
                               ),
                               const SizedBox(height: 24),
@@ -1232,23 +1374,10 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+                                      color: Colors.white),)),),
+                            ]),),
+                      ]),)),),
+            ])),),
       bottomNavigationBar: ProfessionalBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -1278,120 +1407,324 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> {
             activeIcon: Icon(Icons.person, color: Colors.white),
             label: 'Profile',
           ),
-        ],
-      ),
-    );
+        ]),);
   }
 
   Widget _buildTimeSlotsGrid() {
     final dayName = DateFormat('EEEE').format(selectedDate!);
     final availableSlots = dayTimeSlots[dayName] ?? [];
     
-    // NOUVEAU: Générer une liste complète incluant les créneaux indisponibles
+    // Générer une liste complète incluant les créneaux indisponibles
     final allPossibleSlots = _generateDefaultTimeSlots();
     final List<String> allSlots = [];
     
-    // Combiner les créneaux disponibles et indisponibles
+    // Combiner les créneaux disponibles et indisponibles pour un affichage complet
     for (final slot in allPossibleSlots) {
-      if (availableSlots.contains(slot) || bookedTimeSlots.contains(slot)) {
-        allSlots.add(slot);
-      }
+      allSlots.add(slot);
     }
     
     // Si aucun créneau, afficher le message par défaut
-    if (allSlots.isEmpty && availableSlots.isEmpty) {
+    if (allSlots.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: Colors.orange[50],
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: Colors.orange[200]!),
         ),
-        child: Row(
+        child: Column(
           children: [
-            Icon(Icons.info_outline, color: Colors.orange[600], size: 20),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'No time slots available for this day.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.orange[700],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
+            Icon(Icons.schedule_outlined, color: Colors.orange[600], size: 32),
+            const SizedBox(height: 8),
+            Text(
+              'No time slots available',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: Colors.orange[700]),),
+            const SizedBox(height: 4),
+            Text(
+              'Please select a different date or contact the clinic directly.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.orange[600]),),
+          ]),);
     }
     
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: allSlots.map((time) {
-        final isSelected = selectedTime == time;
-        final isBooked = bookedTimeSlots.contains(time);
-        final isAvailable = availableSlots.contains(time);
-        
-        return GestureDetector(
-          onTap: isAvailable ? () {
-            setState(() {
-              selectedTime = time;
-            });
-          } : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              color: isBooked 
-                  ? Colors.grey[100] 
-                  : isSelected 
-                      ? const Color(0xFF159BBD) 
-                      : Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: isBooked 
-                    ? Colors.grey[300]! 
-                    : isSelected 
-                        ? const Color(0xFF159BBD) 
-                        : Colors.grey[300]!,
-              ),
-              boxShadow: isSelected && isAvailable ? [
-                BoxShadow(
-                  color: const Color(0xFF159BBD).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 1),
-                ),
-              ] : null,
-            ),
-            child: Stack(
-              children: [
-                Text(
-                  isBooked ? 'Unavailable' : _formatTimeForDisplay(time),
-                  style: TextStyle(
-                    fontSize: isBooked ? 10 : 12,
-                    fontWeight: FontWeight.w600,
-                    color: isBooked 
-                        ? Colors.grey[500] 
-                        : isSelected 
-                            ? Colors.white 
-                            : Colors.grey[700],
-                    decoration: isBooked ? TextDecoration.lineThrough : null,
-                  ),
-                ),
-                if (isBooked)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: Colors.grey.withOpacity(0.1),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Légende pour expliquer les différents états
+        Container(
+          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.blue[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.blue[100]!),
           ),
-        );
-      }).toList(),
+          child: Row(
+            children: [
+              // Légende disponible
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                  border: Border.all(color: const Color(0xFF159BBD))),),
+              const SizedBox(width: 6),
+              const Text('Available', style: TextStyle(fontSize: 11, color: Colors.black54)),
+              const SizedBox(width: 16),
+              // Légende sélectionné
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF159BBD),
+                  borderRadius: BorderRadius.circular(4)),),
+              const SizedBox(width: 6),
+              const Text('Selected', style: TextStyle(fontSize: 11, color: Colors.black54)),
+              const SizedBox(width: 16),
+              // Légende réservé
+              Container(
+                width: 12,
+                height: 12,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: CustomPaint(
+                  painter: MiniHatchPatternPainter()),),
+              const SizedBox(width: 6),
+              const Text('Booked', style: TextStyle(fontSize: 11, color: Colors.black54)),
+            ]),),
+        
+        // Grille des créneaux horaires
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: allSlots.map((time) {
+            final isSelected = selectedTime == time;
+            final isBooked = bookedTimeSlots.contains(time);
+            final isAvailable = availableSlots.contains(time) && !isBooked;
+            
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: isAvailable ? () {
+                    setState(() {
+                      selectedTime = time;
+                    });
+                  } : null,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 80,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      color: _getTimeSlotColor(isBooked, isSelected, isAvailable),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: _getTimeSlotBorderColor(isBooked, isSelected, isAvailable),
+                        width: isSelected ? 2 : 1,
+                      ),
+                      boxShadow: _getTimeSlotShadow(isBooked, isSelected, isAvailable),
+                    ),
+                    child: Stack(
+                      children: [
+                        // Effet hachuré pour les créneaux réservés
+                        if (isBooked)
+                          Positioned.fill(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(11),
+                              child: CustomPaint(
+                                painter: ProfessionalHatchPatternPainter())),),
+                        
+                        // Contenu principal
+                        Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                _formatTimeForDisplay(time),
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _getTimeSlotTextColor(isBooked, isSelected, isAvailable)),),
+                              if (isBooked)
+                                Text(
+                                  'Booked',
+                                  style: TextStyle(
+                                    fontSize: 8,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.red[600]),),
+                            ]),),
+                        
+                        // Icône de statut dans le coin
+                        if (isBooked)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.red[500],
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1),
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 8,
+                                color: Colors.white)),)
+                        else if (isSelected)
+                          Positioned(
+                            top: 2,
+                            right: 2,
+                            child: Container(
+                              width: 14,
+                              height: 14,
+                              decoration: BoxDecoration(
+                                color: Colors.green[500],
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1),
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                size: 8,
+                                color: Colors.white)),),
+                        
+                        // Overlay pour les créneaux non disponibles
+                        if (isBooked)
+                          Positioned.fill(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.black.withOpacity(0.05),
+                                borderRadius: BorderRadius.circular(11))),),
+                      ]),))),);
+          }).toList(),
+        ),
+      ],
     );
   }
+
+  // Fonction pour déterminer la couleur de fond du créneau
+  Color _getTimeSlotColor(bool isBooked, bool isSelected, bool isAvailable) {
+    if (isBooked) {
+      return Colors.red[50]!;
+    } else if (isSelected) {
+      return const Color(0xFF159BBD);
+    } else if (isAvailable) {
+      return Colors.white;
+    } else {
+      return Colors.grey[100]!;
+    }
+  }
+
+  // Fonction pour déterminer la couleur de bordure du créneau
+  Color _getTimeSlotBorderColor(bool isBooked, bool isSelected, bool isAvailable) {
+    if (isBooked) {
+      return Colors.red[300]!;
+    } else if (isSelected) {
+      return const Color(0xFF159BBD);
+    } else if (isAvailable) {
+      return const Color(0xFF159BBD).withOpacity(0.3);
+    } else {
+      return Colors.grey[300]!;
+    }
+  }
+
+  // Fonction pour déterminer la couleur du texte du créneau
+  Color _getTimeSlotTextColor(bool isBooked, bool isSelected, bool isAvailable) {
+    if (isBooked) {
+      return Colors.red[700]!;
+    } else if (isSelected) {
+      return Colors.white;
+    } else if (isAvailable) {
+      return const Color(0xFF159BBD);
+    } else {
+      return Colors.grey[500]!;
+    }
+  }
+
+  // Fonction pour déterminer l'ombre du créneau
+  List<BoxShadow> _getTimeSlotShadow(bool isBooked, bool isSelected, bool isAvailable) {
+    if (isBooked) {
+      return [
+        BoxShadow(
+          color: Colors.red.withOpacity(0.1),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ];
+    } else if (isSelected) {
+      return [
+        BoxShadow(
+          color: const Color(0xFF159BBD).withOpacity(0.3),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        ),
+      ];
+    } else if (isAvailable) {
+      return [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 2,
+          offset: const Offset(0, 1),
+        ),
+      ];
+    } else {
+      return [];
+    }
+  }
+}
+
+// CustomPainter pour les hachures des créneaux réservés
+class ProfessionalHatchPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.red.withOpacity(0.1)
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    // Draw diagonal lines for hatch pattern
+    const spacing = 8.0;
+    for (double i = -size.height; i < size.width + size.height; i += spacing) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+// CustomPainter pour les mini hachures dans la légende
+class MiniHatchPatternPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.red.withOpacity(0.4)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
+
+    // Créer un motif de hachures diagonales
+    for (double i = -size.height; i < size.width; i += 3) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 } 

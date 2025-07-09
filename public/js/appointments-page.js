@@ -159,13 +159,13 @@ const appointmentsPage = {
             if (this.currentFilter === 'today') {
                 const today = new Date();
                 filtered = filtered.filter(appointment => {
-                    const appointmentDate = this.parseAppointmentDate(appointment);
+                    const appointmentDate = this.parseAppointmentDate(appointment.date, appointment.time);
                     return appointmentDate.toDateString() === today.toDateString();
                 });
             } else if (this.currentFilter === 'upcoming') {
                 const today = new Date();
                 filtered = filtered.filter(appointment => {
-                    const appointmentDate = this.parseAppointmentDate(appointment);
+                    const appointmentDate = this.parseAppointmentDate(appointment.date, appointment.time);
                     return appointmentDate > today;
                 });
             } else {
@@ -189,8 +189,8 @@ const appointmentsPage = {
                     bValue = (b.service || b.serviceType || '').toLowerCase();
                     break;
                 case 'date':
-                    aValue = this.parseAppointmentDate(a);
-                    bValue = this.parseAppointmentDate(b);
+                    aValue = this.parseAppointmentDate(a.date, a.time);
+                    bValue = this.parseAppointmentDate(b.date, b.time);
                     break;
                 case 'status':
                     aValue = (a.status || 'pending').toLowerCase();
@@ -554,11 +554,11 @@ const appointmentsPage = {
                                     </div>
                                     <div class="detail-item">
                                         <label>Date:</label>
-                                        <span>${this.formatDate(this.parseAppointmentDate(appointment))}</span>
+                                        <span>${this.formatAppointmentDate(appointment).fullDate}</span>
                                     </div>
                                     <div class="detail-item">
                                         <label>Time:</label>
-                                        <span>${appointment.time || 'N/A'}</span>
+                                        <span>${this.formatAppointmentDate(appointment).time}</span>
                                     </div>
                                     <div class="detail-item">
                                         <label>Status:</label>
@@ -775,32 +775,49 @@ const appointmentsPage = {
         try {
             let dateObj;
             
-            // Handle Firebase timestamp
+            // 🗓️ AMÉLIORATION: Gestion robuste des timestamps Firebase
             if (date && date.seconds) {
+                // Timestamp Firebase avec seconds
                 dateObj = new Date(date.seconds * 1000);
-        }
-            // Handle string date
-            else if (typeof date === 'string') {
+            } else if (date && date.toDate && typeof date.toDate === 'function') {
+                // Méthode toDate() de Firebase
+                dateObj = date.toDate();
+            } else if (typeof date === 'string') {
+                // String date - essayer différents formats
+                if (date.includes('T')) {
+                    // Format ISO
+                    dateObj = new Date(date);
+                } else if (date.includes('/')) {
+                    // Format MM/DD/YYYY ou DD/MM/YYYY
+                    dateObj = new Date(date);
+                } else {
+                    // Autres formats
+                    dateObj = new Date(date);
+                }
+            } else if (date instanceof Date) {
+                // Déjà un objet Date
                 dateObj = new Date(date);
-            }
-            // Handle Date object
-            else if (date instanceof Date) {
-                dateObj = new Date(date);
-            }
-            // Default to today
-            else {
+            } else {
+                // Fallback à aujourd'hui
+                console.warn('Unable to parse date, using current date:', date);
                 dateObj = new Date();
-        }
+            }
 
-            // If time is provided, parse and set it
-            if (time && typeof time === 'string') {
+            // Validation de la date
+            if (isNaN(dateObj.getTime())) {
+                console.warn('Invalid date detected, using current date:', date);
+                dateObj = new Date();
+            }
+
+            // 🕐 AMÉLIORATION: Gestion de l'heure si fournie
+            if (time && typeof time === 'string' && time.trim() !== '') {
                 const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
                 if (timeMatch) {
                     let hours = parseInt(timeMatch[1]);
                     const minutes = parseInt(timeMatch[2]);
                     const period = timeMatch[3];
                     
-                    // Convert to 24-hour format if needed
+                    // Conversion au format 24h si nécessaire
                     if (period) {
                         if (period.toUpperCase() === 'PM' && hours !== 12) {
                             hours += 12;
@@ -810,13 +827,21 @@ const appointmentsPage = {
                     }
                     
                     dateObj.setHours(hours, minutes, 0, 0);
+                } else {
+                    // Essayer de parser l'heure sans AM/PM
+                    const simpleTimeMatch = time.match(/(\d{1,2}):(\d{2})/);
+                    if (simpleTimeMatch) {
+                        const hours = parseInt(simpleTimeMatch[1]);
+                        const minutes = parseInt(simpleTimeMatch[2]);
+                        dateObj.setHours(hours, minutes, 0, 0);
+                    }
                 }
             }
             
             return dateObj;
         } catch (error) {
-            console.error('Error parsing date:', error);
-            return new Date(); // Return current date as fallback
+            console.error('Error parsing appointment date:', error, { date, time });
+            return new Date(); // Retourner la date actuelle en cas d'erreur
         }
     },
 
@@ -840,17 +865,29 @@ const appointmentsPage = {
         return textMap[status] || 'Pending';
     },
 
-    formatDate(date) {
-        if (!date) return 'N/A';
+    formatAppointmentDate(appointment) {
+        const date = this.parseAppointmentDate(appointment.date, appointment.time);
         
-        const options = {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
+        return {
+            fullDate: date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            shortDate: date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            }),
+            time: appointment.time || date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }),
+            dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'long' }),
+            dateObject: date
         };
-        
-        return date.toLocaleDateString('en-US', options);
     },
 
     updateElement(id, value) {

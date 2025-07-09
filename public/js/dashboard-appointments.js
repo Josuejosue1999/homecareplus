@@ -175,22 +175,14 @@ const dashboardAppointments = {
     },
 
     createSimplifiedAppointmentCard(appointment) {
-        const date = this.parseAppointmentDate(appointment);
-        const formattedDate = date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric'
-        });
-        const formattedTime = date.toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-
+        const dateInfo = this.formatAppointmentDate(appointment);
+        
         const statusClass = this.getStatusClass(appointment.status);
         const statusIcon = this.getStatusIcon(appointment.status);
-        const isToday = this.isToday(date);
-        const isTomorrow = this.isTomorrow(date);
+        const isToday = this.isToday(dateInfo.dateObject);
+        const isTomorrow = this.isTomorrow(dateInfo.dateObject);
 
-        let dateDisplay = formattedDate;
+        let dateDisplay = dateInfo.shortDate;
         if (isToday) {
             dateDisplay = '<span style="color: var(--success-color); font-weight: 700;">Today</span>';
         } else if (isTomorrow) {
@@ -255,7 +247,7 @@ const dashboardAppointments = {
                     </div>
                     <div class="appointment-datetime">
                         <span class="date">${dateDisplay}</span>
-                        <span class="time">${formattedTime}</span>
+                        <span class="time">${dateInfo.time}</span>
                     </div>
                     <div class="appointment-status">
                         <span class="status-badge ${statusClass}" title="Appointment status: ${statusDisplay}">
@@ -484,24 +476,78 @@ const dashboardAppointments = {
             return new Date();
         }
 
-        // If it's a Firestore timestamp
-        if (dateString.seconds) {
-            return new Date(dateString.seconds * 1000);
-        }
+        try {
+            let dateObj;
+            
+            // 🗓️ AMÉLIORATION: Gestion robuste des timestamps Firebase
+            if (dateString && dateString.seconds) {
+                // Timestamp Firebase avec seconds
+                dateObj = new Date(dateString.seconds * 1000);
+            } else if (dateString && dateString.toDate && typeof dateString.toDate === 'function') {
+                // Méthode toDate() de Firebase
+                dateObj = dateString.toDate();
+            } else if (typeof dateString === 'string') {
+                // String date - essayer différents formats
+                if (dateString.includes('T')) {
+                    // Format ISO
+                    dateObj = new Date(dateString);
+                } else if (dateString.includes('/')) {
+                    // Format MM/DD/YYYY ou DD/MM/YYYY
+                    dateObj = new Date(dateString);
+                } else {
+                    // Autres formats
+                    dateObj = new Date(dateString);
+                }
+            } else if (dateString instanceof Date) {
+                // Déjà un objet Date
+                dateObj = new Date(dateString);
+            } else {
+                // Fallback à aujourd'hui
+                console.warn('Unable to parse date, using current date:', dateString);
+                dateObj = new Date();
+            }
 
-        // If it's already a Date object
-        if (dateString instanceof Date) {
-            return dateString;
-        }
+            // Validation de la date
+            if (isNaN(dateObj.getTime())) {
+                console.warn('Invalid date detected, using current date:', dateString);
+                dateObj = new Date();
+            }
 
-        // Try to parse as string
-        const parsed = new Date(dateString);
-        if (isNaN(parsed.getTime())) {
-            console.warn('Invalid date format:', dateString);
-            return new Date();
+            // 🕐 AMÉLIORATION: Gestion de l'heure si fournie
+            const time = appointment.time || appointment.appointmentTime;
+            if (time && typeof time === 'string' && time.trim() !== '') {
+                const timeMatch = time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+                if (timeMatch) {
+                    let hours = parseInt(timeMatch[1]);
+                    const minutes = parseInt(timeMatch[2]);
+                    const period = timeMatch[3];
+                    
+                    // Conversion au format 24h si nécessaire
+                    if (period) {
+                        if (period.toUpperCase() === 'PM' && hours !== 12) {
+                            hours += 12;
+                        } else if (period.toUpperCase() === 'AM' && hours === 12) {
+                            hours = 0;
+                        }
+                    }
+                    
+                    dateObj.setHours(hours, minutes, 0, 0);
+                } else {
+                    // Essayer de parser l'heure sans AM/PM
+                    const simpleTimeMatch = time.match(/(\d{1,2}):(\d{2})/);
+                    if (simpleTimeMatch) {
+                        const hours = parseInt(simpleTimeMatch[1]);
+                        const minutes = parseInt(simpleTimeMatch[2]);
+                        dateObj.setHours(hours, minutes, 0, 0);
+                    }
+                }
+            }
+            
+            return dateObj;
+        } catch (error) {
+            console.error('Error parsing appointment date:', error, { appointment });
+            return new Date(); // Retourner la date actuelle en cas d'erreur
         }
-
-        return parsed;
     },
 
     getStatusClass(status) {
@@ -562,6 +608,31 @@ const dashboardAppointments = {
         setInterval(() => {
             this.loadAppointments();
         }, 5 * 60 * 1000);
+    },
+
+    formatAppointmentDate(appointment) {
+        const date = this.parseAppointmentDate(appointment);
+        
+        return {
+            fullDate: date.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }),
+            shortDate: date.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric'
+            }),
+            time: date.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            }),
+            dayOfWeek: date.toLocaleDateString('en-US', { weekday: 'long' }),
+            dateObject: date
+        };
     }
 };
 

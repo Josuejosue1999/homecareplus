@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - HomeCare Plus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Floating Particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HomeCare Plus</span>
+                </div>
+                <div class="sidebar-user">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="user-info">
+                        <h6>Admin System</h6>
+                        <span>Super Administrateur</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item active">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-users"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-hospital"></i>
+                        <span>Cliniques</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>Rendez-vous</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-comments"></i>
+                        <span>Messages</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Rapports</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cog"></i>
+                        <span>Paramètres</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Déconnexion</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Dashboard Administrateur</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Rechercher...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <button class="notifications" id="notificationBtn">
+                        <i class="fas fa-bell"></i>
+                        <span class="badge">3</span>
+                    </button>
+                    <div class="user-menu" id="userMenu">
+                        <div class="user-avatar-small">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Statistics Cards -->
+                <div class="row">
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card">
+                            <div class="stat-icon users">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalUsers">1,248</h3>
+                                <p>Utilisateurs</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+12%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card">
+                            <div class="stat-icon clinics">
+                                <i class="fas fa-hospital"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalClinics">35</h3>
+                                <p>Cliniques</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+8%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card">
+                            <div class="stat-icon appointments">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalAppointments">892</h3>
+                                <p>Rendez-vous</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+23%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card">
+                            <div class="stat-icon revenue">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalRevenue">$45,678</h3>
+                                <p>Revenus</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+15%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts and Recent Activity -->
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="content-card slide-in-left">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-chart-line"></i>
+                                    Statistiques de Croissance
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="chart-btn active" data-chart="users">Utilisateurs</button>
+                                    <button class="chart-btn" data-chart="clinics">Cliniques</button>
+                                    <button class="chart-btn" data-chart="revenue">Revenus</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="growthChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-4">
+                        <div class="content-card slide-in-left">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-clock"></i>
+                                    Activités Récentes
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="activity-item">
+                                    <div class="activity-icon user">
+                                        <i class="fas fa-user-plus"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6>Nouvel utilisateur</h6>
+                                        <p>Jean Dupont s'est inscrit</p>
+                                    </div>
+                                    <div class="activity-time">Il y a 2 min</div>
+                                </div>
+                                
+                                <div class="activity-item">
+                                    <div class="activity-icon clinic">
+                                        <i class="fas fa-hospital"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6>Clinique ajoutée</h6>
+                                        <p>Clinique Saint-Joseph</p>
+                                    </div>
+                                    <div class="activity-time">Il y a 1h</div>
+                                </div>
+                                
+                                <div class="activity-item">
+                                    <div class="activity-icon appointment">
+                                        <i class="fas fa-calendar-alt"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6>Rendez-vous confirmé</h6>
+                                        <p>Dr. Smith - Patient Marie</p>
+                                    </div>
+                                    <div class="activity-time">Il y a 3h</div>
+                                </div>
+                                
+                                <div class="activity-item">
+                                    <div class="activity-icon user">
+                                        <i class="fas fa-user-check"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <h6>Profil vérifié</h6>
+                                        <p>Clinique Moderne</p>
+                                    </div>
+                                    <div class="activity-time">Il y a 5h</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users Management -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="content-card fade-in-up">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-users-cog"></i>
+                                    Gestion des Utilisateurs
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="action-btn">
+                                        <i class="fas fa-plus"></i>
+                                        Ajouter
+                                    </button>
+                                    <button class="action-btn">
+                                        <i class="fas fa-download"></i>
+                                        Exporter
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="users-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Utilisateur</th>
+                                                <th>Email</th>
+                                                <th>Rôle</th>
+                                                <th>Statut</th>
+                                                <th>Date d'inscription</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>
+                                                    <div class="user-name">
+                                                        <div class="user-avatar-table">JD</div>
+                                                        <div>
+                                                            <strong>Jean Dupont</strong>
+                                                            <br>
+                                                            <small>ID: #001</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>jean.dupont@email.com</td>
+                                                <td>Patient</td>
+                                                <td><span class="status-badge active">Actif</span></td>
+                                                <td>2024-01-15</td>
+                                                <td>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="user-name">
+                                                        <div class="user-avatar-table">MS</div>
+                                                        <div>
+                                                            <strong>Marie Smith</strong>
+                                                            <br>
+                                                            <small>ID: #002</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>marie.smith@email.com</td>
+                                                <td>Docteur</td>
+                                                <td><span class="status-badge active">Actif</span></td>
+                                                <td>2024-01-14</td>
+                                                <td>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="user-name">
+                                                        <div class="user-avatar-table">CS</div>
+                                                        <div>
+                                                            <strong>Clinique Sainte-Anne</strong>
+                                                            <br>
+                                                            <small>ID: #003</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>contact@clinique-sa.com</td>
+                                                <td>Clinique</td>
+                                                <td><span class="status-badge active">Actif</span></td>
+                                                <td>2024-01-13</td>
+                                                <td>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="user-name">
+                                                        <div class="user-avatar-table">PD</div>
+                                                        <div>
+                                                            <strong>Pierre Durand</strong>
+                                                            <br>
+                                                            <small>ID: #004</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>pierre.durand@email.com</td>
+                                                <td>Patient</td>
+                                                <td><span class="status-badge inactive">Inactif</span></td>
+                                                <td>2024-01-12</td>
+                                                <td>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td>
+                                                    <div class="user-name">
+                                                        <div class="user-avatar-table">SJ</div>
+                                                        <div>
+                                                            <strong>Sophie Johnson</strong>
+                                                            <br>
+                                                            <small>ID: #005</small>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>sophie.johnson@email.com</td>
+                                                <td>Docteur</td>
+                                                <td><span class="status-badge active">Actif</span></td>
+                                                <td>2024-01-11</td>
+                                                <td>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="action-btn">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button class="action-btn danger">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="notification-toast" id="notificationToast">
+        <div class="toast-content">
+            <i class="fas fa-bell"></i>
+            <div class="toast-message">
+                <h6>Nouvelle notification</h6>
+                <p>Un nouveau message vous attend</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Grid CSS -->
+    <style>
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 0 -15px;
+        }
+        
+        .col-12 { width: 100%; }
+        .col-lg-8 { width: 66.66%; }
+        .col-lg-4 { width: 33.33%; }
+        .col-md-3 { width: 25%; }
+        .col-sm-6 { width: 50%; }
+        
+        .row > div {
+            padding: 0 15px;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 992px) {
+            .col-lg-8, .col-lg-4 { width: 100%; }
+        }
+        
+        @media (max-width: 768px) {
+            .col-md-3, .col-sm-6 { width: 100%; }
+        }
+        
+        .table-responsive {
+            overflow-x: auto;
+        }
+    </style>
+
+    <script src="/js/dashboard.js"></script>
+</body>
+</html> 

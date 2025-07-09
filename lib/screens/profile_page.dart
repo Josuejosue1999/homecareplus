@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:homecare_app/screens/choose.dart';
 import 'package:homecare_app/screens/login.dart';
+import 'package:homecare_app/screens/help_support_page.dart';
+import 'package:homecare_app/screens/security_page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -898,31 +900,27 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           const SizedBox(height: 24),
           _buildSettingItem(
-            Icons.notifications_outlined,
-            'Notifications',
-            'Manage your notification preferences',
-            () {},
-          ),
-          const SizedBox(height: 16),
-          _buildSettingItem(
-            Icons.language_outlined,
-            'Language',
-            'Change app language',
-            () {},
-          ),
-          const SizedBox(height: 16),
-          _buildSettingItem(
             Icons.security_outlined,
             'Privacy & Security',
-            'Manage your privacy settings',
-            () {},
+            'Manage your privacy settings and account security',
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SecurityPage()),
+              );
+            },
           ),
           const SizedBox(height: 16),
           _buildSettingItem(
             Icons.help_outline,
             'Help & Support',
-            'Get help and contact support',
-            () {},
+            'Get help, FAQs, and contact our support team',
+            () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HelpSupportPage()),
+              );
+            },
           ),
         ],
       ),

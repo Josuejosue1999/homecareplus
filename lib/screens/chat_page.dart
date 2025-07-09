@@ -19,16 +19,94 @@ class ChatPage extends StatefulWidget {
   State<ChatPage> createState() => _ChatPageState();
 }
 
-class _ChatPageState extends State<ChatPage> {
+class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   int _selectedIndex = 3; // Changed to 3 for chat
   String userName = 'User';
   String greeting = '';
+
+  // Animation controllers for moving bubbles
+  late AnimationController _bubble1Controller;
+  late AnimationController _bubble2Controller;
+  late AnimationController _bubble3Controller;
+  late AnimationController _bubble4Controller;
+  
+  // Animations for bubble positions
+  late Animation<Offset> _bubble1Animation;
+  late Animation<Offset> _bubble2Animation;
+  late Animation<Offset> _bubble3Animation;
+  late Animation<Offset> _bubble4Animation;
 
   @override
   void initState() {
     super.initState();
     _updateGreeting();
     _loadUserName();
+    
+    // Initialize bubble animation controllers with different durations for variety
+    _bubble1Controller = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    );
+    _bubble2Controller = AnimationController(
+      duration: const Duration(seconds: 12),
+      vsync: this,
+    );
+    _bubble3Controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    );
+    _bubble4Controller = AnimationController(
+      duration: const Duration(seconds: 15),
+      vsync: this,
+    );
+
+    // Create bubble movement animations
+    _bubble1Animation = Tween<Offset>(
+      begin: const Offset(-0.1, 0.8),
+      end: const Offset(1.1, -0.2),
+    ).animate(CurvedAnimation(
+      parent: _bubble1Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble2Animation = Tween<Offset>(
+      begin: const Offset(1.1, 0.9),
+      end: const Offset(-0.1, -0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble2Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble3Animation = Tween<Offset>(
+      begin: const Offset(0.5, 1.2),
+      end: const Offset(0.3, -0.3),
+    ).animate(CurvedAnimation(
+      parent: _bubble3Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble4Animation = Tween<Offset>(
+      begin: const Offset(-0.2, 1.0),
+      end: const Offset(1.2, 0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble4Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start bubble animations
+    _bubble1Controller.repeat();
+    _bubble2Controller.repeat();
+    _bubble3Controller.repeat();
+    _bubble4Controller.repeat();
+  }
+
+  @override
+  void dispose() {
+    _bubble1Controller.dispose();
+    _bubble2Controller.dispose();
+    _bubble3Controller.dispose();
+    _bubble4Controller.dispose();
+    super.dispose();
   }
 
   void _updateGreeting() {
@@ -130,54 +208,254 @@ class _ChatPageState extends State<ChatPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              // Enhanced Header with Animated Bubbles
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Stack(
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          greeting,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                    // Animated Bubbles Background
+                    // Bubble 1
+                    AnimatedBuilder(
+                      animation: _bubble1Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble1Animation.value.dy * 120,
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.15),
+                                  Colors.white.withOpacity(0.05),
+                                ],
+                              ),
+                            ),
                           ),
+                        );
+                      },
+                    ),
+                    // Bubble 2
+                    AnimatedBuilder(
+                      animation: _bubble2Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble2Animation.value.dy * 120,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.12),
+                                  Colors.white.withOpacity(0.03),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Bubble 3
+                    AnimatedBuilder(
+                      animation: _bubble3Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble3Animation.value.dy * 120,
+                          child: Container(
+                            width: 35,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.1),
+                                  Colors.white.withOpacity(0.02),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Bubble 4
+                    AnimatedBuilder(
+                      animation: _bubble4Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble4Animation.value.dy * 120,
+                          child: Container(
+                            width: 50,
+                            height: 50,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.08),
+                                  Colors.white.withOpacity(0.01),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    // Header Content
+                    Column(
+                      children: [
+                        // Professional Header with greeting and user info
+                        Row(
+                          children: [
+                            // Back button
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: IconButton(
+                                icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
+                                onPressed: () => Navigator.pop(context),
+                              ),
+                            ),
+                            
+                            const SizedBox(width: 16),
+                            
+                            // User greeting and info
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '$greeting, $userName',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Your Healthcare Messages',
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            // Message count indicator
+                            StreamBuilder<List<ChatConversation>>(
+                              stream: ChatService.getPatientConversations(),
+                              builder: (context, snapshot) {
+                                final conversations = snapshot.data ?? [];
+                                final unreadCount = conversations.fold<int>(
+                                  0, 
+                                  (sum, conv) => sum + (conv.hasUnreadMessages ? conv.unreadCount : 0)
+                                );
+                                
+                                if (unreadCount == 0) return const SizedBox.shrink();
+                                
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[600],
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.red.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    unreadCount > 99 ? '99+' : unreadCount.toString(),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          userName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            color: Colors.white,
+                        
+                        const SizedBox(height: 24),
+                        
+                        // Professional Messages Badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(25),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.3),
+                              width: 1,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              const Text(
+                                'Healthcare Messages',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white,
-                      child: IconButton(
-                        icon: const Icon(Icons.person, color: Color(0xFF159BBD)),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const ProfilePage()),
-                          );
-                        },
-                      ),
-                    ),
                   ],
                 ),
               ),
-              // Chat List
+              
+              // Enhanced Chat List
               Expanded(
                 child: Container(
                   decoration: const BoxDecoration(
-                    color: Colors.white,
+                    color: Color(0xFFF8F9FA),
                     borderRadius: BorderRadius.only(
                       topLeft: Radius.circular(30),
                       topRight: Radius.circular(30),
@@ -193,9 +471,46 @@ class _ChatPageState extends State<ChatPage> {
                       print('ChatPage: StreamBuilder data length: ${snapshot.data?.length ?? 0}');
                       
                       if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.1),
+                                      blurRadius: 20,
+                                      offset: const Offset(0, 10),
+                                    ),
+                                  ],
+                                ),
+                                child: const CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              const Text(
+                                'Loading Your Messages...',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF4A5568),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                'Please wait while we fetch your conversations',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         );
                       }
@@ -203,45 +518,90 @@ class _ChatPageState extends State<ChatPage> {
                       if (snapshot.hasError) {
                         print('ChatPage: Error in StreamBuilder: ${snapshot.error}');
                         return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Icon(
-                                Icons.error_outline,
-                                size: 64,
-                                color: Colors.grey,
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'Error loading conversations',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(24),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(20),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.error_outline_rounded,
+                                    size: 64,
+                                    color: Colors.red[400],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Please check your connection and try again',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
+                                const SizedBox(height: 24),
+                                const Text(
+                                  'Unable to Load Messages',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF2D3748),
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                              const SizedBox(height: 16),
-                              ElevatedButton(
-                                onPressed: () {
-                                  setState(() {
-                                    // Force rebuild
-                                  });
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF159BBD),
-                                  foregroundColor: Colors.white,
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Unable to load your conversations.\nPlease check your internet connection and try again.',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    color: Colors.grey[600],
+                                    height: 1.4,
+                                  ),
+                                  textAlign: TextAlign.center,
                                 ),
-                                child: const Text('Retry'),
-                              ),
-                            ],
+                                const SizedBox(height: 24),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(12),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF159BBD).withOpacity(0.2),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      setState(() {
+                                        // Force rebuild
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF159BBD),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 24,
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    icon: const Icon(Icons.refresh, size: 20),
+                                    label: const Text(
+                                      'Try Again',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }
@@ -251,32 +611,98 @@ class _ChatPageState extends State<ChatPage> {
 
                       if (conversations.isEmpty) {
                         return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.chat_bubble_outline,
-                                size: 64,
-                                color: Colors.grey[400],
-                              ),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No conversations yet',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.grey[600],
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(32),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        const Color(0xFF159BBD).withOpacity(0.1),
+                                        const Color(0xFF159BBD).withOpacity(0.05),
+                                      ],
+                                    ),
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 20,
+                                        offset: const Offset(0, 10),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(
+                                    Icons.chat_bubble_outline_rounded,
+                                    size: 64,
+                                    color: const Color(0xFF159BBD).withOpacity(0.7),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                'Start booking appointments to chat with clinics!',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[500],
+                                const SizedBox(height: 32),
+                                const Text(
+                                  'No Messages Yet',
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF2D3748),
+                                  ),
                                 ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                                const SizedBox(height: 16),
+                                Text(
+                                  'Your healthcare conversations will appear here.\nStart by booking an appointment with a healthcare provider.',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey[600],
+                                    height: 1.5,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 32),
+                                Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF159BBD).withOpacity(0.2),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 5),
+                                      ),
+                                    ],
+                                  ),
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF159BBD),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 28,
+                                        vertical: 16,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                    ),
+                                    icon: const Icon(Icons.calendar_today, size: 20),
+                                    label: const Text(
+                                      'Book Appointment',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         );
                       }
@@ -293,7 +719,7 @@ class _ChatPageState extends State<ChatPage> {
                           print('  - Last Message: ${conversation.lastMessage}');
                           print('  - Has Unread: ${conversation.hasUnreadMessages}');
                           print('  - Unread Count: ${conversation.unreadCount}');
-                          return _buildChatItem(conversation);
+                          return _buildEnhancedChatItem(conversation);
                         },
                       );
                     },
@@ -307,33 +733,30 @@ class _ChatPageState extends State<ChatPage> {
       bottomNavigationBar: ProfessionalBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        backgroundColor: const Color(0xFF159BBD),
-        selectedColor: Colors.white,
-        unselectedColor: Colors.white.withOpacity(0.7),
-        items: const [
+        items: [
           BottomNavItem(
-            icon: Icon(Icons.dashboard_rounded),
-            activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
-            label: 'Home',
+            icon: ProfessionalIcons.home,
+            activeIcon: ProfessionalIcons.homeActive,
+            label: 'Dashboard',
           ),
           BottomNavItem(
-            icon: Icon(Icons.event_note_rounded),
-            activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
+            icon: ProfessionalIcons.appointments,
+            activeIcon: ProfessionalIcons.appointmentsActive,
             label: 'Appointments',
           ),
           BottomNavItem(
-            icon: Icon(Icons.add_circle, size: 38, color: Colors.white),
-            activeIcon: Icon(Icons.add_circle, size: 38, color: Colors.white),
-            label: 'Book',
+            icon: ProfessionalIcons.calendar,
+            activeIcon: ProfessionalIcons.calendarActive,
+            label: 'Calendar',
           ),
           BottomNavItem(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
+            icon: ProfessionalIcons.messages,
+            activeIcon: ProfessionalIcons.messagesActive,
             label: 'Messages',
           ),
           BottomNavItem(
-            icon: Icon(Icons.account_circle_outlined),
-            activeIcon: Icon(Icons.account_circle_rounded, color: Colors.white),
+            icon: ProfessionalIcons.profile,
+            activeIcon: ProfessionalIcons.profileActive,
             label: 'Profile',
           ),
         ],
@@ -341,156 +764,217 @@ class _ChatPageState extends State<ChatPage> {
     );
   }
 
-  Widget _buildChatItem(ChatConversation conversation) {
+  Widget _buildEnhancedChatItem(ChatConversation conversation) {
     final isUnread = conversation.hasUnreadMessages;
     final timeAgo = _getTimeAgo(conversation.lastMessageTime);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(15),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+            color: isUnread 
+                ? const Color(0xFF159BBD).withOpacity(0.15)
+                : Colors.black.withOpacity(0.08),
+            blurRadius: isUnread ? 20 : 15,
+            offset: const Offset(0, 6),
+            spreadRadius: isUnread ? 2 : 0,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+            spreadRadius: 0,
           ),
         ],
+        border: isUnread ? Border.all(
+          color: const Color(0xFF159BBD).withOpacity(0.3),
+          width: 1.5,
+        ) : null,
       ),
-      child: InkWell(
-        onTap: () async {
-          // Marquer la conversation comme lue avant d'ouvrir
-          if (isUnread) {
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () async {
             await _markConversationAsRead(conversation.id);
-          }
-          
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ChatConversationPage(
-                conversationId: conversation.id,
-                otherPartyName: conversation.clinicName,
-                isClinic: false,
-              ),
-            ),
-          );
-        },
-        child: Row(
-          children: [
-            // Avatar avec image de l'hôpital
-            _buildHospitalAvatar(conversation.clinicName, conversation.hospitalImage),
-            const SizedBox(width: 15),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          conversation.clinicName,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                            color: isUnread ? const Color(0xFF159BBD) : Colors.black87,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        timeAgo,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: isUnread ? const Color(0xFF159BBD) : Colors.grey,
-                        ),
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChatConversationPage(
+                    conversationId: conversation.id,
+                    otherPartyName: conversation.clinicName,
+                    isClinic: false,
+                  ),
+                ),
+              );
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              children: [
+                // Enhanced hospital avatar with better design
+                Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(18),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF159BBD).withOpacity(0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 5),
-                  Text(
-                    conversation.lastMessage,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isUnread ? Colors.black87 : Colors.grey,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: conversation.hospitalImage != null && conversation.hospitalImage!.isNotEmpty
+                        ? _buildHospitalImageWidget(conversation.hospitalImage!)
+                        : _buildPlaceholderAvatar(),
                   ),
-                ],
-              ),
-            ),
-            if (isUnread)
-              Container(
-                width: 10,
-                height: 10,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF159BBD),
-                  shape: BoxShape.circle,
                 ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHospitalAvatar(String hospitalName, String? hospitalImage) {
-    print('Loading image for hospital: $hospitalName, image: $hospitalImage');
-    
-    // Si on a une vraie image de l'hôpital depuis Firebase, l'utiliser
-    if (hospitalImage != null && hospitalImage.isNotEmpty) {
-      print('Using Firebase image for $hospitalName: $hospitalImage');
-      return Container(
-        width: 50,
-        height: 50,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          border: Border.all(
-            color: const Color(0xFF159BBD).withOpacity(0.3),
-            width: 2,
+                
+                const SizedBox(width: 16),
+                
+                // Enhanced conversation details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Hospital name with enhanced styling
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              conversation.clinicName,
+                              style: TextStyle(
+                                fontSize: 17,
+                                fontWeight: isUnread ? FontWeight.w700 : FontWeight.w600,
+                                color: const Color(0xFF2D3748),
+                                letterSpacing: 0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          // Enhanced time indicator
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isUnread 
+                                  ? const Color(0xFF159BBD).withOpacity(0.1)
+                                  : Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              timeAgo,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: isUnread 
+                                    ? const Color(0xFF159BBD)
+                                    : Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 8),
+                      
+                      // Enhanced last message with better formatting
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF159BBD).withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline,
+                              size: 12,
+                              color: const Color(0xFF159BBD),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              conversation.lastMessage,
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: isUnread ? FontWeight.w500 : FontWeight.w400,
+                                color: isUnread ? const Color(0xFF4A5568) : const Color(0xFF718096),
+                                height: 1.3,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(width: 12),
+                
+                // Enhanced action indicator with unread count
+                Column(
+                  children: [
+                    if (isUnread && conversation.unreadCount > 0)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red[600],
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          conversation.unreadCount > 99 ? '99+' : conversation.unreadCount.toString(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Action arrow with enhanced design
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isUnread 
+                            ? const Color(0xFF159BBD).withOpacity(0.1)
+                            : Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        size: 14,
+                        color: isUnread 
+                            ? const Color(0xFF159BBD)
+                            : Colors.grey[600],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(23),
-          child: _buildHospitalImageWidget(hospitalImage),
-        ),
-      );
-    }
-
-    // Fallback vers le mapping statique si pas d'image Firebase
-    final hospitalImages = {
-      'king Hospital': 'assets/hospital.PNG',
-      'King Hospital': 'assets/hospital.PNG',
-      'New Hospital': 'assets/hospital2.PNG',
-      'newclinic': 'assets/hospital.PNG',
-      'Test Clinic 1750941734839': 'assets/hospital.PNG',
-    };
-
-    final imagePath = hospitalImages[hospitalName] ?? 'assets/hospital.PNG';
-    print('Using fallback image for $hospitalName: $imagePath');
-
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: const Color(0xFF159BBD).withOpacity(0.3),
-          width: 2,
-        ),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(23),
-        child: Image.asset(
-          imagePath,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            print('Error loading asset image: $error');
-            return _buildPlaceholderAvatar();
-          },
         ),
       ),
     );
@@ -564,14 +1048,27 @@ class _ChatPageState extends State<ChatPage> {
 
   Widget _buildPlaceholderAvatar() {
     return Container(
+      width: 56,
+      height: 56,
       decoration: BoxDecoration(
-        color: const Color(0xFF159BBD).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(23),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            const Color(0xFF159BBD).withOpacity(0.1),
+            const Color(0xFF159BBD).withOpacity(0.05),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(25.5),
+        border: Border.all(
+          color: const Color(0xFF159BBD).withOpacity(0.2),
+          width: 1.5,
+        ),
       ),
       child: const Icon(
-        Icons.local_hospital,
+        Icons.local_hospital_rounded,
         color: Color(0xFF159BBD),
-        size: 24,
+        size: 28,
       ),
     );
   }

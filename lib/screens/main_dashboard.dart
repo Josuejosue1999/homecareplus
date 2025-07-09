@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'package:lottie/lottie.dart';
+import 'package:video_player/video_player.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
@@ -12,12 +13,14 @@ import 'package:homecare_app/screens/hospital_details.dart';
 import 'package:homecare_app/screens/book_appointment.dart';
 import 'package:homecare_app/screens/pro_hospitals_page.dart';
 import 'package:homecare_app/screens/notification_page.dart';
+import 'package:homecare_app/screens/ai_chat_screen.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 import 'package:homecare_app/widgets/notification_badge.dart';
 import 'package:homecare_app/widgets/chat_notification_badge.dart';
 import '../models/appointment.dart';
 import '../services/appointment_service.dart';
 import '../services/notification_service.dart';
+import 'package:homecare_app/screens/find_healthcare_page.dart';
 
 class MainDashboard extends StatefulWidget {
   final String? selectedHospitalName;
@@ -41,18 +44,158 @@ class MainDashboard extends StatefulWidget {
   State<MainDashboard> createState() => _MainDashboardState();
 }
 
-class _MainDashboardState extends State<MainDashboard> {
+class _MainDashboardState extends State<MainDashboard> with TickerProviderStateMixin {
   int _selectedIndex = 0;
   String userName = 'User';
   String greeting = '';
   bool showHospitalBooking = false;
+  bool showAiWelcomeMessage = true;
+
+  // Animation controllers for moving bubbles
+  late AnimationController _bubble1Controller;
+  late AnimationController _bubble2Controller;
+  late AnimationController _bubble3Controller;
+  late AnimationController _bubble4Controller;
+  
+  // Animation controller for speech bubble
+  late AnimationController _speechBubbleController;
+  late Animation<double> _speechBubbleAnimation;
+  
+  // Animations for bubble positions
+  late Animation<Offset> _bubble1Animation;
+  late Animation<Offset> _bubble2Animation;
+  late Animation<Offset> _bubble3Animation;
+  late Animation<Offset> _bubble4Animation;
+
+  // Video player controller for AI button
+  VideoPlayerController? _videoController;
 
   @override
   void initState() {
     super.initState();
     _updateGreeting();
+    _loadUserName();
+    _initializeAnimations();
+    _initializeSpeechBubbleAnimation();
+    _initializeVideoController();
     if (widget.selectedHospitalName != null) {
       showHospitalBooking = true;
+    }
+  }
+
+  void _initializeAnimations() {
+    // Initialize bubble animation controllers with different durations for variety
+    _bubble1Controller = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    );
+    
+    _bubble2Controller = AnimationController(
+      duration: const Duration(seconds: 12),
+      vsync: this,
+    );
+    
+    _bubble3Controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    );
+    
+    _bubble4Controller = AnimationController(
+      duration: const Duration(seconds: 15),
+      vsync: this,
+    );
+
+    // Create different movement patterns for each bubble
+    _bubble1Animation = Tween<Offset>(
+      begin: const Offset(-0.2, 0.3),
+      end: const Offset(1.2, 0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble1Controller,
+      curve: Curves.easeInOut,
+    ));
+    
+    _bubble2Animation = Tween<Offset>(
+      begin: const Offset(1.1, 0.8),
+      end: const Offset(-0.1, 0.2),
+    ).animate(CurvedAnimation(
+      parent: _bubble2Controller,
+      curve: Curves.easeInOut,
+    ));
+    
+    _bubble3Animation = Tween<Offset>(
+      begin: const Offset(0.2, -0.1),
+      end: const Offset(0.8, 0.9),
+    ).animate(CurvedAnimation(
+      parent: _bubble3Controller,
+      curve: Curves.easeInOut,
+    ));
+    
+    _bubble4Animation = Tween<Offset>(
+      begin: const Offset(0.9, 0.1),
+      end: const Offset(0.1, 0.7),
+    ).animate(CurvedAnimation(
+      parent: _bubble4Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start animations and repeat them
+    _bubble1Controller.repeat(reverse: true);
+    _bubble2Controller.repeat(reverse: true);
+    _bubble3Controller.repeat(reverse: true);
+    _bubble4Controller.repeat(reverse: true);
+  }
+
+  void _initializeSpeechBubbleAnimation() {
+    _speechBubbleController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    );
+    
+    _speechBubbleAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _speechBubbleController,
+      curve: Curves.easeInOut,
+    ));
+    
+    // Start the animation after a delay
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        _speechBubbleController.forward();
+      }
+    });
+  }
+
+  void _initializeVideoController() {
+    _videoController = VideoPlayerController.asset('assets/vido.mp4');
+    _videoController!.initialize().then((_) {
+      _videoController!.setLooping(true);
+      _videoController!.play();
+      if (mounted) {
+        setState(() {});
+      }
+    });
+  }
+
+  Future<void> _loadUserName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        
+        if (userDoc.exists) {
+          final data = userDoc.data()!;
+          setState(() {
+            userName = data['name'] ?? data['fullName'] ?? 'User';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading user name: $e');
     }
   }
 
@@ -86,10 +229,10 @@ class _MainDashboardState extends State<MainDashboard> {
         );
         break;
       case 2:
-        // Navigation vers la page des hôpitaux
+        // Navigate to Find Healthcare page with Google Maps
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+          MaterialPageRoute(builder: (context) => const FindHealthcarePage()),
         );
         break;
       case 3:
@@ -150,10 +293,12 @@ class _MainDashboardState extends State<MainDashboard> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.close, color: Color(0xFF159BBD)),
-                    onPressed: widget.selectedHospitalName != null ? null : () {
-                      setState(() {
-                        showHospitalBooking = false;
-                      });
+                    onPressed: () {
+                      // Rediriger vers la home page
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (context) => const MainDashboard()),
+                      );
                     },
                   ),
                 ),
@@ -418,7 +563,10 @@ class _MainDashboardState extends State<MainDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Stack(
+      children: [
+        // Main content
+        Scaffold(
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -436,37 +584,193 @@ class _MainDashboardState extends State<MainDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header Section
+              // Header Section with Animated Bubbles
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                height: 140,
+                child: Stack(
+                  children: [
+                    // Animated Moving Bubbles for Dynamic Feel
+                    AnimatedBuilder(
+                      animation: _bubble1Controller,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: MediaQuery.of(context).size.width * _bubble1Animation.value.dx,
+                          top: 140 * _bubble1Animation.value.dy,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.15),
+                                  Colors.white.withOpacity(0.08),
+                                  Colors.white.withOpacity(0.03),
+                                ],
+                                stops: const [0.0, 0.6, 1.0],
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.2),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.1),
+                                  spreadRadius: 0,
+                                  blurRadius: 20,
+                                  offset: const Offset(-4, -4),
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  spreadRadius: 0,
+                                  blurRadius: 15,
+                                  offset: const Offset(4, 4),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    AnimatedBuilder(
+                      animation: _bubble2Controller,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: MediaQuery.of(context).size.width * _bubble2Animation.value.dx,
+                          top: 140 * _bubble2Animation.value.dy,
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.12),
+                                  Colors.white.withOpacity(0.06),
+                                  Colors.white.withOpacity(0.02),
+                                ],
+                                stops: const [0.0, 0.7, 1.0],
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.15),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.08),
+                                  spreadRadius: 0,
+                                  blurRadius: 18,
+                                  offset: const Offset(-3, -3),
+                                ),
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  spreadRadius: 0,
+                                  blurRadius: 12,
+                                  offset: const Offset(3, 3),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    AnimatedBuilder(
+                      animation: _bubble3Controller,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: MediaQuery.of(context).size.width * _bubble3Animation.value.dx,
+                          top: 140 * _bubble3Animation.value.dy,
+                          child: Container(
+                            width: 45,
+                            height: 45,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.08),
+                                  Colors.white.withOpacity(0.04),
+                                  Colors.transparent,
+                                ],
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.1),
+                                width: 1,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.white.withOpacity(0.05),
+                                  spreadRadius: 0,
+                                  blurRadius: 10,
+                                  offset: const Offset(-2, -2),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    AnimatedBuilder(
+                      animation: _bubble4Controller,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: MediaQuery.of(context).size.width * _bubble4Animation.value.dx,
+                          top: 140 * _bubble4Animation.value.dy,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.1),
+                                  Colors.white.withOpacity(0.05),
+                                  Colors.transparent,
+                                ],
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.08),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    
+                    // Main Header Content
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            greeting,
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: 0.5,
-                            ),
+                          Expanded(
+                            child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          greeting,
+                          style: const TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                                    letterSpacing: 0.5,
                           ),
-                          const SizedBox(height: 6),
-                          Text(
-                            userName,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Colors.white.withOpacity(0.9),
-                              letterSpacing: 0.3,
-                            ),
+                        ),
+                                const SizedBox(height: 6),
+                        Text(
+                          userName,
+                                  style: TextStyle(
+                            fontSize: 18,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.white.withOpacity(0.9),
+                                    letterSpacing: 0.3,
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
+                            ),
                     ),
                     NotificationBadge(
                       onPressed: () async {
@@ -477,6 +781,9 @@ class _MainDashboardState extends State<MainDashboard> {
                         setState(() {}); // Rafraîchir le badge après retour
                         },
                       size: 50,
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -515,7 +822,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                   borderRadius: BorderRadius.circular(24),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                    color: const Color(0xFF159BBD).withOpacity(0.1),
                                       blurRadius: 20,
                                       offset: const Offset(0, 8),
                                       spreadRadius: 2,
@@ -550,15 +857,15 @@ class _MainDashboardState extends State<MainDashboard> {
                                           ),
                                         ),
                                         const SizedBox(width: 12),
-                                        const Text(
-                                          'Quick Actions',
-                                          style: TextStyle(
+                                    const Text(
+                                      'Quick Actions',
+                                      style: TextStyle(
                                             fontSize: 22,
                                             fontWeight: FontWeight.w800,
-                                            color: Color(0xFF159BBD),
+                                        color: Color(0xFF159BBD),
                                             letterSpacing: 0.3,
-                                          ),
-                                        ),
+                                      ),
+                                    ),
                                       ],
                                     ),
                                     const SizedBox(height: 24),
@@ -568,40 +875,40 @@ class _MainDashboardState extends State<MainDashboard> {
                                         Expanded(
                                           child: _buildActionCard(
                                             lottieAsset: 'assets/cal.json',
-                                            title: 'Appointments',
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(builder: (context) => const AppointmentsPage()),
-                                              );
-                                            },
+                                          title: 'Appointments',
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                                            );
+                                          },
                                           ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: _buildActionCard(
                                             lottieAsset: 'assets/book.json',
-                                            title: 'Book',
-                                            onTap: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
-                                              );
-                                            },
+                                          title: 'Book',
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const FindHealthcarePage()),
+                                            );
+                                          },
                                           ),
                                         ),
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: ChatNotificationBadge(
-                                            child: _buildActionCard(
+                                          child: _buildActionCard(
                                               lottieAsset: 'assets/sms.json',
-                                              title: 'Messages',
-                                              onTap: () {
-                                                Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(builder: (context) => const ChatPage()),
-                                                );
-                                              },
+                                            title: 'Messages',
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(builder: (context) => const ChatPage()),
+                                              );
+                                            },
                                             ),
                                           ),
                                         ),
@@ -666,12 +973,12 @@ class _MainDashboardState extends State<MainDashboard> {
                                               ),
                                             ),
                                             const SizedBox(width: 12),
-                                            const Text(
-                                              'Upcoming Appointments',
-                                              style: TextStyle(
+                                        const Text(
+                                          'Upcoming Appointments',
+                                          style: TextStyle(
                                                 fontSize: 16,
                                                 fontWeight: FontWeight.w800,
-                                                color: Color(0xFF159BBD),
+                                            color: Color(0xFF159BBD),
                                                 letterSpacing: 0.3,
                                               ),
                                             ),
@@ -681,18 +988,18 @@ class _MainDashboardState extends State<MainDashboard> {
                                           decoration: BoxDecoration(
                                             color: const Color(0xFF159BBD).withOpacity(0.08),
                                             borderRadius: BorderRadius.circular(16),
-                                          ),
+                                        ),
                                           child: TextButton(
-                                            onPressed: () {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(builder: (context) => const AppointmentsPage()),
-                                              );
-                                            },
-                                            child: const Text(
-                                              'See All',
-                                              style: TextStyle(
-                                                color: Color(0xFF159BBD),
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => const AppointmentsPage()),
+                                            );
+                                          },
+                                          child: const Text(
+                                            'See All',
+                                            style: TextStyle(
+                                              color: Color(0xFF159BBD),
                                                 fontWeight: FontWeight.w700,
                                                 fontSize: 11,
                                                 letterSpacing: 0.2,
@@ -900,7 +1207,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                         ),
                                                         boxShadow: [
                                                           BoxShadow(
-                                                            color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                        color: const Color(0xFF159BBD).withOpacity(0.1),
                                                             blurRadius: 8,
                                                             offset: const Offset(0, 3),
                                                             spreadRadius: 1,
@@ -1058,7 +1365,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                             return Container(
                                               margin: const EdgeInsets.only(bottom: 16),
                                               padding: const EdgeInsets.all(18),
-                                              decoration: BoxDecoration(
+                                      decoration: BoxDecoration(
                                                 gradient: LinearGradient(
                                                   begin: Alignment.topLeft,
                                                   end: Alignment.bottomRight,
@@ -1105,7 +1412,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                       ),
                                                       boxShadow: [
                                                         BoxShadow(
-                                                          color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
                                                           blurRadius: 8,
                                                           offset: const Offset(0, 3),
                                                           spreadRadius: 1,
@@ -1130,9 +1437,9 @@ class _MainDashboardState extends State<MainDashboard> {
                                                   
                                                   // Informations du rendez-vous
                                                   Expanded(
-                                                      child: Column(
+                                      child: Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
-                                                        children: [
+                                        children: [
                                                         Text(
                                                           data['hospitalName'] ?? 'Unknown Hospital',
                                                           style: const TextStyle(
@@ -1299,7 +1606,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => const ProHospitalsPage(),
+                                                builder: (context) => const FindHealthcarePage(),
                                               ),
                                             );
                                           },
@@ -1335,7 +1642,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                         ),
                                     const SizedBox(height: 15),
                                     SizedBox(
-                                      height: 180,
+                                      height: 220, // Fixed height to prevent overflow
                                       child: StreamBuilder<QuerySnapshot>(
                                         stream: FirebaseFirestore.instance
                                             .collection('clinics')
@@ -1373,7 +1680,9 @@ class _MainDashboardState extends State<MainDashboard> {
                                             );
                                           }
 
-                                          return PageView.builder(
+                                          return Container(
+                                            height: 220, // Fixed height to prevent overflow
+                                            child: PageView.builder(
                                             itemCount: (hospitals.length / 2).ceil(),
                                             itemBuilder: (context, pageIndex) {
                                               final startIndex = pageIndex * 2;
@@ -1400,6 +1709,7 @@ class _MainDashboardState extends State<MainDashboard> {
                                                 ],
                                               );
                                             },
+                                            ),
                                           );
                                         },
                                       ),
@@ -1416,6 +1726,68 @@ class _MainDashboardState extends State<MainDashboard> {
           ),
         ),
       ),
+      floatingActionButton: Container(
+            width: 85,
+            height: 85,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF159BBD),
+                  const Color(0xFF0F7A96),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF159BBD).withOpacity(0.5),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
+                  spreadRadius: 3,
+                ),
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 15,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: ClipOval(
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AIChatScreen(),
+                    ),
+                  );
+                },
+                child: _videoController != null && _videoController!.value.isInitialized
+                    ? VideoPlayer(_videoController!)
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF159BBD),
+                              const Color(0xFF0F7A96),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.smart_toy_outlined,
+                            color: Colors.white,
+                            size: 36,
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       bottomNavigationBar: ProfessionalBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
@@ -1450,6 +1822,149 @@ class _MainDashboardState extends State<MainDashboard> {
           ),
         ],
       ),
+    ),
+
+    // Semi-transparent background overlay when AI message is showing
+    if (showAiWelcomeMessage)
+      Positioned.fill(
+        child: GestureDetector(
+          onTap: () {
+            setState(() {
+              showAiWelcomeMessage = false;
+            });
+          },
+          child: Container(
+            color: Colors.black.withOpacity(0.15), // Light overlay to indicate modal state
+          ),
+        ),
+      ),
+
+    // AI Welcome Message Overlay - Professional Design
+    if (showAiWelcomeMessage)
+          Positioned(
+        bottom: 130, // Position above the floating action button
+        right: 50, // Moved slightly to the left for better alignment
+            child: AnimatedBuilder(
+              animation: _speechBubbleAnimation,
+              builder: (context, child) {
+                return Transform.scale(
+              scale: _speechBubbleAnimation.value.clamp(0.0, 1.0),
+                  child: Opacity(
+                opacity: _speechBubbleAnimation.value.clamp(0.0, 1.0),
+                child: Material(
+                  color: Colors.transparent,
+                  elevation: 20,
+                  borderRadius: BorderRadius.circular(16),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        showAiWelcomeMessage = false;
+                      });
+                    },
+                    child: Container(
+                      constraints: const BoxConstraints(
+                        maxWidth: 250,
+                      ),
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.15),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                            spreadRadius: 2,
+                          ),
+                          BoxShadow(
+                            color: const Color(0xFF159BBD).withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: const Color(0xFF159BBD).withOpacity(0.2),
+                          width: 1,
+                        ),
+                      ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                          // Header avec bouton close
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                children: [
+                        Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                      shape: BoxShape.circle,
+                          ),
+                                    child: const Icon(
+                                      Icons.smart_toy_outlined,
+                                      color: Color(0xFF159BBD),
+                                      size: 16,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'AI Assistant',
+                            style: TextStyle(
+                                      color: Color(0xFF159BBD),
+                              fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                ),
+                              ],
+                            ),
+                              GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    showAiWelcomeMessage = false;
+                                  });
+                                },
+                                child: Container(
+                                  width: 28,
+                                  height: 28,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  child: Icon(
+                                    Icons.close,
+                                    color: Colors.grey[600],
+                                    size: 18,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Message principal
+                          const Text(
+                            "I'm your doctor assistant, how can I help you?",
+                            style: TextStyle(
+                              color: Color(0xFF2D3748),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              height: 1.4,
+                                ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
     );
   }
 
@@ -1515,10 +2030,10 @@ class _MainDashboardState extends State<MainDashboard> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
-                  icon,
+              icon,
                   size: 24,
-                  color: const Color(0xFF159BBD),
-                ),
+              color: const Color(0xFF159BBD),
+            ),
               ),
             const SizedBox(height: 12),
             Text(
@@ -1994,5 +2509,55 @@ class _MainDashboardState extends State<MainDashboard> {
     
     // Fallback to placeholder
     return _buildPlaceholderImageForAppointment();
+  }
+
+  Widget _buildThinkingDot(int index, double animationValue) {
+    // Créer un délai pour chaque point (0, 0.33, 0.66)
+    double delay = index * 0.33;
+    
+    // Calculer l'opacité basée sur l'animation et le délai
+    double adjustedValue = (animationValue - delay) % 1.0;
+    double opacity;
+    
+    if (adjustedValue < 0.5) {
+      // Fade in
+      opacity = (adjustedValue * 2).clamp(0.0, 1.0);
+    } else {
+      // Fade out
+      opacity = (2 - (adjustedValue * 2)).clamp(0.0, 1.0);
+    }
+    
+    // Effet de scale pour rendre l'animation plus dynamique
+    double scale = 0.6 + (opacity * 0.4);
+    
+    return Transform.scale(
+      scale: scale,
+      child: Container(
+        width: 6,
+        height: 6,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withOpacity(opacity),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(opacity * 0.5),
+              blurRadius: 3,
+              spreadRadius: 1,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _bubble1Controller.dispose();
+    _bubble2Controller.dispose();
+    _bubble3Controller.dispose();
+    _bubble4Controller.dispose();
+    _speechBubbleController.dispose();
+    _videoController?.dispose();
+    super.dispose();
   }
 } 

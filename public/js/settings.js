@@ -2,11 +2,81 @@
 class SettingsManager {
   constructor() {
     this.apiBase = '/api/settings';
+    this.googleMapsApiKey = 'AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g';
+    this.isGoogleMapsReady = false;
+    this.geocoder = null;
     this.setupEventListeners();
     this.initializeForms();
     this.loadExistingData();
     this.setupContactPreview();
     this.setupLocationDetection();
+    this.initializeGoogleMaps();
+  }
+
+  // Initialize Google Maps API
+  async initializeGoogleMaps() {
+    try {
+      console.log('🗺️ Initializing Google Maps API...');
+      
+      // Load Google Maps API dynamically
+      if (!window.google) {
+        await this.loadGoogleMapsScript();
+      }
+      
+      // Wait for Google Maps to be ready
+      await this.waitForGoogleMaps();
+      
+      // Initialize geocoder
+      this.geocoder = new google.maps.Geocoder();
+      this.isGoogleMapsReady = true;
+      
+      console.log('✅ Google Maps API initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize Google Maps API:', error);
+      this.isGoogleMapsReady = false;
+    }
+  }
+
+  // Load Google Maps script
+  loadGoogleMapsScript() {
+    return new Promise((resolve, reject) => {
+      if (document.getElementById('google-maps-script')) {
+        resolve();
+        return;
+      }
+
+      const script = document.createElement('script');
+      script.id = 'google-maps-script';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      
+      script.onload = () => {
+        console.log('✅ Google Maps script loaded');
+        resolve();
+      };
+      
+      script.onerror = (error) => {
+        console.error('❌ Failed to load Google Maps script:', error);
+        reject(error);
+      };
+      
+      document.head.appendChild(script);
+    });
+  }
+
+  // Wait for Google Maps to be ready
+  waitForGoogleMaps() {
+    return new Promise((resolve) => {
+      const checkGoogle = () => {
+        if (window.google && window.google.maps && window.google.maps.Geocoder) {
+          resolve();
+        } else {
+          setTimeout(checkGoogle, 100);
+        }
+      };
+      checkGoogle();
+    });
   }
 
   setupEventListeners() {
@@ -111,10 +181,13 @@ class SettingsManager {
   setupLocationDetection() {
     const detectBtn = document.getElementById('detectLocationBtn');
     if (detectBtn && !detectBtn.hasAttribute('data-listener-added')) {
-      this.detectLocationHandler = () => this.detectLocation();
+      this.detectLocationHandler = () => this.detectLocationWithGoogleMaps();
       detectBtn.addEventListener('click', this.detectLocationHandler);
       detectBtn.setAttribute('data-listener-added', 'true');
     }
+
+    // Add manual address input button
+    this.setupManualAddressInput();
 
     // Auto-update address when components change
     const addressComponents = ['street', 'sector', 'country'];
@@ -126,6 +199,79 @@ class SettingsManager {
         field.setAttribute('data-address-listener-added', 'true');
       }
     });
+  }
+
+  // Nouvelle méthode pour la saisie manuelle d'adresse
+  setupManualAddressInput() {
+    const detectBtn = document.getElementById('detectLocationBtn');
+    if (detectBtn && detectBtn.parentNode) {
+      const manualBtn = document.createElement('button');
+      manualBtn.type = 'button';
+      manualBtn.className = 'btn btn-outline-secondary btn-sm ms-2';
+      manualBtn.id = 'manualAddressBtn';
+      manualBtn.innerHTML = '<i class="fas fa-edit me-1"></i>Manual Input';
+      manualBtn.addEventListener('click', () => this.showManualAddressModal());
+      
+      detectBtn.parentNode.insertBefore(manualBtn, detectBtn.nextSibling);
+    }
+  }
+
+  // Afficher la modal de saisie manuelle
+  showManualAddressModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal fade';
+    modal.id = 'manualAddressModal';
+    modal.innerHTML = `
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-map-marker-alt text-primary me-2"></i>
+              Manual Address Input
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="manualAddressInput" class="form-label">Enter your hospital address:</label>
+              <input type="text" class="form-control" id="manualAddressInput" 
+                     placeholder="e.g., Kacyiru, Gasabo, Kigali, Rwanda">
+              <small class="text-muted">Enter as complete an address as possible for better accuracy</small>
+            </div>
+            <div id="manualAddressStatus" class="alert d-none"></div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="geocodeAddressBtn">
+              <i class="fas fa-search me-1"></i>Find Location
+            </button>
+          </div>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    const bootstrapModal = new bootstrap.Modal(modal);
+    
+    // Add event listener for geocoding
+    document.getElementById('geocodeAddressBtn').addEventListener('click', () => {
+      this.geocodeManualAddress();
+    });
+    
+    bootstrapModal.show();
+    
+    // Clean up modal when closed
+    modal.addEventListener('hidden.bs.modal', () => {
+      document.body.removeChild(modal);
+    });
+  }
+
+  // Afficher le statut de la recherche manuelle
+  showManualAddressStatus(message, type) {
+    const statusDiv = document.getElementById('manualAddressStatus');
+    statusDiv.className = `alert alert-${type}`;
+    statusDiv.innerHTML = `<i class="fas fa-info-circle me-2"></i>${message}`;
+    statusDiv.classList.remove('d-none');
   }
 
   // New method to update contact preview in real-time
@@ -180,332 +326,377 @@ class SettingsManager {
     }
   }
 
-  // Enhanced location detection
-  async detectLocation() {
+  // Professional location detection with Google Maps
+  async detectLocationWithGoogleMaps() {
     const detectBtn = document.getElementById('detectLocationBtn');
-    const statusDiv = document.getElementById('locationStatus');
-    const statusText = document.getElementById('locationStatusText');
-
-    if (!navigator.geolocation) {
-      this.showLocationStatus('Geolocation is not supported by this browser.', 'danger');
-      return;
-    }
-
-    // Show loading state
-    detectBtn.disabled = true;
-    detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Detecting...';
-    this.showLocationStatus('Detecting your location...', 'info');
+    const originalBtnText = detectBtn.innerHTML;
 
     try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 300000
-        });
-      });
+      // Initialize button state
+      detectBtn.disabled = true;
+      detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Initializing...';
+      this.showLocationStatus('🔄 Initializing location detection system...', 'info');
 
-      const { latitude, longitude } = position.coords;
+      // Ensure Google Maps is ready
+      if (!this.isGoogleMapsReady) {
+        await this.initializeGoogleMaps();
+      }
+
+      if (!this.isGoogleMapsReady) {
+        throw new Error('Google Maps API not available');
+      }
+
+      // Check geolocation support
+      if (!navigator.geolocation) {
+        throw new Error('Geolocation is not supported by this browser');
+      }
+
+      // Start location detection
+      detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Detecting location...';
+      this.showLocationStatus('📍 Detecting your precise location...', 'info');
+
+      console.log('🎯 Starting enhanced location detection...');
+
+      // Get current position with high accuracy
+      const position = await this.getCurrentPositionEnhanced();
       
-      // Update coordinate fields
+      const { latitude, longitude } = position.coords;
+      console.log('📍 Location detected:', { latitude, longitude, accuracy: position.coords.accuracy });
+
+      // Update coordinate fields immediately
       document.getElementById('latitude').value = latitude.toFixed(6);
       document.getElementById('longitude').value = longitude.toFixed(6);
 
-      // Update button text to show coordinates
-      detectBtn.innerHTML = `<i class="fas fa-map-marker-alt me-2"></i>Lat: ${latitude.toFixed(4)}, Lng: ${longitude.toFixed(4)}`;
+      // Update button to show coordinates
+      detectBtn.innerHTML = `<i class="fas fa-crosshairs me-2"></i>Coordinates: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
-      // Try to get address from coordinates
-      const addressFound = await this.reverseGeocode(latitude, longitude);
+      // Perform reverse geocoding with Google Maps
+      detectBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Finding address...';
+      this.showLocationStatus('🔍 Finding your address using Google Maps...', 'info');
+
+      const addressData = await this.reverseGeocodeEnhanced(latitude, longitude);
       
-      if (addressFound) {
-        this.showLocationStatus('📍 Localisation et adresse détectées avec succès!', 'success');
+      if (addressData.success) {
+        // Update all address fields
+        this.updateAddressFields(addressData);
+        
+        // Show success
+        this.showLocationStatus('✅ Location and address detected successfully!', 'success');
+        detectBtn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Location Detected Successfully';
+        detectBtn.classList.add('btn-success');
+        detectBtn.classList.remove('btn-outline-primary');
+
+        // Auto-save the location
+        await this.saveLocationData();
+        
+        console.log('✅ Location detection completed successfully');
       } else {
-        this.showLocationStatus('📍 Coordonnées détectées. Veuillez saisir l\'adresse manuellement.', 'warning');
+        // Partial success - coordinates only
+        this.showLocationStatus('📍 Coordinates detected. Please complete the address manually.', 'warning');
+        detectBtn.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Complete Address Manually';
+        detectBtn.classList.add('btn-warning');
+        detectBtn.classList.remove('btn-outline-primary');
       }
-      
+
     } catch (error) {
-      console.error('Geolocation error:', error);
-      let message = 'Unable to detect location. ';
+      console.error('❌ Location detection failed:', error);
       
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          message += 'Please allow location access.';
-          break;
-        case error.POSITION_UNAVAILABLE:
-          message += 'Location information unavailable.';
-          break;
-        case error.TIMEOUT:
-          message += 'Location request timed out.';
-          break;
-        default:
-          message += 'Unknown error occurred.';
-          break;
+      // Handle specific error types
+      let errorMessage = 'Unable to detect location. ';
+      let showManualInput = false;
+
+      if (error.code) {
+        switch (error.code) {
+          case 1: // PERMISSION_DENIED
+            errorMessage = '🚫 Location permission denied. Please enable location access in your browser.';
+            showManualInput = true;
+            break;
+          case 2: // POSITION_UNAVAILABLE
+            errorMessage = '📍 Location unavailable. Please check your GPS settings.';
+            showManualInput = true;
+            break;
+          case 3: // TIMEOUT
+            errorMessage = '⏱️ Location detection timed out. Please try again.';
+            break;
+          default:
+            errorMessage = '❌ Location detection failed. Please try again or enter manually.';
+            showManualInput = true;
+        }
+      } else if (error.message.includes('Google Maps')) {
+        errorMessage = '🗺️ Google Maps service unavailable. Please try again later.';
+        showManualInput = true;
+      } else {
+        errorMessage = '❌ Location detection failed. Please enter your address manually.';
+        showManualInput = true;
       }
-      
-      this.showLocationStatus(message, 'danger');
+
+      this.showLocationStatus(errorMessage, 'danger');
+      detectBtn.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i>Detection Failed';
+      detectBtn.classList.add('btn-danger');
+      detectBtn.classList.remove('btn-outline-primary');
+
+      if (showManualInput) {
+        this.showManualLocationInput();
+      }
     } finally {
-      // Reset button state but keep coordinates if detected
-      detectBtn.disabled = false;
-      if (!detectBtn.innerHTML.includes('Lat:')) {
-        detectBtn.innerHTML = '<i class="fas fa-location-arrow me-2"></i>Auto-Detect Location';
-      }
+      // Reset button state after 5 seconds
+      setTimeout(() => {
+        detectBtn.disabled = false;
+        detectBtn.innerHTML = originalBtnText;
+        detectBtn.className = 'btn btn-outline-primary';
+      }, 5000);
     }
   }
 
-  // Enhanced method for reverse geocoding with precise street address detection
-  async reverseGeocode(lat, lng) {
-    console.log(`🌍 Détection d'adresse pour les coordonnées au Rwanda: ${lat}, ${lng}`);
-    
-    try {
-      // Service principal: Nominatim avec paramètres optimisés pour le Rwanda
-      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&countrycodes=rw&accept-language=en,fr`, {
-        headers: {
-          'User-Agent': 'HealthCenter-Dashboard-Rwanda/1.0'
-        }
-      });
-      
-      const data = await response.json();
-      console.log('📍 Données Nominatim Rwanda reçues:', data);
-      
-      if (data && data.address) {
-        const address = data.address;
-        const streetField = document.getElementById('street');
-        const sectorField = document.getElementById('sector');
-        
-        // Construction intelligente de l'adresse de rue pour le Rwanda
-        let streetValue = '';
-        let addressComponents = [];
-        
-        // Au Rwanda, les adresses suivent souvent le format: Secteur, Cellule, Village
-        // Essayer d'abord les composants standards
-        if (address.house_number) {
-          addressComponents.push(address.house_number);
-          console.log(`🏠 Numéro de maison trouvé: ${address.house_number}`);
-        }
-        
-        // Nom de la rue (plusieurs variantes possibles au Rwanda)
-        const roadName = address.road || address.street || address.pedestrian || 
-                         address.footway || address.path || address.track || 
-                         address.residential || address.hamlet || address.neighbourhood;
-        if (roadName) {
-          addressComponents.push(roadName);
-          console.log(`🛣️ Nom de rue/quartier trouvé: ${roadName}`);
-        }
-        
-        // Si pas de rue spécifique, utiliser des éléments géographiques rwandais
-        if (addressComponents.length === 0) {
-          // Utiliser la cellule, le village ou le secteur comme adresse
-          const localArea = address.suburb || address.village || address.hamlet || 
-                           address.neighbourhood || address.quarter || address.residential;
-          if (localArea) {
-            addressComponents.push(localArea);
-            console.log(`🏘️ Zone locale rwandaise trouvée: ${localArea}`);
-          }
-        }
-        
-        // Fallback: utiliser des points d'intérêt ou bâtiments
-        if (addressComponents.length === 0 && (address.building || address.amenity || address.shop || address.office)) {
-          const landmark = address.building || address.amenity || address.shop || address.office;
-          addressComponents.push(`Près de ${landmark}`);
-          console.log(`🏢 Point de repère trouvé: ${landmark}`);
-        }
-        
-        // Assembler l'adresse
-        if (addressComponents.length > 0) {
-          streetValue = addressComponents.join(' ');
-        }
-        
-        // Remplir le champ street address
-        if (streetField) {
-          if (streetValue.trim()) {
-            streetField.value = streetValue.trim();
-            streetField.classList.add('is-valid');
-            console.log(`✅ Adresse rwandaise définie: ${streetValue.trim()}`);
+  // Enhanced geolocation with retry mechanism
+  getCurrentPositionEnhanced() {
+    return new Promise((resolve, reject) => {
+      const options = {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000
+      };
+
+      let attempts = 0;
+      const maxAttempts = 3;
+
+      const tryGeolocation = () => {
+        attempts++;
+        console.log(`🔄 Geolocation attempt ${attempts}/${maxAttempts}`);
+
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            console.log(`✅ Geolocation success on attempt ${attempts}`);
+            console.log(`📍 Accuracy: ${position.coords.accuracy}m`);
+            resolve(position);
+          },
+          (error) => {
+            console.log(`❌ Geolocation attempt ${attempts} failed:`, error);
             
-            // Notification spécifique pour le Rwanda
-            this.showNotification(`📍 Adresse détectée au Rwanda: ${streetValue.trim()}`, 'success');
+            if (attempts < maxAttempts && error.code === 3) { // TIMEOUT
+              console.log('🔄 Retrying with relaxed settings...');
+              setTimeout(tryGeolocation, 2000);
+            } else {
+              reject(error);
+            }
+          },
+          {
+            ...options,
+            enableHighAccuracy: attempts === 1,
+            timeout: attempts * 10000, // Increase timeout on retry
+          }
+        );
+      };
+
+      tryGeolocation();
+    });
+  }
+
+  // Enhanced reverse geocoding with Google Maps
+  async reverseGeocodeEnhanced(latitude, longitude) {
+    try {
+      console.log('🔍 Starting enhanced reverse geocoding...');
+      
+      if (!this.geocoder) {
+        throw new Error('Google Maps Geocoder not available');
+      }
+
+      const latlng = new google.maps.LatLng(latitude, longitude);
+      
+      return new Promise((resolve) => {
+        this.geocoder.geocode({ location: latlng }, (results, status) => {
+          if (status === 'OK' && results && results.length > 0) {
+            console.log('✅ Geocoding successful:', results[0]);
+            
+            const addressData = this.parseGoogleMapsResult(results[0]);
+            resolve({ success: true, ...addressData });
           } else {
-            console.log('⚠️ Aucune adresse spécifique trouvée au Rwanda');
-            // Utiliser les coordonnées comme référence
-            streetField.value = `Coordonnées: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            streetField.classList.add('is-warning');
-            this.showNotification('📍 Localisation détectée. Au Rwanda, utilisez les coordonnées GPS ou décrivez l\'emplacement (ex: "Près de l\'école primaire de Kimisagara").', 'warning');
+            console.log('⚠️ Geocoding failed:', status);
+            resolve({ success: false });
           }
-        }
-        
-        // Remplir le champ sector avec les divisions administratives rwandaises
-        if (sectorField) {
-          // Au Rwanda: Province > District > Secteur > Cellule > Village
-          const sectorValue = address.state_district || address.county || // District
-                             address.suburb || address.neighbourhood || // Secteur/Cellule
-                             address.city || address.town || address.village || // Ville/Village
-                             address.state || // Province
-                             'Kigali'; // Fallback par défaut
-          
-          if (sectorValue) {
-            sectorField.value = sectorValue;
-            sectorField.classList.add('is-valid');
-            console.log(`🏘️ Division administrative rwandaise définie: ${sectorValue}`);
-          }
-        }
-        
-        this.updateAddressField();
-        this.updateContactPreview();
-        return true; // Succès
+        });
+      });
+    } catch (error) {
+      console.error('❌ Reverse geocoding error:', error);
+      return { success: false };
+    }
+  }
+
+  // Parse Google Maps geocoding result
+  parseGoogleMapsResult(result) {
+    console.log('📝 Parsing Google Maps result...');
+    
+    const components = result.address_components;
+    const formattedAddress = result.formatted_address;
+    
+    let street = '';
+    let sector = '';
+    let country = 'Rwanda';
+    
+    // Extract address components
+    for (const component of components) {
+      const types = component.types;
+      
+      if (types.includes('street_number')) {
+        street = component.long_name + ' ' + street;
+      } else if (types.includes('route')) {
+        street = street + component.long_name;
+      } else if (types.includes('sublocality_level_1') || types.includes('sublocality')) {
+        sector = component.long_name;
+      } else if (types.includes('locality') && !sector) {
+        sector = component.long_name;
+      } else if (types.includes('administrative_area_level_1') && !sector) {
+        sector = component.long_name;
+      } else if (types.includes('country')) {
+        country = component.long_name;
+      }
+    }
+    
+    // Fallback to formatted address if no street found
+    if (!street && formattedAddress) {
+      const parts = formattedAddress.split(',');
+      street = parts[0].trim();
+    }
+    
+    // Fallback for sector
+    if (!sector && formattedAddress) {
+      const parts = formattedAddress.split(',');
+      if (parts.length > 1) {
+        sector = parts[1].trim();
+      }
+    }
+    
+    // Clean up values
+    street = street.trim() || 'Detected Location';
+    sector = sector.trim() || 'Detected Area';
+    
+    console.log('📍 Parsed address:', { street, sector, country });
+    
+    return {
+      street: street,
+      sector: sector,
+      country: country,
+      fullAddress: formattedAddress
+    };
+  }
+
+  // Update address fields with parsed data
+  updateAddressFields(addressData) {
+    const streetField = document.getElementById('street');
+    const sectorField = document.getElementById('sector');
+    const countryField = document.getElementById('country');
+    
+    if (streetField && addressData.street) {
+      streetField.value = addressData.street;
+      streetField.classList.add('is-valid');
+      streetField.classList.remove('is-invalid');
+    }
+    
+    if (sectorField && addressData.sector) {
+      sectorField.value = addressData.sector;
+      sectorField.classList.add('is-valid');
+      sectorField.classList.remove('is-invalid');
+    }
+    
+    if (countryField && addressData.country) {
+      countryField.value = addressData.country;
+      countryField.classList.add('is-valid');
+      countryField.classList.remove('is-invalid');
+    }
+    
+    // Update derived fields
+    this.updateAddressField();
+    this.updateContactPreview();
+  }
+
+  // Save location data to backend
+  async saveLocationData() {
+    try {
+      console.log('💾 Saving location data...');
+      
+      const locationData = {
+        street: document.getElementById('street')?.value || '',
+        sector: document.getElementById('sector')?.value || '',
+        country: document.getElementById('country')?.value || 'Rwanda',
+        latitude: document.getElementById('latitude')?.value || '',
+        longitude: document.getElementById('longitude')?.value || '',
+        phone: document.getElementById('phone')?.value || '',
+        website: document.getElementById('website')?.value || ''
+      };
+      
+      const response = await fetch('/api/settings/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(locationData)
+      });
+
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        console.log('✅ Location data saved successfully');
+        this.showNotification('📍 Location saved successfully!', 'success');
+        return true;
+      } else {
+        console.error('❌ Failed to save location data:', result.message);
+        return false;
       }
     } catch (error) {
-      console.warn('❌ Service Nominatim échoué:', error);
+      console.error('❌ Error saving location data:', error);
+      return false;
     }
-    
-    // Service de fallback: BigDataCloud
-    try {
-      console.log('🔄 Tentative avec le service de fallback pour le Rwanda...');
-      const fallbackResponse = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lng}&localityLanguage=en`);
-      const fallbackData = await fallbackResponse.json();
-      console.log('📍 Données BigDataCloud Rwanda reçues:', fallbackData);
-      
-      if (fallbackData) {
-        const streetField = document.getElementById('street');
-        const sectorField = document.getElementById('sector');
-        
-        // Construire une adresse pour le Rwanda
-        let streetValue = '';
-        
-        if (fallbackData.streetNumber && fallbackData.streetName) {
-          streetValue = `${fallbackData.streetNumber} ${fallbackData.streetName}`;
-          console.log(`🏠 Adresse complète BigDataCloud Rwanda: ${streetValue}`);
-        } else if (fallbackData.locality || fallbackData.localityInfo) {
-          streetValue = fallbackData.locality || fallbackData.localityInfo.administrative[0]?.name || 'Zone détectée';
-          console.log(`📍 Localité Rwanda BigDataCloud: ${streetValue}`);
-        } else {
-          // Fallback pour le Rwanda - utiliser les coordonnées
-          streetValue = `Coordonnées Rwanda: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-          console.log(`📍 Utilisation des coordonnées GPS pour le Rwanda: ${streetValue}`);
-        }
-        
-        if (streetField && streetValue) {
-          streetField.value = streetValue;
-          streetField.classList.add('is-valid');
-          this.showNotification(`📍 Localisation Rwanda détectée: ${streetValue}`, 'success');
-        }
-        
-        if (sectorField) {
-          const sectorValue = fallbackData.principalSubdivision || 
-                             fallbackData.countryName || 
-                             'Rwanda';
-          sectorField.value = sectorValue;
-          sectorField.classList.add('is-valid');
-        }
-        
-        this.updateAddressField();
-        this.updateContactPreview();
-        return true; // Succès partiel
-      }
-    } catch (fallbackError) {
-      console.warn('❌ Service BigDataCloud échoué aussi:', fallbackError);
-    }
-    
-    // Service spécifique pour le Rwanda - utiliser les coordonnées
-    try {
-      console.log('🔄 Utilisation des coordonnées GPS pour le Rwanda...');
-      const streetField = document.getElementById('street');
-      const sectorField = document.getElementById('sector');
-      
-      if (streetField) {
-        // Au Rwanda, les coordonnées GPS sont souvent utilisées comme référence
-        streetField.value = `GPS: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        streetField.classList.add('is-valid');
-        
-        // Déterminer approximativement la zone basée sur les coordonnées
-        let zone = 'Rwanda';
-        if (lat >= -1.9 && lat <= -1.8 && lng >= 30.0 && lng <= 30.2) {
-          zone = 'Kigali Centre';
-        } else if (lat >= -2.0 && lat <= -1.7 && lng >= 29.9 && lng <= 30.3) {
-          zone = 'Région de Kigali';
-        }
-        
-        if (sectorField) {
-          sectorField.value = zone;
-          sectorField.classList.add('is-valid');
-        }
-        
-        this.showNotification(`📍 Coordonnées GPS Rwanda enregistrées. Vous pouvez ajouter une description de l'emplacement (ex: "Près du marché de Kimisagara").`, 'info');
-        this.updateAddressField();
-        this.updateContactPreview();
-        return true;
-      }
-    } catch (coordError) {
-      console.warn('❌ Erreur lors de l\'utilisation des coordonnées:', coordError);
-    }
-    
-    // Si tout échoue
-    console.log('⚠️ Tous les services de géocodage ont échoué pour le Rwanda');
-    this.showNotification('📍 Coordonnées GPS détectées au Rwanda. Veuillez ajouter manuellement une description de l\'emplacement (ex: "Secteur Kimisagara, près de l\'école").', 'warning');
-    return false;
   }
 
-  // New method to show location status
   showLocationStatus(message, type) {
     const statusDiv = document.getElementById('locationStatus');
     const statusText = document.getElementById('locationStatusText');
     
     if (statusDiv && statusText) {
-      statusDiv.className = `alert alert-${type} d-block`;
+      statusDiv.className = `alert alert-${type}`;
       statusText.textContent = message;
+      statusDiv.classList.remove('d-none');
       
-      // Auto-hide success messages
+      // Auto-hide success messages after 5 seconds
       if (type === 'success') {
         setTimeout(() => {
           statusDiv.classList.add('d-none');
-        }, 3000);
+        }, 5000);
       }
     }
   }
 
-  // New method to reset contact form
   resetContactForm() {
     const contactForm = document.getElementById('contactForm');
-    if (!contactForm) return;
-
-    Swal.fire({
-      title: 'Reset Contact Form?',
-      text: 'This will clear all contact information fields. Are you sure?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#159BBD',
-      cancelButtonColor: '#6c757d',
-      confirmButtonText: 'Yes, reset it!',
-      cancelButtonText: 'Cancel'
-    }).then((result) => {
-      if (result.isConfirmed) {
-        // Reset form fields
-        const fields = ['phone', 'website', 'street', 'sector', 'country', 'address', 'latitude', 'longitude'];
-        fields.forEach(fieldId => {
-          const field = document.getElementById(fieldId);
-          if (field) {
-            field.value = '';
-            field.classList.remove('is-invalid', 'is-valid');
-          }
-        });
-
-        // Reset preview
-        this.updateContactPreview();
-        
-        // Hide location status
-        const statusDiv = document.getElementById('locationStatus');
-        if (statusDiv) {
-          statusDiv.classList.add('d-none');
-        }
-
-        Swal.fire({
-          title: 'Reset Complete!',
-          text: 'Contact form has been cleared.',
-          icon: 'success',
-          timer: 2000,
-          showConfirmButton: false
-        });
+    if (contactForm) {
+      contactForm.reset();
+      
+      // Clear validation states
+      const fields = contactForm.querySelectorAll('.form-control');
+      fields.forEach(field => {
+        field.classList.remove('is-valid', 'is-invalid');
+      });
+      
+      // Clear error messages
+      const errorMessages = contactForm.querySelectorAll('.invalid-feedback');
+      errorMessages.forEach(msg => msg.remove());
+      
+      // Reset location status
+      const locationStatus = document.getElementById('locationStatus');
+      if (locationStatus) {
+        locationStatus.classList.add('d-none');
       }
-    });
+      
+      // Reset detect button
+      const detectBtn = document.getElementById('detectLocationBtn');
+      if (detectBtn) {
+        detectBtn.disabled = false;
+        detectBtn.innerHTML = '<i class="fas fa-location-arrow me-2"></i>Auto-Detect Location';
+      }
+      
+      // Update preview
+      this.updateContactPreview();
+    }
   }
 
   async loadExistingData() {

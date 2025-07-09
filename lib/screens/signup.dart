@@ -10,16 +10,235 @@ class SignupPage extends StatefulWidget {
   State<SignupPage> createState() => _SignupPageState();
 }
 
-class _SignupPageState extends State<SignupPage> {
+class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
-  bool _isPasswordVisible = false;
-  bool _isConfirmPasswordVisible = false;
   bool _isLoading = false;
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+
+  // Animation controllers for moving bubbles (10+ bubbles)
+  late AnimationController _bubble1Controller;
+  late AnimationController _bubble2Controller;
+  late AnimationController _bubble3Controller;
+  late AnimationController _bubble4Controller;
+  late AnimationController _bubble5Controller;
+  late AnimationController _bubble6Controller;
+  late AnimationController _bubble7Controller;
+  late AnimationController _bubble8Controller;
+  late AnimationController _bubble9Controller;
+  late AnimationController _bubble10Controller;
+  late AnimationController _bubble11Controller;
+  late AnimationController _bubble12Controller;
+  
+  // Animations for bubble positions
+  late Animation<Offset> _bubble1Animation;
+  late Animation<Offset> _bubble2Animation;
+  late Animation<Offset> _bubble3Animation;
+  late Animation<Offset> _bubble4Animation;
+  late Animation<Offset> _bubble5Animation;
+  late Animation<Offset> _bubble6Animation;
+  late Animation<Offset> _bubble7Animation;
+  late Animation<Offset> _bubble8Animation;
+  late Animation<Offset> _bubble9Animation;
+  late Animation<Offset> _bubble10Animation;
+  late Animation<Offset> _bubble11Animation;
+  late Animation<Offset> _bubble12Animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeBubbleAnimations();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    _bubble1Controller.dispose();
+    _bubble2Controller.dispose();
+    _bubble3Controller.dispose();
+    _bubble4Controller.dispose();
+    _bubble5Controller.dispose();
+    _bubble6Controller.dispose();
+    _bubble7Controller.dispose();
+    _bubble8Controller.dispose();
+    _bubble9Controller.dispose();
+    _bubble10Controller.dispose();
+    _bubble11Controller.dispose();
+    _bubble12Controller.dispose();
+    super.dispose();
+  }
+
+  void _initializeBubbleAnimations() {
+    // Initialize bubble animation controllers with different durations for variety
+    _bubble1Controller = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    );
+    _bubble2Controller = AnimationController(
+      duration: const Duration(seconds: 12),
+      vsync: this,
+    );
+    _bubble3Controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    );
+    _bubble4Controller = AnimationController(
+      duration: const Duration(seconds: 15),
+      vsync: this,
+    );
+    _bubble5Controller = AnimationController(
+      duration: const Duration(seconds: 9),
+      vsync: this,
+    );
+    _bubble6Controller = AnimationController(
+      duration: const Duration(seconds: 13),
+      vsync: this,
+    );
+    _bubble7Controller = AnimationController(
+      duration: const Duration(seconds: 11),
+      vsync: this,
+    );
+    _bubble8Controller = AnimationController(
+      duration: const Duration(seconds: 14),
+      vsync: this,
+    );
+    _bubble9Controller = AnimationController(
+      duration: const Duration(seconds: 7),
+      vsync: this,
+    );
+    _bubble10Controller = AnimationController(
+      duration: const Duration(seconds: 16),
+      vsync: this,
+    );
+    _bubble11Controller = AnimationController(
+      duration: const Duration(seconds: 6),
+      vsync: this,
+    );
+    _bubble12Controller = AnimationController(
+      duration: const Duration(seconds: 18),
+      vsync: this,
+    );
+
+    // Create bubble movement animations
+    _bubble1Animation = Tween<Offset>(
+      begin: const Offset(-0.1, 0.8),
+      end: const Offset(1.1, -0.2),
+    ).animate(CurvedAnimation(
+      parent: _bubble1Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble2Animation = Tween<Offset>(
+      begin: const Offset(1.1, 0.9),
+      end: const Offset(-0.1, -0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble2Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble3Animation = Tween<Offset>(
+      begin: const Offset(0.5, 1.2),
+      end: const Offset(0.3, -0.3),
+    ).animate(CurvedAnimation(
+      parent: _bubble3Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble4Animation = Tween<Offset>(
+      begin: const Offset(-0.2, 1.0),
+      end: const Offset(1.2, 0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble4Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble5Animation = Tween<Offset>(
+      begin: const Offset(0.8, 1.3),
+      end: const Offset(0.1, -0.3),
+    ).animate(CurvedAnimation(
+      parent: _bubble5Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble6Animation = Tween<Offset>(
+      begin: const Offset(0.3, 1.4),
+      end: const Offset(0.7, -0.4),
+    ).animate(CurvedAnimation(
+      parent: _bubble6Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble7Animation = Tween<Offset>(
+      begin: const Offset(1.0, 1.1),
+      end: const Offset(0.0, -0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble7Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble8Animation = Tween<Offset>(
+      begin: const Offset(-0.3, 1.5),
+      end: const Offset(1.3, -0.5),
+    ).animate(CurvedAnimation(
+      parent: _bubble8Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble9Animation = Tween<Offset>(
+      begin: const Offset(0.6, 1.0),
+      end: const Offset(0.4, 0.0),
+    ).animate(CurvedAnimation(
+      parent: _bubble9Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble10Animation = Tween<Offset>(
+      begin: const Offset(0.1, 1.6),
+      end: const Offset(0.9, -0.6),
+    ).animate(CurvedAnimation(
+      parent: _bubble10Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble11Animation = Tween<Offset>(
+      begin: const Offset(1.2, 0.8),
+      end: const Offset(-0.2, 0.2),
+    ).animate(CurvedAnimation(
+      parent: _bubble11Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble12Animation = Tween<Offset>(
+      begin: const Offset(0.4, 1.7),
+      end: const Offset(0.6, -0.7),
+    ).animate(CurvedAnimation(
+      parent: _bubble12Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start bubble animations
+    _bubble1Controller.repeat();
+    _bubble2Controller.repeat();
+    _bubble3Controller.repeat();
+    _bubble4Controller.repeat();
+    _bubble5Controller.repeat();
+    _bubble6Controller.repeat();
+    _bubble7Controller.repeat();
+    _bubble8Controller.repeat();
+    _bubble9Controller.repeat();
+    _bubble10Controller.repeat();
+    _bubble11Controller.repeat();
+    _bubble12Controller.repeat();
+  }
 
   Future<void> _signUp() async {
     if (_formKey.currentState!.validate()) {
@@ -99,7 +318,287 @@ class _SignupPageState extends State<SignupPage> {
             stops: const [0.0, 0.4, 0.7, 0.9],
           ),
         ),
-        child: SafeArea(
+        child: Stack(
+          children: [
+            // Animated Bubbles Background
+            // Bubble 1
+            AnimatedBuilder(
+              animation: _bubble1Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble1Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.15),
+                          Colors.white.withOpacity(0.05),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 2
+            AnimatedBuilder(
+              animation: _bubble2Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble2Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.2),
+                          Colors.white.withOpacity(0.08),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 3
+            AnimatedBuilder(
+              animation: _bubble3Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble3Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.03),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 4
+            AnimatedBuilder(
+              animation: _bubble4Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble4Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 35,
+                    height: 35,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.white.withOpacity(0.25),
+                          Colors.white.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 5
+            AnimatedBuilder(
+              animation: _bubble5Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble5Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble5Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 45,
+                    height: 45,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.blue.withOpacity(0.3),
+                          Colors.blue.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 6
+            AnimatedBuilder(
+              animation: _bubble6Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble6Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble6Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.teal.withOpacity(0.25),
+                          Colors.teal.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 7
+            AnimatedBuilder(
+              animation: _bubble7Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble7Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble7Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 55,
+                    height: 55,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.purple.withOpacity(0.2),
+                          Colors.purple.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 8
+            AnimatedBuilder(
+              animation: _bubble8Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble8Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble8Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 25,
+                    height: 25,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.cyan.withOpacity(0.3),
+                          Colors.cyan.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 9
+            AnimatedBuilder(
+              animation: _bubble9Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble9Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble9Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.orange.withOpacity(0.25),
+                          Colors.orange.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 10
+            AnimatedBuilder(
+              animation: _bubble10Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble10Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble10Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.pink.withOpacity(0.2),
+                          Colors.pink.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 11
+            AnimatedBuilder(
+              animation: _bubble11Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble11Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble11Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 20,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.lime.withOpacity(0.3),
+                          Colors.lime.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Bubble 12
+            AnimatedBuilder(
+              animation: _bubble12Animation,
+              builder: (context, child) {
+                return Positioned(
+                  left: _bubble12Animation.value.dx * MediaQuery.of(context).size.width,
+                  top: _bubble12Animation.value.dy * MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.indigo.withOpacity(0.25),
+                          Colors.indigo.withOpacity(0.1),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+            // Main Content
+            SafeArea(
           child: SingleChildScrollView(
               child: Padding(
               padding: const EdgeInsets.all(24.0),
@@ -286,7 +785,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       child: TextFormField(
                         controller: _passwordController,
-                        obscureText: !_isPasswordVisible,
+                            obscureText: _obscurePassword,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           labelText: 'Password',
@@ -294,12 +793,12 @@ class _SignupPageState extends State<SignupPage> {
                           prefixIcon: const Icon(Icons.lock, color: Colors.white70),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
                               color: Colors.white70,
                             ),
                             onPressed: () {
                             setState(() {
-                                _isPasswordVisible = !_isPasswordVisible;
+                                    _obscurePassword = !_obscurePassword;
                             });
                           },
                         ),
@@ -345,7 +844,7 @@ class _SignupPageState extends State<SignupPage> {
                       ),
                       child: TextFormField(
                         controller: _confirmPasswordController,
-                        obscureText: !_isConfirmPasswordVisible,
+                            obscureText: _obscureConfirmPassword,
                         style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           labelText: 'Confirm Password',
@@ -353,12 +852,12 @@ class _SignupPageState extends State<SignupPage> {
                           prefixIcon: const Icon(Icons.lock_outline, color: Colors.white70),
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _isConfirmPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                                  _obscureConfirmPassword ? Icons.visibility : Icons.visibility_off,
                               color: Colors.white70,
                             ),
                             onPressed: () {
                               setState(() {
-                                _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                                    _obscureConfirmPassword = !_obscureConfirmPassword;
                               });
                             },
                           ),
@@ -458,18 +957,10 @@ class _SignupPageState extends State<SignupPage> {
               ),
             ),
           ),
+            ),
+          ],
         ),
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 }

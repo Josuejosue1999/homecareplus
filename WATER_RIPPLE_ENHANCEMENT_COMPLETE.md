@@ -166,3 +166,18 @@ The login and register pages now feature a **stunning water ripple background ef
 
 **🌊 Experience the magic at: http://localhost:3000/login and http://localhost:3000/register** 
  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 

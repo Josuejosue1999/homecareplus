@@ -502,21 +502,62 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
             
             // Correspondance exacte du nom de la clinique (optimized - no excessive logging)
             if (hospitalName === clinicName) {
-                // Convertir la date
+                // 🗓️ AMÉLIORATION: Conversion robuste des dates Firebase
                 let appointmentDate = data.appointmentDate || data.date || data.createdAt;
-                if (appointmentDate && appointmentDate.toDate) {
-                    appointmentDate = appointmentDate.toDate();
-                } else if (appointmentDate && appointmentDate.seconds) {
-                    appointmentDate = new Date(appointmentDate.seconds * 1000);
-                } else if (typeof appointmentDate === 'string') {
-                    appointmentDate = new Date(appointmentDate);
+                let formattedDate = null;
+                
+                try {
+                    if (appointmentDate && appointmentDate.toDate) {
+                        // Timestamp Firebase
+                        formattedDate = appointmentDate.toDate();
+                    } else if (appointmentDate && appointmentDate.seconds) {
+                        // Objet timestamp avec seconds
+                        formattedDate = new Date(appointmentDate.seconds * 1000);
+                    } else if (typeof appointmentDate === 'string') {
+                        // String date
+                        formattedDate = new Date(appointmentDate);
+                    } else if (appointmentDate instanceof Date) {
+                        // Déjà un objet Date
+                        formattedDate = new Date(appointmentDate);
+                    } else {
+                        // Fallback à la date de création ou maintenant
+                        const createdAt = data.createdAt;
+                        if (createdAt && createdAt.toDate) {
+                            formattedDate = createdAt.toDate();
+                        } else if (createdAt && createdAt.seconds) {
+                            formattedDate = new Date(createdAt.seconds * 1000);
+                        } else {
+                            formattedDate = new Date();
+                        }
+                    }
+                    
+                    // Valider que la date est valide
+                    if (isNaN(formattedDate.getTime())) {
+                        console.warn(`Invalid date for appointment ${doc.id}, using current date`);
+                        formattedDate = new Date();
+                    }
+                } catch (dateError) {
+                    console.error(`Error parsing date for appointment ${doc.id}:`, dateError);
+                    formattedDate = new Date();
                 }
                 
                 // Vérifier si c'est un rendez-vous à venir
-                if (appointmentDate && 
-                    appointmentDate > now && 
-                    appointmentDate < nextWeek &&
+                if (formattedDate && 
+                    formattedDate > now && 
+                    formattedDate < nextWeek &&
                     (data.status === 'pending' || data.status === 'confirmed')) {
+                    
+                    // 🕐 AMÉLIORATION: Formatage cohérent de l'heure
+                    let appointmentTime = data.appointmentTime || data.time || '';
+                    if (appointmentTime && !appointmentTime.includes(':')) {
+                        // Si l'heure n'a pas de format correct, essayer de la corriger
+                        if (appointmentTime.length === 3 || appointmentTime.length === 4) {
+                            // Format comme "800" ou "1400" -> "08:00" ou "14:00"
+                            const hour = appointmentTime.slice(0, -2).padStart(2, '0');
+                            const minute = appointmentTime.slice(-2);
+                            appointmentTime = `${hour}:${minute}`;
+                        }
+                    }
                     
                     appointments.push({
                         id: doc.id,
@@ -524,14 +565,28 @@ app.get("/api/appointments/clinic-appointments", requireAuth, async (req, res) =
                         patientEmail: data.patientEmail || data.email || '',
                         patientPhone: data.patientPhone || data.phone || '',
                         service: data.service || data.department || 'General Consultation',
-                        date: appointmentDate,
-                        time: data.appointmentTime || data.time || '',
+                        date: formattedDate, // Date correctement formatée
+                        time: appointmentTime, // Heure correctement formatée
                         status: data.status || 'pending',
                         notes: data.notes || data.reasonOfBooking || '',
                         hospital: hospitalName,
-                        duration: data.duration || '30 minutes',
+                        duration: data.duration || data.meetingDuration ? `${data.meetingDuration} minutes` : '30 minutes',
                         createdAt: data.createdAt?.toDate?.() || new Date(),
-                        updatedAt: data.updatedAt?.toDate?.() || new Date()
+                        updatedAt: data.updatedAt?.toDate?.() || new Date(),
+                        // 🔧 NOUVEAUX CHAMPS pour un meilleur affichage
+                        dateString: formattedDate.toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        }),
+                        timeString: appointmentTime,
+                        dayOfWeek: formattedDate.toLocaleDateString('en-US', { weekday: 'long' }),
+                        shortDate: formattedDate.toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
+                        })
                     });
                 }
             }
@@ -1705,7 +1760,7 @@ async function createAppointmentConfirmationMessage(appointmentData, clinicName,
         patientId: patientId,
         clinicId: clinicId,
         patientName: patientName,
-        clinicName: hospitalName, // Utiliser le nom de l'hôpital du rendez-vous
+        clinicName: hospitalName, // Utiliser le nom de l'hôpital
         hospitalImage: hospitalImage, // Ajouter l'image de l'hôpital
         lastMessageTime: serverTimestamp(),
         lastMessage: 'Appointment confirmed',
@@ -1995,6 +2050,198 @@ app.get('/api/settings/hospital-image', requireAuth, async (req, res) => {
     });
   }
 });
+
+// Route API pour sauvegarder les coordonnées avec Google Maps
+app.post('/api/settings/coordinates', async (req, res) => {
+  try {
+    const { latitude, longitude } = req.body;
+    const userId = req.session.userId;
+    
+    if (!userId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+    
+    if (!latitude || !longitude) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+    
+    // Valider les coordonnées
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return res.status(400).json({ error: 'Invalid coordinates' });
+    }
+    
+    // Sauvegarder dans Firebase
+    await db.collection('hospitals').doc(userId).update({
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      lastUpdated: admin.firestore.FieldValue.serverTimestamp()
+    });
+    
+    console.log(`✅ Coordinates saved for hospital ${userId}: ${latitude}, ${longitude}`);
+    res.json({ success: true, message: 'Coordinates saved successfully' });
+    
+  } catch (error) {
+    console.error('Error saving coordinates:', error);
+    res.status(500).json({ error: 'Failed to save coordinates' });
+  }
+});
+
+// Route API pour obtenir les détails d'un hôpital avec calcul de distance Google Maps
+app.get('/api/hospitals/:id/distance', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userLat, userLng } = req.query;
+    
+    if (!userLat || !userLng) {
+      return res.status(400).json({ error: 'User location is required' });
+    }
+    
+    // Obtenir les détails de l'hôpital
+    const hospitalDoc = await db.collection('hospitals').doc(id).get();
+    
+    if (!hospitalDoc.exists) {
+      return res.status(404).json({ error: 'Hospital not found' });
+    }
+    
+    const hospitalData = hospitalDoc.data();
+    
+    if (!hospitalData.latitude || !hospitalData.longitude) {
+      return res.json({ 
+        hospital: hospitalData,
+        distance: null,
+        error: 'Hospital location not available' 
+      });
+    }
+    
+    // Calculer la distance avec Google Maps Distance Matrix API
+    const googleMapsApiKey = 'AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g';
+    const distanceUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${userLat},${userLng}&destinations=${hospitalData.latitude},${hospitalData.longitude}&mode=driving&units=metric&key=${googleMapsApiKey}`;
+    
+    const axios = require('axios');
+    const distanceResponse = await axios.get(distanceUrl);
+    
+    let distanceInfo = null;
+    if (distanceResponse.data.status === 'OK' && 
+        distanceResponse.data.rows.length > 0 && 
+        distanceResponse.data.rows[0].elements.length > 0) {
+      
+      const element = distanceResponse.data.rows[0].elements[0];
+      if (element.status === 'OK') {
+        distanceInfo = {
+          distance: element.distance.text,
+          duration: element.duration.text,
+          distance_value: element.distance.value, // en mètres
+          duration_value: element.duration.value  // en secondes
+        };
+      }
+    }
+    
+    res.json({
+      hospital: hospitalData,
+      distance: distanceInfo
+    });
+    
+  } catch (error) {
+    console.error('Error calculating hospital distance:', error);
+    res.status(500).json({ error: 'Failed to calculate distance' });
+  }
+});
+
+// Route API pour obtenir les hôpitaux proches avec Google Maps
+app.get('/api/hospitals/nearby', async (req, res) => {
+  try {
+    const { lat, lng, radius = 50000 } = req.query; // radius en mètres, par défaut 50km
+    
+    if (!lat || !lng) {
+      return res.status(400).json({ error: 'User location is required' });
+    }
+    
+    const userLat = parseFloat(lat);
+    const userLng = parseFloat(lng);
+    
+    // Obtenir tous les hôpitaux
+    const hospitalsSnapshot = await db.collection('hospitals').get();
+    const hospitals = [];
+    
+    for (const doc of hospitalsSnapshot.docs) {
+      const hospitalData = doc.data();
+      
+      if (hospitalData.latitude && hospitalData.longitude) {
+        // Calculer la distance géodésique simple pour le filtrage initial
+        const distance = calculateGeodesicDistance(
+          userLat, userLng,
+          hospitalData.latitude, hospitalData.longitude
+        );
+        
+        if (distance <= radius) {
+          hospitals.push({
+            id: doc.id,
+            ...hospitalData,
+            distance: distance
+          });
+        }
+      }
+    }
+    
+    // Trier par distance
+    hospitals.sort((a, b) => a.distance - b.distance);
+    
+    // Limiter le nombre de résultats pour éviter trop d'appels API
+    const limitedHospitals = hospitals.slice(0, 10);
+    
+    // Calculer les distances précises avec Google Maps pour les hôpitaux proches
+    const googleMapsApiKey = 'AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g';
+    const destinations = limitedHospitals.map(h => `${h.latitude},${h.longitude}`).join('|');
+    
+    if (destinations) {
+      try {
+        const axios = require('axios');
+        const distanceUrl = `https://maps.googleapis.com/maps/api/distancematrix/json?origins=${userLat},${userLng}&destinations=${destinations}&mode=driving&units=metric&key=${googleMapsApiKey}`;
+        
+        const distanceResponse = await axios.get(distanceUrl);
+        
+        if (distanceResponse.data.status === 'OK' && distanceResponse.data.rows.length > 0) {
+          const elements = distanceResponse.data.rows[0].elements;
+          
+          limitedHospitals.forEach((hospital, index) => {
+            if (elements[index] && elements[index].status === 'OK') {
+              hospital.googleMapsDistance = {
+                distance: elements[index].distance.text,
+                duration: elements[index].duration.text,
+                distance_value: elements[index].distance.value,
+                duration_value: elements[index].duration.value
+              };
+            }
+          });
+        }
+      } catch (apiError) {
+        console.warn('Google Maps API error, using geodesic distances:', apiError.message);
+      }
+    }
+    
+    res.json({
+      hospitals: limitedHospitals,
+      total: hospitals.length,
+      userLocation: { lat: userLat, lng: userLng }
+    });
+    
+  } catch (error) {
+    console.error('Error finding nearby hospitals:', error);
+    res.status(500).json({ error: 'Failed to find nearby hospitals' });
+  }
+});
+
+// Fonction utilitaire pour calculer la distance géodésique
+function calculateGeodesicDistance(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // Rayon de la Terre en mètres
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
 
 
 

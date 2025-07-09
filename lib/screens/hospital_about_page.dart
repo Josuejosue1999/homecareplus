@@ -25,14 +25,95 @@ class HospitalAboutPage extends StatefulWidget {
   State<HospitalAboutPage> createState() => _HospitalAboutPageState();
 }
 
-class _HospitalAboutPageState extends State<HospitalAboutPage> {
+class _HospitalAboutPageState extends State<HospitalAboutPage> with TickerProviderStateMixin {
   String userName = 'User';
   String greeting = '';
+
+  // Animation controllers for moving bubbles
+  late AnimationController _bubble1Controller;
+  late AnimationController _bubble2Controller;
+  late AnimationController _bubble3Controller;
+  late AnimationController _bubble4Controller;
+  
+  // Animations for bubble positions
+  late Animation<Offset> _bubble1Animation;
+  late Animation<Offset> _bubble2Animation;
+  late Animation<Offset> _bubble3Animation;
+  late Animation<Offset> _bubble4Animation;
 
   @override
   void initState() {
     super.initState();
     _updateGreeting();
+    _initializeBubbleAnimations();
+  }
+
+  @override
+  void dispose() {
+    _bubble1Controller.dispose();
+    _bubble2Controller.dispose();
+    _bubble3Controller.dispose();
+    _bubble4Controller.dispose();
+    super.dispose();
+  }
+
+  void _initializeBubbleAnimations() {
+    // Initialize bubble animation controllers with different durations for variety
+    _bubble1Controller = AnimationController(
+      duration: const Duration(seconds: 8),
+      vsync: this,
+    );
+    _bubble2Controller = AnimationController(
+      duration: const Duration(seconds: 12),
+      vsync: this,
+    );
+    _bubble3Controller = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    );
+    _bubble4Controller = AnimationController(
+      duration: const Duration(seconds: 15),
+      vsync: this,
+    );
+
+    // Create bubble movement animations
+    _bubble1Animation = Tween<Offset>(
+      begin: const Offset(-0.1, 0.8),
+      end: const Offset(1.1, -0.2),
+    ).animate(CurvedAnimation(
+      parent: _bubble1Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble2Animation = Tween<Offset>(
+      begin: const Offset(1.1, 0.9),
+      end: const Offset(-0.1, -0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble2Controller,
+      curve: Curves.linear,
+    ));
+
+    _bubble3Animation = Tween<Offset>(
+      begin: const Offset(0.5, 1.2),
+      end: const Offset(0.3, -0.3),
+    ).animate(CurvedAnimation(
+      parent: _bubble3Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    _bubble4Animation = Tween<Offset>(
+      begin: const Offset(-0.2, 1.0),
+      end: const Offset(1.2, 0.1),
+    ).animate(CurvedAnimation(
+      parent: _bubble4Controller,
+      curve: Curves.easeInOut,
+    ));
+
+    // Start bubble animations
+    _bubble1Controller.repeat();
+    _bubble2Controller.repeat();
+    _bubble3Controller.repeat();
+    _bubble4Controller.repeat();
   }
 
   void _updateGreeting() {
@@ -66,46 +147,144 @@ class _HospitalAboutPageState extends State<HospitalAboutPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // Header Section
-              Padding(
+              // Header Section with Animated Bubbles
+              Container(
                 padding: const EdgeInsets.all(16.0),
-                child: Row(
+                child: Stack(
                   children: [
-                    // Bouton de retour
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: IconButton(
-                        icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                        onPressed: () {
-                          Navigator.pop(context);
-                        },
-                      ),
+                    // Animated Bubbles Background
+                    // Bubble 1
+                    AnimatedBuilder(
+                      animation: _bubble1Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble1Animation.value.dy * 80,
+                          child: Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.15),
+                                  Colors.white.withOpacity(0.05),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
                     ),
-                    const SizedBox(width: 16),
-                    
-                    // Titre
-                    Expanded(
-                      child: Text(
-                        'About',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                    // Bubble 2
+                    AnimatedBuilder(
+                      animation: _bubble2Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble2Animation.value.dy * 80,
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.2),
+                                  Colors.white.withOpacity(0.08),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Bubble 3
+                    AnimatedBuilder(
+                      animation: _bubble3Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble3Animation.value.dy * 80,
+                          child: Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.1),
+                                  Colors.white.withOpacity(0.03),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Bubble 4
+                    AnimatedBuilder(
+                      animation: _bubble4Animation,
+                      builder: (context, child) {
+                        return Positioned(
+                          left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
+                          top: _bubble4Animation.value.dy * 80,
+                          child: Container(
+                            width: 35,
+                            height: 35,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.25),
+                                  Colors.white.withOpacity(0.1),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    // Header Content
+                    Row(
+                      children: [
+                        // Bouton de retour
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: IconButton(
+                            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                          ),
                         ),
-                      ),
-                    ),
-                    
-                    // Bouton profil
-                    CircleAvatar(
-                      radius: 25,
-                      backgroundColor: Colors.white,
-                      child: IconButton(
-                        icon: const Icon(Icons.person, color: Color(0xFF159BBD)),
-                        onPressed: () {},
-                      ),
+                        const SizedBox(width: 16),
+                        
+                        // Titre
+                        Expanded(
+                          child: Text(
+                            'About',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        
+                        // Bouton profil
+                        CircleAvatar(
+                          radius: 25,
+                          backgroundColor: Colors.white,
+                          child: IconButton(
+                            icon: const Icon(Icons.person, color: Color(0xFF159BBD)),
+                            onPressed: () {},
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

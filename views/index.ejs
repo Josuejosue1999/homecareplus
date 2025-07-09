@@ -25,8 +25,15 @@
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
             <a class="navbar-brand" href="/">
-                <i class="fas fa-heartbeat text-primary me-2"></i>
-                <span class="fw-bold">HomeCare Plus</span>
+                <div class="brand-container">
+                    <div class="brand-icon">
+                        <i class="fas fa-hospital-symbol"></i>
+                    </div>
+                    <div class="brand-text">
+                        <span class="brand-name">HomeCare Plus</span>
+                        <span class="brand-tagline">Healthcare Excellence</span>
+                    </div>
+                </div>
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -36,19 +43,40 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="#platform">Platform</a>
+                        <a class="nav-link active-link" href="#mobile-app">
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Mobile App</span>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#about">About</a>
+                        <a class="nav-link" href="#platform">
+                            <i class="fas fa-hospital"></i>
+                            <span>Healthcare Management</span>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#contact">Contact</a>
+                        <a class="nav-link" href="#about">
+                            <i class="fas fa-info-circle"></i>
+                            <span>About Us</span>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link btn btn-outline-primary btn-sm ms-2" href="/login">Login</a>
+                        <a class="nav-link" href="#contact">
+                            <i class="fas fa-envelope"></i>
+                            <span>Contact</span>
+                        </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link btn btn-primary btn-sm ms-2" href="/register">Register</a>
+                        <a class="nav-link btn btn-outline-primary btn-sm ms-2 download-btn" href="#mobile-app">
+                            <i class="fas fa-download"></i>
+                            <span>Download App</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn btn-primary btn-sm ms-2 cta-btn" href="/register">
+                            <i class="fas fa-rocket"></i>
+                            <span>Get Started</span>
+                        </a>
                     </li>
                 </ul>
             </div>
@@ -56,10 +84,10 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero-section">
+    <section id="home" class="hero-section">
         <div class="hero-video-container">
             <video autoplay muted loop id="hero-video">
-                <source src="/videos/back.mp4" type="video/mp4">
+                <source src="/videos/ba.mp4" type="video/mp4">
                 Your browser does not support the video tag.
             </video>
             <div class="hero-overlay"></div>
@@ -93,155 +121,95 @@
         </div>
     </section>
 
-    <!-- Platform Overview Section -->
-    <section id="platform" class="platform-section py-5">
+    <!-- Mobile App Download Section -->
+    <section id="mobile-app" class="app-download-section py-5">
         <div class="container">
-            <div class="row text-center mb-5">
-                <div class="col-lg-10 mx-auto" data-aos="fade-up">
-                    <div class="section-badge">
-                        <i class="fas fa-network-wired"></i>
-                        <span>Complete Healthcare Ecosystem</span>
-                    </div>
-                    <h2 class="section-title">Three Powerful Platforms, One Vision</h2>
-                    <p class="section-subtitle">
-                        HomeCare Plus offers a comprehensive healthcare management ecosystem designed for patients, healthcare providers, and administrators
-                    </p>
-                </div>
-            </div>
-            
-            <div class="row g-5 align-items-center">
-                <!-- Mobile App for Patients -->
-                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="100">
-                    <div class="platform-card patient-platform">
-                        <div class="platform-header">
-                            <div class="platform-icon">
+            <div class="row align-items-center g-5">
+                <!-- Left Content -->
+                <div class="col-lg-6" data-aos="fade-right">
+                    <div class="app-content">
+                        <div class="text-center mb-4">
+                            <div class="section-badge">
                                 <i class="fas fa-mobile-alt"></i>
+                                <span>Patient Mobile App</span>
                             </div>
-                            <h3>Patient Mobile App</h3>
-                            <p class="platform-subtitle">Healthcare at your fingertips</p>
                         </div>
                         
-                        <div class="platform-features">
-                            <div class="feature-item">
-                                <i class="fas fa-calendar-plus"></i>
-                                <span>Book Appointments</span>
+                        <div class="app-features-grid">
+                            <div class="feature-card" data-aos="fade-up" data-aos-delay="100">
+                                <div class="feature-icon">
+                                    <i class="fas fa-calendar-plus"></i>
+                                </div>
+                                <h4>Easy Appointment Booking</h4>
+                                <p>Schedule appointments with healthcare providers seamlessly through our intuitive booking system with real-time availability</p>
                             </div>
-                            <div class="feature-item">
-                                <i class="fas fa-search-location"></i>
-                                <span>Find Nearby Hospitals</span>
+                            
+                            <div class="feature-card" data-aos="fade-up" data-aos-delay="200">
+                                <div class="feature-icon">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                </div>
+                                <h4>Find Nearby Hospitals</h4>
+                                <p>Discover healthcare facilities in your vicinity with advanced GPS integration and comprehensive facility information</p>
                             </div>
-                            <div class="feature-item">
-                                <i class="fas fa-comments"></i>
-                                <span>Chat with Doctors</span>
+                            
+                            <div class="feature-card" data-aos="fade-up" data-aos-delay="300">
+                                <div class="feature-icon">
+                                    <i class="fas fa-comments"></i>
+                                </div>
+                                <h4>Direct Doctor Communication</h4>
+                                <p>Engage in secure, encrypted conversations with your healthcare team for personalized care and medical consultations</p>
                             </div>
-                            <div class="feature-item">
-                                <i class="fas fa-file-medical"></i>
-                                <span>Medical Records</span>
+                            
+                            <div class="feature-card" data-aos="fade-up" data-aos-delay="400">
+                                <div class="feature-icon">
+                                    <i class="fas fa-robot"></i>
+                                </div>
+                                <h4>AI Health Assistant</h4>
+                                <p>Access intelligent health guidance, medication reminders, and symptom analysis powered by advanced AI technology</p>
                             </div>
-                            <div class="feature-item">
-                                <i class="fas fa-bell"></i>
-                                <span>Smart Notifications</span>
-                    </div>
-                </div>
-                
-                        <div class="platform-cta">
-                            <h5>Download Now</h5>
-                            <div class="download-buttons">
-                                <a href="#" class="download-btn">
-                                    <i class="fab fa-apple"></i>
-                                    <div>
-                                        <small>Download on the</small>
-                                        <strong>App Store</strong>
-                                    </div>
-                                </a>
-                                <a href="#" class="download-btn">
-                                    <i class="fab fa-google-play"></i>
-                                    <div>
-                                        <small>Get it on</small>
-                                        <strong>Google Play</strong>
-                                    </div>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Central Connection Visual -->
-                <div class="col-lg-4" data-aos="zoom-in" data-aos-delay="200">
-                    <div class="connection-visual">
-                        <div class="central-hub">
-                            <div class="hub-icon">
-                                <i class="fas fa-heartbeat"></i>
-                            </div>
-                            <h4>HomeCare Plus</h4>
-                            <p>Unified Healthcare Platform</p>
-                        </div>
-                        <div class="connection-lines">
-                            <div class="line line-left"></div>
-                            <div class="line line-right"></div>
-                        </div>
-                        <div class="platform-stats">
-                            <div class="stat-item">
-                                <h3>10K+</h3>
-                                <p>Active Patients</p>
-                            </div>
-                            <div class="stat-item">
-                                <h3>500+</h3>
-                                <p>Healthcare Providers</p>
-                    </div>
-                            <div class="stat-item">
-                                <h3>150+</h3>
-                                <p>Medical Facilities</p>
-                </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Doctor Dashboard -->
-                <div class="col-lg-4" data-aos="fade-up" data-aos-delay="300">
-                    <div class="platform-card doctor-platform">
-                        <div class="platform-header">
-                            <div class="platform-icon">
-                                <i class="fas fa-user-md"></i>
-                            </div>
-                            <h3>Doctor Dashboard</h3>
-                            <p class="platform-subtitle">Professional practice management</p>
                         </div>
                         
-                        <div class="platform-features">
-                            <div class="feature-item">
-                                <i class="fas fa-chart-line"></i>
-                                <span>Analytics & Reports</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-calendar-check"></i>
-                                <span>Appointment Management</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-users"></i>
-                                <span>Patient Management</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-comment-medical"></i>
-                                <span>Secure Messaging</span>
-                            </div>
-                            <div class="feature-item">
-                                <i class="fas fa-cog"></i>
-                                <span>Practice Settings</span>
+                        <div class="app-download-cta" data-aos="fade-up" data-aos-delay="500">
+                            <a href="#" class="download-main-btn">
+                                <i class="fas fa-download"></i>
+                                <span>Download App</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
                 
-                        <div class="platform-cta">
-                            <h5>Join Our Network</h5>
-                            <div class="action-buttons">
-                                <a href="/register" class="btn btn-primary btn-lg">
-                                    <i class="fas fa-user-plus"></i>
-                                    Register Now
-                                </a>
-                                <a href="/login" class="btn btn-outline-primary">
-                                    <i class="fas fa-sign-in-alt"></i>
-                                    Login
-                                </a>
+                <!-- Right Screenshots -->
+                <div class="col-lg-6" data-aos="fade-left">
+                    <div class="app-screenshots">
+                        <div class="screenshots-container">
+                            <div class="screenshot-item screenshot-1">
+                                <img src="/assets/1.JPG" alt="HomeCare Plus App - Main Dashboard" class="img-fluid">
+                                <div class="screenshot-overlay">
+                                    <div class="screenshot-label">Main Dashboard</div>
+                                </div>
+                            </div>
+                            <div class="screenshot-item screenshot-2">
+                                <img src="/assets/2.JPG" alt="HomeCare Plus App - Appointment Booking" class="img-fluid">
+                                <div class="screenshot-overlay">
+                                    <div class="screenshot-label">Book Appointments</div>
+                                </div>
+                            </div>
+                            <div class="screenshot-item screenshot-3">
+                                <img src="/assets/3.JPG" alt="HomeCare Plus App - Doctor Chat" class="img-fluid">
+                                <div class="screenshot-overlay">
+                                    <div class="screenshot-label">Doctor Chat</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="floating-elements">
+                            <div class="floating-element element-1">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="floating-element element-2">
+                                <i class="fas fa-stethoscope"></i>
+                            </div>
+                            <div class="floating-element element-3">
+                                <i class="fas fa-pills"></i>
                             </div>
                         </div>
                     </div>
@@ -250,85 +218,119 @@
         </div>
     </section>
 
-    <!-- Admin Preview Section -->
-    <section class="admin-preview-section py-5">
+    <!-- Healthcare Management Section -->
+    <section id="platform" class="admin-preview-section app-download-section py-5">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6" data-aos="fade-right">
+                    <div class="healthcare-showcase">
+                        <div class="dashboard-grid">
+                            <div class="main-dashboard">
+                                <div class="dashboard-header">
+                                    <div class="header-controls">
+                                        <div class="control-dot red"></div>
+                                        <div class="control-dot yellow"></div>
+                                        <div class="control-dot green"></div>
+                                    </div>
+                                    <div class="header-title">Analytics Dashboard</div>
+                                </div>
+                                <div class="dashboard-content">
+                                    <img src="/assets/da1.png" alt="Healthcare Analytics Dashboard" class="dashboard-image">
+                                    <div class="stats-overlay">
+                                        <div class="live-indicator">
+                                            <div class="pulse-dot"></div>
+                                            <span>Live Data</span>
+                                        </div>
+                                        <div class="metrics-grid">
+                                            <div class="metric-card">
+                                                <div class="metric-icon">
+                                                    <i class="fas fa-users"></i>
+                                                </div>
+                                                <div class="metric-info">
+                                                    <div class="metric-value">3,247</div>
+                                                    <div class="metric-label">Active Patients</div>
+                                                </div>
+                                            </div>
+                                            <div class="metric-card">
+                                                <div class="metric-icon">
+                                                    <i class="fas fa-calendar-check"></i>
+                                                </div>
+                                                <div class="metric-info">
+                                                    <div class="metric-value">156</div>
+                                                    <div class="metric-label">Today's Appointments</div>
+                                                </div>
+                                            </div>
+                                            <div class="metric-card">
+                                                <div class="metric-icon">
+                                                    <i class="fas fa-chart-line"></i>
+                                                </div>
+                                                <div class="metric-info">
+                                                    <div class="metric-value">99.2%</div>
+                                                    <div class="metric-label">System Uptime</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="secondary-dashboard">
+                                <div class="mini-card">
+                                    <div class="mini-header">
+                                        <i class="fas fa-users-cog"></i>
+                                        <span>Staff Management</span>
+                                    </div>
+                                    <img src="/assets/da2.png" alt="Staff Management" class="mini-image">
+                                </div>
+                                <div class="floating-badge">
+                                    <i class="fas fa-shield-check"></i>
+                                    <span>HIPAA Compliant</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6" data-aos="fade-left">
                     <div class="admin-content">
-                        <div class="section-badge">
-                            <i class="fas fa-shield-alt"></i>
-                            <span>Coming Soon</span>
+                        <div class="section-badge mb-4">
+                            <i class="fas fa-hospital"></i>
+                            <span>Healthcare Management</span>
                         </div>
                         <h2>Advanced Admin Dashboard</h2>
                         <p class="lead">
-                            Comprehensive system administration and healthcare network management tools.
+                            Streamline your healthcare operations with our comprehensive administrative platform designed for modern medical facilities.
                         </p>
                         <div class="admin-features">
                             <div class="admin-feature">
-                                <i class="fas fa-network-wired"></i>
+                                <i class="fas fa-chart-line"></i>
                                 <div>
-                                    <h5>Network Management</h5>
-                                    <p>Oversee the entire healthcare network and facility operations</p>
-                                </div>
-                            </div>
-                            <div class="admin-feature">
-                                <i class="fas fa-chart-pie"></i>
-                                <div>
-                                    <h5>Advanced Analytics</h5>
-                                    <p>Deep insights into system performance and healthcare metrics</p>
+                                    <h5>Real-time Analytics</h5>
+                                    <p>Monitor key performance indicators, track patient flow, and analyze operational metrics with advanced reporting tools</p>
                                 </div>
                             </div>
                             <div class="admin-feature">
                                 <i class="fas fa-users-cog"></i>
                                 <div>
-                                    <h5>User Management</h5>
-                                    <p>Comprehensive control over patients, doctors, and staff accounts</p>
-                    </div>
-                </div>
+                                    <h5>Staff Management</h5>
+                                    <p>Efficiently manage healthcare providers, schedule rotations, and track performance with comprehensive staff oversight</p>
+                                </div>
+                            </div>
+                            <div class="admin-feature">
+                                <i class="fas fa-database"></i>
+                                <div>
+                                    <h5>Data Integration</h5>
+                                    <p>Seamlessly integrate with existing systems, manage patient records, and ensure compliance with healthcare regulations</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="admin-cta">
-                            <button class="btn btn-outline-primary btn-lg" disabled>
-                                <i class="fas fa-clock"></i>
-                                Coming Soon
-                            </button>
+                            <a href="/register" class="btn btn-primary btn-lg">
+                                <i class="fas fa-rocket"></i>
+                                Get Started
+                            </a>
                             <p class="text-muted mt-2">
-                                <small>Be the first to know when admin features launch</small>
+                                <small>Transform your healthcare administration today</small>
                             </p>
                         </div>
-                    </div>
-                </div>
-                <div class="col-lg-6" data-aos="fade-left">
-                    <div class="admin-visual">
-                        <div class="dashboard-preview">
-                            <div class="preview-header">
-                                <div class="preview-dots">
-                                    <span></span>
-                                    <span></span>
-                                    <span></span>
-                                </div>
-                                <div class="preview-title">Admin Dashboard</div>
-                            </div>
-                            <div class="preview-content">
-                                <div class="preview-sidebar">
-                                    <div class="sidebar-item active"></div>
-                                    <div class="sidebar-item"></div>
-                                    <div class="sidebar-item"></div>
-                                    <div class="sidebar-item"></div>
-                                </div>
-                                <div class="preview-main">
-                                    <div class="chart-placeholder">
-                                        <i class="fas fa-chart-bar"></i>
-                        </div>
-                                    <div class="stats-grid">
-                                        <div class="stat-placeholder"></div>
-                                        <div class="stat-placeholder"></div>
-                                        <div class="stat-placeholder"></div>
-                                        <div class="stat-placeholder"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
                     </div>
                 </div>
             </div>
@@ -336,43 +338,67 @@
     </section>
 
     <!-- About Section -->
-    <section id="about" class="about-section py-5">
+    <section id="about" class="about-section app-download-section py-5">
         <div class="container">
             <div class="row align-items-center">
                 <div class="col-lg-6" data-aos="fade-right">
-                    <div class="about-badge">
-                        <i class="fas fa-info-circle"></i>
-                        <span>About</span>
+                    <div class="text-center mb-4">
+                        <div class="section-badge">
+                            <i class="fas fa-info-circle"></i>
+                            <span>About Us</span>
+                        </div>
                     </div>
                     <h2>HomeCare Plus</h2>
                     <p class="lead">
-                        Innovative platform designed to modernize medical facility management.
+                        Revolutionizing healthcare management through innovative technology and patient-centered solutions.
                     </p>
                     <p>
-                        Our mission is to simplify medical management by offering professional, 
-                        secure, and easy-to-use tools. We are committed to improving the experience 
-                        of healthcare professionals and patients.
+                        At HomeCare Plus, we bridge the gap between traditional healthcare and modern digital solutions. 
+                        Our comprehensive platform empowers healthcare providers with cutting-edge tools while ensuring 
+                        patients receive seamless, personalized care. We are dedicated to transforming the healthcare 
+                        experience through innovation, security, and accessibility.
                     </p>
                     <div class="about-features">
                         <div class="about-feature">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Intuitive and modern interface</span>
+                            <i class="fas fa-shield-check"></i>
+                            <span>Enterprise-grade security and HIPAA compliance</span>
                         </div>
                         <div class="about-feature">
-                            <i class="fas fa-check-circle"></i>
-                            <span>Hospital-level security</span>
+                            <i class="fas fa-mobile-alt"></i>
+                            <span>Intuitive design with powerful functionality</span>
                         </div>
                         <div class="about-feature">
-                            <i class="fas fa-check-circle"></i>
-                            <span>24/7 technical support</span>
+                            <i class="fas fa-headset"></i>
+                            <span>24/7 dedicated support and training</span>
+                        </div>
+                        <div class="about-feature">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Advanced analytics and reporting tools</span>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-6" data-aos="fade-left">
-                    <div class="about-visual">
-                        <div class="about-image">
-                            <img src="https://via.placeholder.com/500x400/159BBD/ffffff?text=HomeCare+Plus" 
-                                 alt="About HomeCare Plus" class="img-fluid rounded">
+                    <div class="about-visual-enhanced">
+                        <div class="about-image-dynamic">
+                            <img src="/assets/aa1.png" 
+                                 alt="HomeCare Plus - Healthcare Management Platform" class="img-fluid">
+                            <div class="image-decorations">
+                                <div class="decoration-circle circle-1"></div>
+                                <div class="decoration-circle circle-2"></div>
+                                <div class="decoration-circle circle-3"></div>
+                            </div>
+                            <div class="about-stats-card">
+                                <div class="stats-grid">
+                                    <div class="stat-item">
+                                        <div class="stat-number">500+</div>
+                                        <div class="stat-text">Hospitals</div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-number">50K+</div>
+                                        <div class="stat-text">Patients</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -445,10 +471,11 @@
                 </div>
                 <div class="col-lg-6 text-lg-end">
                     <div class="footer-links">
-                        <a href="#platform">Platform</a>
-                        <a href="#about">About</a>
+                        <a href="#mobile-app">Mobile App</a>
+                        <a href="#platform">Healthcare Management</a>
+                        <a href="#about">About Us</a>
                         <a href="#contact">Contact</a>
-                        <a href="/login">Login</a>
+                        <a href="/register">Get Started</a>
                     </div>
                 </div>
             </div>

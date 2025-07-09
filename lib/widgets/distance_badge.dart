@@ -5,20 +5,14 @@ class DistanceBadge extends StatefulWidget {
   final double? hospitalLatitude;
   final double? hospitalLongitude;
   final String? fallbackText;
-  final bool showIcon;
-  final Color? backgroundColor;
-  final Color? textColor;
-  final double? fontSize;
-
+  final bool useGoogleMaps;
+  
   const DistanceBadge({
     Key? key,
     this.hospitalLatitude,
     this.hospitalLongitude,
     this.fallbackText,
-    this.showIcon = true,
-    this.backgroundColor,
-    this.textColor,
-    this.fontSize,
+    this.useGoogleMaps = true,
   }) : super(key: key);
 
   @override
@@ -27,7 +21,7 @@ class DistanceBadge extends StatefulWidget {
 
 class _DistanceBadgeState extends State<DistanceBadge> {
   String _distanceText = '';
-  bool _isLoading = true;
+  bool _isLoading = false;
   bool _hasError = false;
   bool _isEnableButton = false;
 
@@ -35,6 +29,15 @@ class _DistanceBadgeState extends State<DistanceBadge> {
   void initState() {
     super.initState();
     _loadDistance();
+  }
+
+  @override
+  void didUpdateWidget(DistanceBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.hospitalLatitude != widget.hospitalLatitude ||
+        oldWidget.hospitalLongitude != widget.hospitalLongitude) {
+      _loadDistance();
+    }
   }
 
   Future<void> _loadDistance() async {
@@ -74,10 +77,20 @@ class _DistanceBadgeState extends State<DistanceBadge> {
       }
 
       // Calculer la distance
-      String distance = await LocationService.getDistanceFromUser(
-        widget.hospitalLatitude!,
-        widget.hospitalLongitude!,
-      );
+      String distance;
+      if (widget.useGoogleMaps) {
+        // Utiliser l'API Google Maps pour des calculs plus précis
+        distance = await LocationService.getDistanceFromUserWithGoogleMaps(
+          widget.hospitalLatitude!,
+          widget.hospitalLongitude!,
+        );
+      } else {
+        // Utiliser le calcul géodésique traditionnel
+        distance = await LocationService.getDistanceFromUser(
+          widget.hospitalLatitude!,
+          widget.hospitalLongitude!,
+        );
+      }
 
       if (mounted) {
         setState(() {
@@ -138,14 +151,39 @@ class _DistanceBadgeState extends State<DistanceBadge> {
 
       // Calculer la distance avec la nouvelle localisation
       if (widget.hospitalLatitude != null && widget.hospitalLongitude != null) {
-        final distance = LocationService.calculateDistance(
-          userLocation.latitude,
-          userLocation.longitude,
-          widget.hospitalLatitude!,
-          widget.hospitalLongitude!,
-        );
-
-        final formattedDistance = LocationService.formatDistance(distance);
+        String formattedDistance;
+        
+        if (widget.useGoogleMaps) {
+          // Utiliser l'API Google Maps
+          final googleDistance = await LocationService.getDistanceFromGoogleMaps(
+            userLocation.latitude,
+            userLocation.longitude,
+            widget.hospitalLatitude!,
+            widget.hospitalLongitude!,
+          );
+          
+          if (googleDistance != null) {
+            formattedDistance = '${googleDistance['distance']} (${googleDistance['duration']})';
+          } else {
+            // Fallback vers le calcul traditionnel
+            final distance = LocationService.calculateDistance(
+              userLocation.latitude,
+              userLocation.longitude,
+              widget.hospitalLatitude!,
+              widget.hospitalLongitude!,
+            );
+            formattedDistance = LocationService.formatDistance(distance);
+          }
+        } else {
+          // Calcul géodésique traditionnel
+          final distance = LocationService.calculateDistance(
+            userLocation.latitude,
+            userLocation.longitude,
+            widget.hospitalLatitude!,
+            widget.hospitalLongitude!,
+          );
+          formattedDistance = LocationService.formatDistance(distance);
+        }
 
         if (mounted) {
           setState(() {
@@ -170,109 +208,139 @@ class _DistanceBadgeState extends State<DistanceBadge> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: _isEnableButton ? _enableLocation : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    if (_isLoading) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: _getBackgroundColor(),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: _getBorderColor(),
-            width: 0.5,
-          ),
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (widget.showIcon && !_isLoading && !_hasError) ...[
-              Icon(
-                Icons.location_on,
-                size: 12,
-                color: _getTextColor(),
+            SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(const Color(0xFF159BBD)),
               ),
-              const SizedBox(width: 4),
-            ],
-            if (_isLoading) ...[
-              SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(_getTextColor()),
-                ),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Calculating...',
+              style: TextStyle(
+                fontSize: 12,
+                color: const Color(0xFF159BBD),
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(width: 4),
-              Text(
-                'Calculating...',
-                style: TextStyle(
-                  fontSize: widget.fontSize ?? 10,
-                  fontWeight: FontWeight.w500,
-                  color: _getTextColor(),
-                ),
-              ),
-            ] else ...[
-              Flexible(
-                child: Text(
-                  _distanceText,
-                  style: TextStyle(
-                    fontSize: widget.fontSize ?? 10,
-                    fontWeight: FontWeight.w500,
-                    color: _getTextColor(),
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+            ),
           ],
         ),
+      );
+    }
+
+    if (_isEnableButton) {
+      return GestureDetector(
+        onTap: _enableLocation,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.95),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+            border: Border.all(color: Colors.orange.shade300, width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(2),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.my_location_rounded,
+                  size: 12,
+                  color: Colors.orange.shade700,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                'Tap to enable',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.orange.shade700,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+        border: Border.all(
+          color: _hasError ? Colors.red.shade200 : const Color(0xFF159BBD).withOpacity(0.3),
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(2),
+            decoration: BoxDecoration(
+              color: _hasError ? Colors.red.shade50 : const Color(0xFF159BBD).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              _hasError ? Icons.location_disabled_rounded : Icons.near_me_rounded,
+              size: 12,
+              color: _hasError ? Colors.red.shade600 : const Color(0xFF159BBD),
+            ),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              _distanceText,
+              style: TextStyle(
+                fontSize: 12,
+                color: _hasError ? Colors.red.shade600 : const Color(0xFF159BBD),
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  Color _getBackgroundColor() {
-    if (widget.backgroundColor != null) {
-      return widget.backgroundColor!;
-    }
-    
-    if (_hasError) {
-      return _isEnableButton ? Colors.blue[50]! : Colors.grey[100]!;
-    }
-    
-    if (_isLoading) {
-      return const Color(0xFF159BBD).withOpacity(0.1);
-    }
-    
-    return const Color(0xFF159BBD).withOpacity(0.1);
-  }
-
-  Color _getTextColor() {
-    if (widget.textColor != null) {
-      return widget.textColor!;
-    }
-    
-    if (_hasError) {
-      return _isEnableButton ? Colors.blue[600]! : Colors.grey[600]!;
-    }
-    
-    if (_isLoading) {
-      return const Color(0xFF159BBD);
-    }
-    
-    return const Color(0xFF159BBD);
-  }
-
-  Color _getBorderColor() {
-    if (_hasError) {
-      return _isEnableButton ? Colors.blue[300]! : Colors.grey[300]!;
-    }
-    
-    if (_isLoading) {
-      return const Color(0xFF159BBD).withOpacity(0.3);
-    }
-    
-    return const Color(0xFF159BBD).withOpacity(0.3);
   }
 }
 

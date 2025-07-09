@@ -8,6 +8,8 @@ import '../widgets/distance_badge.dart';
 import 'facilities.dart';
 import 'choose.dart';
 import 'hospital_details.dart';
+import 'find_healthcare_page.dart';
+import '../main.dart';
 import 'dart:io';
 import 'dart:convert';
 
@@ -60,34 +62,24 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     });
 
     try {
-      // Vérifier si la localisation est disponible
-      bool locationAvailable = await LocationService.isLocationAvailable();
+      // Use the enhanced location service with Google Maps API
+      final userLocation = await LocationService.getCurrentLocation();
       
-      if (!locationAvailable) {
-        // Essayer d'obtenir la localisation depuis le cache
-        _userLocation = await LocationService.getCachedLocation();
-        
-        if (_userLocation == null) {
-          // Demander les permissions
-          bool permissionGranted = await LocationService.requestLocationPermission();
-          if (!permissionGranted) {
-            setState(() {
-              _showLocationPermissionDialog = true;
-            });
-          }
-        }
+      if (userLocation != null) {
+        setState(() {
+          _userLocation = userLocation;
+          _isLocationLoading = false;
+        });
       } else {
-        // Obtenir la localisation actuelle
-        _userLocation = await LocationService.getCurrentLocation();
-      }
-    } catch (e) {
-      print('Error initializing location: $e');
-    } finally {
-      if (mounted) {
         setState(() {
           _isLocationLoading = false;
         });
       }
+    } catch (e) {
+      print('Error initializing location: $e');
+      setState(() {
+        _isLocationLoading = false;
+      });
     }
   }
 
@@ -371,58 +363,76 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            // Title and Icon Section (moved higher)
+                            // Header row with back arrow, logo and title
                             Row(
                               children: [
-                                // Medical Icon
-                                Container(
-                                  width: 56, // Increased to match larger title
-                                  height: 56,
-                                  decoration: BoxDecoration(
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Colors.white.withOpacity(0.25),
-                                        Colors.white.withOpacity(0.15),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(16),
-                                    border: Border.all(
-                                      color: Colors.white.withOpacity(0.3),
-                                      width: 1.5,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        spreadRadius: 0,
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
+                                // Back Arrow
+                                GestureDetector(
+                                  onTap: () {
+            Navigator.pushReplacement(
+              context,
+                                      PageRouteBuilder(
+                                        pageBuilder: (context, animation, secondaryAnimation) => const ProfessionalWelcomeScreen(),
+                                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                          return SlideTransition(
+                                            position: Tween<Offset>(
+                                              begin: const Offset(-1.0, 0.0),
+                                              end: Offset.zero,
+                                            ).animate(CurvedAnimation(
+                                              parent: animation,
+                                              curve: Curves.easeInOutCubic,
+                                            )),
+                                            child: child,
+                                          );
+                                        },
+                                        transitionDuration: const Duration(milliseconds: 600),
                                       ),
-                                      BoxShadow(
-                                        color: Colors.white.withOpacity(0.1),
-                                        spreadRadius: 0,
-                                        blurRadius: 6,
-                                        offset: const Offset(0, -2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.local_hospital_rounded,
-                                    color: Colors.white,
-                                    size: 28, // Increased to match larger title
+                                    );
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.15),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_back_ios,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
                                   ),
                                 ),
-                                const SizedBox(width: 16),
-                                // Title (increased size)
-                                const Text(
-                                  'Find Healthcare',
-                                  style: TextStyle(
+                                
+                                // Title - Centered between back arrow and symbol
+                                Expanded(
+                                  child: Center(
+                                    child: Text(
+                                      'Find Healthcare',
+          style: TextStyle(
+                                        fontSize: 28,
+                                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                
+                                // Symbol on the right
+                                Container(
+                                  padding: const EdgeInsets.all(12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.2),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: Colors.white.withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.local_hospital,
                                     color: Colors.white,
-                                    fontSize: 28, // Increased from 24 to 28
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: -0.5,
-                                    height: 1.1,
+                                    size: 24,
                                   ),
                                 ),
                               ],
@@ -474,8 +484,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                   SizedBox(
                                     width: 14, // Reduced from 16 to 14
                                     height: 14,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
                                       valueColor: AlwaysStoppedAnimation<Color>(Colors.white.withOpacity(0.8)),
                                     ),
                                   ),
@@ -487,12 +497,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                       fontSize: 12, // Reduced from 14 to 12
                                       fontWeight: FontWeight.w500,
                                     ),
-                                  ),
-                                ],
-                              ),
+                    ),
+                  ],
+                ),
                             ] else if (_userLocation != null) ...[
                               Row(
-                                children: [
+        children: [
                                   SizedBox(
                                     width: 14, // Reduced from 16 to 14
                                     height: 14,
@@ -524,9 +534,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
-                                  ),
-                                ],
-                              ),
+                          ),
+                        ],
+                      ),
                               if (_userLocation!.sector.isNotEmpty) ...[
                                 const SizedBox(height: 3), // Reduced spacing
                                 Row(
@@ -610,54 +620,54 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
             child: Container(
               padding: const EdgeInsets.all(20),
               child: _buildSearchSection(),
+              ),
             ),
-          ),
 
-          // Hospitals List
+            // Hospitals List
           SliverToBoxAdapter(
-            child: StreamBuilder<List<Hospital>>(
-              stream: searchQuery.isEmpty 
-                  ? HospitalService.getHospitals()
-                  : HospitalService.searchHospitals(searchQuery),
-              builder: (context, snapshot) {
-                print('StreamBuilder state: ${snapshot.connectionState}');
-                print('StreamBuilder hasError: ${snapshot.hasError}');
-                print('StreamBuilder error: ${snapshot.error}');
-                print('StreamBuilder hasData: ${snapshot.hasData}');
-                print('StreamBuilder data length: ${snapshot.data?.length}');
-                
-                if (snapshot.connectionState == ConnectionState.waiting) {
+              child: StreamBuilder<List<Hospital>>(
+                stream: searchQuery.isEmpty 
+                    ? HospitalService.getHospitals()
+                    : HospitalService.searchHospitals(searchQuery),
+                builder: (context, snapshot) {
+                  print('StreamBuilder state: ${snapshot.connectionState}');
+                  print('StreamBuilder hasError: ${snapshot.hasError}');
+                  print('StreamBuilder error: ${snapshot.error}');
+                  print('StreamBuilder hasData: ${snapshot.hasData}');
+                  print('StreamBuilder data length: ${snapshot.data?.length}');
+                  
+                  if (snapshot.connectionState == ConnectionState.waiting) {
                   return _buildLoadingState();
-                }
+                  }
 
-                if (snapshot.hasError) {
-                  print('StreamBuilder error details: ${snapshot.error}');
-                  // Try to fetch data once as a fallback
-                  return FutureBuilder<List<Hospital>>(
-                    future: _fetchHospitalsOnce(),
-                    builder: (context, futureSnapshot) {
-                      if (futureSnapshot.connectionState == ConnectionState.waiting) {
+                  if (snapshot.hasError) {
+                    print('StreamBuilder error details: ${snapshot.error}');
+                    // Try to fetch data once as a fallback
+                    return FutureBuilder<List<Hospital>>(
+                      future: _fetchHospitalsOnce(),
+                      builder: (context, futureSnapshot) {
+                        if (futureSnapshot.connectionState == ConnectionState.waiting) {
                         return _buildLoadingState();
-                      }
-                      
-                      if (futureSnapshot.hasError) {
+                        }
+                        
+                        if (futureSnapshot.hasError) {
                         return _buildErrorState();
-                      }
-                      
-                      final hospitals = futureSnapshot.data ?? [];
-                      return _buildHospitalsList(hospitals);
-                    },
-                  );
-                }
+                        }
+                        
+                        final hospitals = futureSnapshot.data ?? [];
+                        return _buildHospitalsList(hospitals);
+                      },
+                    );
+                  }
 
-                final hospitals = snapshot.data ?? [];
-                print('Final hospitals list length: ${hospitals.length}');
-                return _buildHospitalsList(hospitals);
-              },
-            ),
-          ),
-        ],
-      ),
+                  final hospitals = snapshot.data ?? [];
+                  print('Final hospitals list length: ${hospitals.length}');
+                  return _buildHospitalsList(hospitals);
+                },
+                                              ),
+                                            ),
+                                          ],
+                                        ),
     );
   }
 
@@ -690,8 +700,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                 child: const Icon(
                   Icons.search_rounded,
                   color: Color(0xFF159BBD),
-                  size: 20,
-                ),
+                size: 20,
+              ),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -767,6 +777,87 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
               },
             ),
           ),
+          
+          const SizedBox(height: 20),
+          
+          // Find Nearby Healthcare Button with Google Maps
+          Container(
+            width: double.infinity,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF159BBD).withOpacity(0.3),
+                  spreadRadius: 0,
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const FindHealthcarePage(),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.map_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Find Healthcare Maps', // Shortened text to avoid overflow
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -793,14 +884,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
             'Finding Healthcare Centers',
             style: TextStyle(
               fontSize: 18,
-              fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w600,
               color: Color(0xFF1A1A1A),
+              ),
             ),
-          ),
           const SizedBox(height: 8),
-          Text(
+              Text(
             'Please wait while we load available hospitals...',
-            style: TextStyle(
+                style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
             ),
@@ -815,7 +906,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     return Container(
       padding: const EdgeInsets.all(40),
       child: Column(
-        children: [
+              children: [
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -838,9 +929,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+                Text(
             'Please check your internet connection and try again',
-            style: TextStyle(
+                  style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
             ),
@@ -857,17 +948,17 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
               backgroundColor: const Color(0xFF159BBD),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
+                    shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
-              ),
-            ),
+                    ),
+                  ),
             child: const Text(
               'Retry',
-              style: TextStyle(
+                    style: TextStyle(
                 fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
+                    ),
+                  ),
+                ),
         ],
       ),
     );
@@ -880,62 +971,62 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     print('Has profile image: ${hospital.profileImageUrl != null && hospital.profileImageUrl!.isNotEmpty}');
     
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => HospitalDetailsPage(
-              hospitalName: hospital.name,
-              hospitalImage: hospital.profileImageUrl ?? 'assets/hospital.PNG',
-              address: hospital.location ?? 'Address not available',
-              facilities: hospital.facilities.isNotEmpty 
-                  ? hospital.facilities 
-                  : ['General Care', 'Consultation'],
-              rating: 4.5,
-              reviewCount: 50,
-              aboutText: hospital.about ?? 'This healthcare facility is committed to providing exceptional medical care and services.',
-              hospitalSchedule: hospital.availableSchedule,
-              reviews: [
-                {
-                  'name': 'John Doe',
+                                            onTap: () {
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => HospitalDetailsPage(
+                                                    hospitalName: hospital.name,
+                                                    hospitalImage: hospital.profileImageUrl ?? 'assets/hospital.PNG',
+                                                    address: hospital.location ?? 'Address not available',
+                                                    facilities: hospital.facilities.isNotEmpty 
+                                                        ? hospital.facilities 
+                                                        : ['General Care', 'Consultation'],
+                                                    rating: 4.5,
+                                                    reviewCount: 50,
+                                                    aboutText: hospital.about ?? 'This healthcare facility is committed to providing exceptional medical care and services.',
+                                                    hospitalSchedule: hospital.availableSchedule,
+                                                    reviews: [
+                                                      {
+                                                        'name': 'John Doe',
                   'rating': '5',
                   'comment': 'Excellent service and professional staff.',
                   'date': '2024-01-15',
-                },
-                {
-                  'name': 'Jane Smith',
+                                                      },
+                                                      {
+                                                        'name': 'Jane Smith',
                   'rating': '4',
                   'comment': 'Good experience, clean facility.',
                   'date': '2024-01-10',
-                },
-              ],
-            ),
-          ),
-        );
-      },
+                                                      },
+                                                    ],
+                                                  ),
+                                                ),
+                                              );
+                                            },
       child: Container(
         margin: const EdgeInsets.only(bottom: 20),
-        decoration: BoxDecoration(
-          color: Colors.white,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
+                                      boxShadow: [
+                                        BoxShadow(
               color: const Color(0xFF159BBD).withOpacity(0.08),
               spreadRadius: 0,
               blurRadius: 20,
               offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
+                                        ),
+                                      ],
+                                    ),
+                                    child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+                                      children: [
             // Hospital Image with Overlay
-            Container(
+                                  Container(
               height: 160,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                borderRadius: const BorderRadius.only(
+                                    width: double.infinity,
+                                    decoration: BoxDecoration(
+                                      borderRadius: const BorderRadius.only(
                   topLeft: Radius.circular(20),
                   topRight: Radius.circular(20),
                 ),
@@ -948,8 +1039,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                     borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(20),
                       topRight: Radius.circular(20),
-                    ),
-                    child: _buildHospitalImage(hospital),
+              ),
+              child: _buildHospitalImage(hospital),
                   ),
                   // Gradient Overlay
                   Container(
@@ -1030,8 +1121,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                         hospitalLatitude: hospital.latitude,
                         hospitalLongitude: hospital.longitude,
                         fallbackText: 'Distance N/A',
-                        showIcon: true,
-                        fontSize: 11,
+                        useGoogleMaps: true,
                       ),
                     ),
                   ),
@@ -1042,9 +1132,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
             // Hospital Info
             Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
+                                    child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
+                                      children: [
                   // Hospital Name and Rating
                   Row(
                     children: [
@@ -1055,10 +1145,10 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
                             color: Color(0xFF1A1A1A),
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                                          ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                                        ),
                       ),
                       const SizedBox(width: 12),
                       Container(
@@ -1069,18 +1159,18 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
-                          children: [
+                                          children: [
                             const Icon(
                               Icons.star_rounded,
-                              size: 16,
+                        size: 16,
                               color: Colors.amber,
-                            ),
-                            const SizedBox(width: 4),
+                      ),
+                      const SizedBox(width: 4),
                             const Text(
-                              '4.5',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
+                        '4.5',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                          fontWeight: FontWeight.w600,
                                 color: Color(0xFF1A1A1A),
                               ),
                             ),
@@ -1094,7 +1184,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                   
                   // Location
                   Row(
-                    children: [
+                            children: [
                       SizedBox(
                         width: 16,
                         height: 16,
@@ -1117,14 +1207,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                       Expanded(
                         child: Text(
                           hospital.location ?? 'Location not available',
-                          style: TextStyle(
+                                              style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
-                          ),
+                                            ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
+                                        ),
                         ),
-                      ),
                     ],
                   ),
                   
@@ -1135,27 +1225,51 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: hospital.facilities.take(3).map((facility) {
+                      children: [
+                        // Afficher les 3 premières facilities
+                        ...hospital.facilities.take(3).map((facility) {
                         return Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: const Color(0xFF159BBD).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF159BBD).withOpacity(0.2),
-                              width: 1,
-                            ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: const Color(0xFF159BBD).withOpacity(0.2),
+                                width: 1,
+                              ),
                           ),
                           child: Text(
                             facility,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Color(0xFF159BBD),
-                              fontWeight: FontWeight.w600,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF159BBD),
+                                fontWeight: FontWeight.w600,
                             ),
                           ),
                         );
                       }).toList(),
+                        // Ajouter "..." si il y a plus de 3 facilities
+                        if (hospital.facilities.length > 3)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Colors.grey.withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: const Text(
+                              '...',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                   ],
@@ -1230,12 +1344,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
     );
   }
 
@@ -1249,55 +1363,55 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
       if (hospital.profileImageUrl!.startsWith('data:image')) {
         // Base64 image from Firestore
         return Image.memory(
-          base64Decode(hospital.profileImageUrl!.split(',')[1]),
-          fit: BoxFit.cover,
+            base64Decode(hospital.profileImageUrl!.split(',')[1]),
+                                        fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            print('Error loading base64 image for ${hospital.name}: $error');
-            return _buildPlaceholderImage();
-          },
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading base64 image for ${hospital.name}: $error');
+              return _buildPlaceholderImage();
+            },
         );
       }
       // Check if it's a network URL
       else if (hospital.profileImageUrl!.startsWith('http')) {
         // Network image
         return Image.network(
-          hospital.profileImageUrl!,
-          fit: BoxFit.cover,
+            hospital.profileImageUrl!,
+            fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            print('Error loading network image for ${hospital.name}: $error');
-            return _buildPlaceholderImage();
-          },
-          loadingBuilder: (context, child, loadingProgress) {
-            if (loadingProgress == null) {
-              print('Network image loaded successfully for ${hospital.name}');
-              return child;
-            }
-            return Center(
-              child: CircularProgressIndicator(
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded / 
-                      loadingProgress.expectedTotalBytes!
-                    : null,
-                valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
-              ),
-            );
-          },
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading network image for ${hospital.name}: $error');
+              return _buildPlaceholderImage();
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) {
+                print('Network image loaded successfully for ${hospital.name}');
+                return child;
+              }
+              return Center(
+                child: CircularProgressIndicator(
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded / 
+                        loadingProgress.expectedTotalBytes!
+                      : null,
+                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+                                                ),
+                                              );
+                                            },
         );
       } else {
         // Local file path
         return Image.file(
-          File(hospital.profileImageUrl!),
-          fit: BoxFit.cover,
+            File(hospital.profileImageUrl!),
+            fit: BoxFit.cover,
           width: double.infinity,
           height: double.infinity,
-          errorBuilder: (context, error, stackTrace) {
-            print('Error loading local image for ${hospital.name}: $error');
-            return _buildPlaceholderImage();
-          },
+            errorBuilder: (context, error, stackTrace) {
+              print('Error loading local image for ${hospital.name}: $error');
+              return _buildPlaceholderImage();
+            },
         );
       }
     } else {
@@ -1310,7 +1424,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     return Container(
       width: double.infinity,
       height: double.infinity,
-      decoration: BoxDecoration(
+                                    decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -1322,11 +1436,11 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
       ),
       child: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                        Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
+                                          decoration: BoxDecoration(
                 color: const Color(0xFF159BBD).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
@@ -1339,15 +1453,15 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
             const SizedBox(height: 12),
             Text(
               'Healthcare Center',
-              style: TextStyle(
+                                              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF159BBD).withOpacity(0.8),
-              ),
-            ),
-          ],
-        ),
-      ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
     );
   }
 
@@ -1378,8 +1492,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     if (hospitals.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(40),
-        child: Column(
-          children: [
+                              child: Column(
+                                children: [
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -1389,15 +1503,15 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
               child: Icon(
                 searchQuery.isEmpty ? Icons.local_hospital_outlined : Icons.search_off_rounded,
                 size: 48,
-                color: Colors.grey[400],
-              ),
+              color: Colors.grey[400],
+            ),
             ),
             const SizedBox(height: 24),
             Text(
               searchQuery.isEmpty 
                   ? 'No Healthcare Centers'
                   : 'No Results Found',
-              style: TextStyle(
+                                          style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700],
@@ -1408,14 +1522,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
               searchQuery.isEmpty 
                   ? 'Healthcare centers will appear here once they register'
                   : 'Try adjusting your search terms',
-              style: TextStyle(
+                                          style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
-              ),
+                                              ),
               textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+                                            ),
+                                          ],
+                                        ),
       );
     }
 
@@ -1468,3 +1582,4 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     );
   }
 } 
+

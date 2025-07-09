@@ -446,94 +446,185 @@ class HospitalDetailsPage extends StatelessWidget {
                       onPressed: () {
                         showDialog(
                           context: context,
+                          barrierDismissible: false,
                           builder: (BuildContext context) {
                             return Dialog(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
-                              ),
+                              backgroundColor: Colors.transparent,
+                              elevation: 0,
                               child: Container(
-                                width: MediaQuery.of(context).size.width * 0.85,
-                                padding: const EdgeInsets.all(20),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(15),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF159BBD).withOpacity(0.1),
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: const Icon(
-                                        Icons.calendar_today,
-                                        color: Color(0xFF159BBD),
-                                        size: 40,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    const Text(
-                                      'Book Your Appointment',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    const Text(
-                                      'Please sign in to book your appointment and access your medical records.',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 20),
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                      children: [
-                                        TextButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                          },
-                                          child: const Text(
-                                            'Cancel',
-                                            style: TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                          ),
-                                        ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            Navigator.of(context).pop();
-                                            Navigator.pushReplacement(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => LoginPage(
-                                                  selectedHospitalName: hospitalName,
-                                                  selectedHospitalImage: hospitalImage,
-                                                  selectedHospitalLocation: address,
-                                                  selectedHospitalFacilities: facilities,
-                                                  selectedHospitalAbout: aboutText,
-                                                  selectedHospitalSchedule: hospitalSchedule,
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(0xFF159BBD),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(10),
-                                            ),
-                                          ),
-                                          child: const Text(
-                                            'Continue',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
+                                width: MediaQuery.of(context).size.width * 0.9,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.15),
+                                      spreadRadius: 0,
+                                      blurRadius: 30,
+                                      offset: const Offset(0, 10),
                                     ),
                                   ],
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(32),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Professional Icon with gradient background
+                                      Container(
+                                        width: 80,
+                                        height: 80,
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            colors: [
+                                              const Color(0xFF159BBD),
+                                              const Color(0xFF0D7A94),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                          ),
+                                          shape: BoxShape.circle,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFF159BBD).withOpacity(0.3),
+                                              spreadRadius: 0,
+                                              blurRadius: 20,
+                                              offset: const Offset(0, 8),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.medical_services_rounded,
+                                          color: Colors.white,
+                                          size: 40,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      
+                                      // Professional Title
+                                      const Text(
+                                        'Authentication Required',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w700,
+                                          color: Color(0xFF1A1A1A),
+                                          letterSpacing: -0.5,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 32),
+                                      
+                                      // Professional Action Buttons
+                                      Row(
+                                        children: [
+                                          // Cancel Button
+                                          Expanded(
+                                            child: Container(
+                                              height: 52,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(
+                                                  color: Colors.grey[300]!,
+                                                  width: 1.5,
+                                                ),
+                                                borderRadius: BorderRadius.circular(16),
+                                              ),
+                                              child: TextButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                },
+                                                style: TextButton.styleFrom(
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(16),
+                                                  ),
+                                                ),
+                                                child: Text(
+                                                  'Cancel',
+                                                  style: TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.grey[700],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 16),
+                                          
+                                          // Sign In Button
+                                          Expanded(
+                                            child: Container(
+                                              height: 52,
+                                              decoration: BoxDecoration(
+                                                gradient: LinearGradient(
+                                                  colors: [
+                                                    const Color(0xFF159BBD),
+                                                    const Color(0xFF0D7A94),
+                                                  ],
+                                                  begin: Alignment.topLeft,
+                                                  end: Alignment.bottomRight,
+                                                ),
+                                                borderRadius: BorderRadius.circular(16),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: const Color(0xFF159BBD).withOpacity(0.3),
+                                                    spreadRadius: 0,
+                                                    blurRadius: 12,
+                                                    offset: const Offset(0, 4),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: ElevatedButton(
+                                                onPressed: () {
+                                                  Navigator.of(context).pop();
+                                                  Navigator.pushReplacement(
+                                                    context,
+                                                    MaterialPageRoute(
+                                                      builder: (context) => LoginPage(
+                                                        selectedHospitalName: hospitalName,
+                                                        selectedHospitalImage: hospitalImage,
+                                                        selectedHospitalLocation: address,
+                                                        selectedHospitalFacilities: facilities,
+                                                        selectedHospitalAbout: aboutText,
+                                                        selectedHospitalSchedule: hospitalSchedule,
+                                                      ),
+                                                    ),
+                                                  );
+                                                },
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: Colors.transparent,
+                                                  shadowColor: Colors.transparent,
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius: BorderRadius.circular(16),
+                                                  ),
+                                                ),
+                                                child: const Row(
+                                                  mainAxisAlignment: MainAxisAlignment.center,
+                                                  children: [
+                                                    Icon(
+                                                      Icons.login_rounded,
+                                                      color: Colors.white,
+                                                      size: 18,
+                                                    ),
+                                                    SizedBox(width: 6),
+                                                    Flexible(
+                                                      child: Text(
+                                                        'Sign In',
+                                                        style: TextStyle(
+                                                          fontSize: 15,
+                                                          fontWeight: FontWeight.w600,
+                                                          color: Colors.white,
+                                                        ),
+                                                        overflow: TextOverflow.ellipsis,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             );

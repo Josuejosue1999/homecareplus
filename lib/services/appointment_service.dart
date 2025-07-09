@@ -1863,4 +1863,26 @@ class AppointmentService {
       print('❌ Error updating appointment hospital images: $e');
     }
   }
+  // Méthode de compatibilité pour isTimeSlotAvailableByHospitalName
+  static Future<bool> isTimeSlotAvailableByHospitalName(String hospitalName, DateTime date, String time) async {
+    return await isTimeSlotAvailable(hospitalName, date, time);
+  }
+
+  // Méthode de compatibilité pour getAllBookedTimeSlots
+  static Future<Set<String>> getAllBookedTimeSlots(String clinicId, DateTime date) async {
+    try {
+      final availableSlots = await getAvailableTimeSlots(clinicId, date);
+      final allSlots = _generateDefaultTimeSlots();
+      return allSlots.where((slot) => !availableSlots.contains(slot)).toSet();
+    } catch (e) {
+      print('Error getting booked time slots: $e');
+      return {};
+    }
+  }
+
+  // Méthode de compatibilité pour createAppointmentWithParams
+  static Future<String> createAppointmentWithParams(Appointment appointment) async {
+    return await createAppointment(appointment);
+  }
+
 } 
