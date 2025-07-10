@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/css/dashboard.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
     <!-- Animated Background -->
@@ -30,61 +31,43 @@
                     </div>
                     <div class="user-info">
                         <h6>Admin System</h6>
-                        <span>Super Administrateur</span>
+                        <span>Super Administrator</span>
                     </div>
                 </div>
             </div>
             
             <nav class="sidebar-nav">
                 <div class="nav-item active">
-                    <a href="#" class="nav-link">
+                    <a href="/" class="nav-link">
                         <i class="fas fa-chart-line"></i>
                         <span>Dashboard</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-users"></i>
-                        <span>Utilisateurs</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="/clinics" class="nav-link clinics-link">
                         <i class="fas fa-hospital"></i>
-                        <span>Cliniques</span>
+                        <span>Healthcare Centers</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-calendar-alt"></i>
-                        <span>Rendez-vous</span>
+                    <a href="/user-management" class="nav-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>User Management</span>
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-comments"></i>
-                        <span>Messages</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-chart-bar"></i>
-                        <span>Rapports</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="#" class="nav-link">
-                        <i class="fas fa-cog"></i>
-                        <span>Paramètres</span>
+                    <a href="/settings" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        <span>Settings</span>
                     </a>
                 </div>
             </nav>
             
             <div class="sidebar-footer">
                 <div class="nav-item">
-                    <a href="#" class="nav-link">
+                    <a href="#" class="nav-link" onclick="handleLogout(); return false;">
                         <i class="fas fa-sign-out-alt"></i>
-                        <span>Déconnexion</span>
+                        <span>Logout</span>
                     </a>
                 </div>
             </div>
@@ -98,17 +81,13 @@
                     <button class="sidebar-toggle" id="sidebarToggle">
                         <i class="fas fa-bars"></i>
                     </button>
-                    <h1>Dashboard Administrateur</h1>
+                    <h1>Dashboard Overview</h1>
                 </div>
                 <div class="header-right">
                     <div class="search-container">
-                        <input type="text" class="search-input" placeholder="Rechercher...">
+                        <input type="text" class="search-input" placeholder="Search...">
                         <i class="fas fa-search search-icon"></i>
                     </div>
-                    <button class="notifications" id="notificationBtn">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge">3</span>
-                    </button>
                     <div class="user-menu" id="userMenu">
                         <div class="user-avatar-small">
                             <i class="fas fa-user"></i>
@@ -120,89 +99,133 @@
 
             <!-- Dashboard Content -->
             <div class="dashboard-content">
-                <!-- Statistics Cards -->
+                <!-- Welcome Section -->
                 <div class="row">
-                    <div class="col-md-3 col-sm-6 fade-in-up">
-                        <div class="stat-card">
-                            <div class="stat-icon users">
-                                <i class="fas fa-users"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="totalUsers">1,248</h3>
-                                <p>Utilisateurs</p>
-                                <div class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>+12%</span>
+                    <div class="col-12">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-wave-square"></i>
+                                    Welcome to HomeCare Plus Admin
+                                </h5>
+                                <div class="card-actions">
+                                    <span class="text-primary">Last login: Today, 9:30 AM</span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 fade-in-up">
-                        <div class="stat-card">
-                            <div class="stat-icon clinics">
-                                <i class="fas fa-hospital"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="totalClinics">35</h3>
-                                <p>Cliniques</p>
-                                <div class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>+8%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 fade-in-up">
-                        <div class="stat-card">
-                            <div class="stat-icon appointments">
-                                <i class="fas fa-calendar-check"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="totalAppointments">892</h3>
-                                <p>Rendez-vous</p>
-                                <div class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>+23%</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="col-md-3 col-sm-6 fade-in-up">
-                        <div class="stat-card">
-                            <div class="stat-icon revenue">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="totalRevenue">$45,678</h3>
-                                <p>Revenus</p>
-                                <div class="stat-change positive">
-                                    <i class="fas fa-arrow-up"></i>
-                                    <span>+15%</span>
+                            <div class="card-content">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p class="text-light mb-3">Good morning! Here's what's happening in your healthcare platform today.</p>
+                                        <div class="row">
+                                            <div class="col-sm-6">
+                                                <div class="metric-item">
+                                                    <i class="fas fa-calendar-check text-success"></i>
+                                                    <span>23 appointments scheduled today</span>
+                                                </div>
+                                            </div>
+                                            <div class="col-sm-6">
+                                                <div class="metric-item">
+                                                    <i class="fas fa-hospital text-info"></i>
+                                                    <span>3 new clinics pending approval</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="dashboard-illustration">
+                                            <i class="fas fa-heartbeat text-primary" style="font-size: 4rem; opacity: 0.3;"></i>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Charts and Recent Activity -->
+                <!-- Statistics Cards -->
                 <div class="row">
-                    <div class="col-lg-8">
-                        <div class="content-card slide-in-left">
-                            <div class="card-header">
-                                <h5>
-                                    <i class="fas fa-chart-line"></i>
-                                    Statistiques de Croissance
-                                </h5>
-                                <div class="card-actions">
-                                    <button class="chart-btn active" data-chart="users">Utilisateurs</button>
-                                    <button class="chart-btn" data-chart="clinics">Cliniques</button>
-                                    <button class="chart-btn" data-chart="revenue">Revenus</button>
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card glass-effect">
+                            <div class="stat-icon users">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalUsers">1,248</h3>
+                                <p>Total Users</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+12.5% this month</span>
                                 </div>
                             </div>
-                            <div class="card-body">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card glass-effect">
+                            <div class="stat-icon clinics">
+                                <i class="fas fa-hospital"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalClinics">36</h3>
+                                <p>Healthcare Centers</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+28.6% this month</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card glass-effect">
+                            <div class="stat-icon appointments">
+                                <i class="fas fa-calendar-check"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalAppointments">892</h3>
+                                <p>Appointments</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+8.3% this month</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3 col-sm-6 fade-in-up">
+                        <div class="stat-card glass-effect">
+                            <div class="stat-icon revenue">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="totalRevenue">$45,678</h3>
+                                <p>Monthly Revenue</p>
+                                <div class="stat-change positive">
+                                    <i class="fas fa-arrow-up"></i>
+                                    <span>+15.2% this month</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts and Analytics -->
+                <div class="row">
+                    <div class="col-lg-8">
+                        <div class="content-card slide-in-left glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-chart-area"></i>
+                                    Platform Growth Analytics
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="chart-btn active" data-chart="users">Users</button>
+                                    <button class="chart-btn" data-chart="clinics">Clinics</button>
+                                    <button class="chart-btn" data-chart="appointments">Appointments</button>
+                                    <button class="chart-btn" data-chart="revenue">Revenue</button>
+                                </div>
+                            </div>
+                            <div class="card-content">
                                 <div class="chart-container">
                                     <canvas id="growthChart"></canvas>
                                 </div>
@@ -211,233 +234,153 @@
                     </div>
                     
                     <div class="col-lg-4">
-                        <div class="content-card slide-in-left">
+                        <div class="content-card slide-in-right glass-effect">
                             <div class="card-header">
                                 <h5>
                                     <i class="fas fa-clock"></i>
-                                    Activités Récentes
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="activity-item">
-                                    <div class="activity-icon user">
-                                        <i class="fas fa-user-plus"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <h6>Nouvel utilisateur</h6>
-                                        <p>Jean Dupont s'est inscrit</p>
-                                    </div>
-                                    <div class="activity-time">Il y a 2 min</div>
-                                </div>
-                                
-                                <div class="activity-item">
-                                    <div class="activity-icon clinic">
-                                        <i class="fas fa-hospital"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <h6>Clinique ajoutée</h6>
-                                        <p>Clinique Saint-Joseph</p>
-                                    </div>
-                                    <div class="activity-time">Il y a 1h</div>
-                                </div>
-                                
-                                <div class="activity-item">
-                                    <div class="activity-icon appointment">
-                                        <i class="fas fa-calendar-alt"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <h6>Rendez-vous confirmé</h6>
-                                        <p>Dr. Smith - Patient Marie</p>
-                                    </div>
-                                    <div class="activity-time">Il y a 3h</div>
-                                </div>
-                                
-                                <div class="activity-item">
-                                    <div class="activity-icon user">
-                                        <i class="fas fa-user-check"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <h6>Profil vérifié</h6>
-                                        <p>Clinique Moderne</p>
-                                    </div>
-                                    <div class="activity-time">Il y a 5h</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Users Management -->
-                <div class="row">
-                    <div class="col-12">
-                        <div class="content-card fade-in-up">
-                            <div class="card-header">
-                                <h5>
-                                    <i class="fas fa-users-cog"></i>
-                                    Gestion des Utilisateurs
+                                    Recent Activities
                                 </h5>
                                 <div class="card-actions">
-                                    <button class="action-btn">
-                                        <i class="fas fa-plus"></i>
-                                        Ajouter
-                                    </button>
-                                    <button class="action-btn">
-                                        <i class="fas fa-download"></i>
-                                        Exporter
-                                    </button>
+                                    <a href="#" class="text-primary">View All</a>
                                 </div>
                             </div>
-                            <div class="card-body">
-                                <div class="table-responsive">
-                                    <table class="users-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Utilisateur</th>
-                                                <th>Email</th>
-                                                <th>Rôle</th>
-                                                <th>Statut</th>
-                                                <th>Date d'inscription</th>
-                                                <th>Actions</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td>
-                                                    <div class="user-name">
-                                                        <div class="user-avatar-table">JD</div>
-                                                        <div>
-                                                            <strong>Jean Dupont</strong>
-                                                            <br>
-                                                            <small>ID: #001</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>jean.dupont@email.com</td>
-                                                <td>Patient</td>
-                                                <td><span class="status-badge active">Actif</span></td>
-                                                <td>2024-01-15</td>
-                                                <td>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn danger">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="user-name">
-                                                        <div class="user-avatar-table">MS</div>
-                                                        <div>
-                                                            <strong>Marie Smith</strong>
-                                                            <br>
-                                                            <small>ID: #002</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>marie.smith@email.com</td>
-                                                <td>Docteur</td>
-                                                <td><span class="status-badge active">Actif</span></td>
-                                                <td>2024-01-14</td>
-                                                <td>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn danger">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="user-name">
-                                                        <div class="user-avatar-table">CS</div>
-                                                        <div>
-                                                            <strong>Clinique Sainte-Anne</strong>
-                                                            <br>
-                                                            <small>ID: #003</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>contact@clinique-sa.com</td>
-                                                <td>Clinique</td>
-                                                <td><span class="status-badge active">Actif</span></td>
-                                                <td>2024-01-13</td>
-                                                <td>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn danger">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="user-name">
-                                                        <div class="user-avatar-table">PD</div>
-                                                        <div>
-                                                            <strong>Pierre Durand</strong>
-                                                            <br>
-                                                            <small>ID: #004</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>pierre.durand@email.com</td>
-                                                <td>Patient</td>
-                                                <td><span class="status-badge inactive">Inactif</span></td>
-                                                <td>2024-01-12</td>
-                                                <td>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn danger">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr>
-                                                <td>
-                                                    <div class="user-name">
-                                                        <div class="user-avatar-table">SJ</div>
-                                                        <div>
-                                                            <strong>Sophie Johnson</strong>
-                                                            <br>
-                                                            <small>ID: #005</small>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td>sophie.johnson@email.com</td>
-                                                <td>Docteur</td>
-                                                <td><span class="status-badge active">Actif</span></td>
-                                                <td>2024-01-11</td>
-                                                <td>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-eye"></i>
-                                                    </button>
-                                                    <button class="action-btn">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button class="action-btn danger">
-                                                        <i class="fas fa-trash"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                            <div class="card-content">
+                                <div class="activity-list">
+                                    <div class="activity-item">
+                                        <div class="activity-icon clinic">
+                                            <i class="fas fa-hospital"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <h6>New Clinic Registration</h6>
+                                            <p>Zindiro Medical Center submitted registration documents</p>
+                                            <div class="activity-time">
+                                                <i class="far fa-clock"></i>
+                                                <span>2 hours ago</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="activity-item">
+                                        <div class="activity-icon appointment">
+                                            <i class="fas fa-calendar-check"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <h6>Appointment Peak</h6>
+                                            <p>15 new appointments booked in the last hour</p>
+                                            <div class="activity-time">
+                                                <i class="far fa-clock"></i>
+                                                <span>3 hours ago</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="activity-item">
+                                        <div class="activity-icon user">
+                                            <i class="fas fa-user-plus"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <h6>New Users Registered</h6>
+                                            <p>8 new patients joined the platform</p>
+                                            <div class="activity-time">
+                                                <i class="far fa-clock"></i>
+                                                <span>5 hours ago</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="activity-item">
+                                        <div class="activity-icon clinic">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                        <div class="activity-content">
+                                            <h6>Clinic Verification</h6>
+                                            <p>King Faisal Hospital verification completed</p>
+                                            <div class="activity-time">
+                                                <i class="far fa-clock"></i>
+                                                <span>8 hours ago</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions and System Status -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-bolt"></i>
+                                    Quick Actions
+                                </h5>
+                            </div>
+                            <div class="card-content">
+                                <div class="row">
+                                    <div class="col-sm-6 mb-3">
+                                        <a href="/clinics" class="action-btn primary">
+                                            <i class="fas fa-hospital"></i>
+                                            <span>Manage Clinics</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <a href="/user-management" class="action-btn secondary">
+                                            <i class="fas fa-users"></i>
+                                            <span>Manage Users</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <button class="action-btn info" onclick="generateReport()">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span>Generate Report</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-sm-6 mb-3">
+                                        <a href="/settings" class="action-btn warning">
+                                            <i class="fas fa-cog"></i>
+                                            <span>System Settings</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-server"></i>
+                                    System Status
+                                </h5>
+                                <div class="card-actions">
+                                    <span class="status-badge active">All Systems Operational</span>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="status-list">
+                                    <div class="status-item">
+                                        <div class="status-indicator success"></div>
+                                        <span>Database Connection</span>
+                                        <div class="status-value">99.9% uptime</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-indicator success"></div>
+                                        <span>Firebase Services</span>
+                                        <div class="status-value">Operational</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-indicator warning"></div>
+                                        <span>Server Load</span>
+                                        <div class="status-value">68% capacity</div>
+                                    </div>
+                                    <div class="status-item">
+                                        <div class="status-indicator success"></div>
+                                        <span>API Response Time</span>
+                                        <div class="status-value">142ms avg</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -447,49 +390,152 @@
         </div>
     </div>
 
-    <!-- Notification Toast -->
-    <div class="notification-toast" id="notificationToast">
-        <div class="toast-content">
-            <i class="fas fa-bell"></i>
-            <div class="toast-message">
-                <h6>Nouvelle notification</h6>
-                <p>Un nouveau message vous attend</p>
-            </div>
-        </div>
-    </div>
+    <script src="/js/dashboard.js"></script>
+    <script>
+        // Quick Actions Functions
+        function generateReport() {
+            Swal.fire({
+                title: 'Generate Report',
+                text: 'Select the type of report you want to generate:',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Monthly Report',
+                cancelButtonText: 'Weekly Report',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Success!', 'Monthly report is being generated...', 'success');
+                } else if (result.dismiss === Swal.DismissReason.cancel) {
+                    Swal.fire('Success!', 'Weekly report is being generated...', 'success');
+                }
+            });
+        }
 
-    <!-- Bootstrap Grid CSS -->
+        // Logout function
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout Confirmation',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Logout',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#159BBD'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                        window.location.href = '/login';
+                    });
+                }
+            });
+        }
+    </script>
+
     <style>
-        .row {
+        .metric-item {
             display: flex;
-            flex-wrap: wrap;
-            margin: 0 -15px;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(21, 155, 189, 0.05);
         }
-        
-        .col-12 { width: 100%; }
-        .col-lg-8 { width: 66.66%; }
-        .col-lg-4 { width: 33.33%; }
-        .col-md-3 { width: 25%; }
-        .col-sm-6 { width: 50%; }
-        
-        .row > div {
-            padding: 0 15px;
-            margin-bottom: 20px;
+
+        .metric-item i {
+            font-size: 1.2rem;
         }
-        
-        @media (max-width: 992px) {
-            .col-lg-8, .col-lg-4 { width: 100%; }
+
+        .metric-item span {
+            font-size: 0.9rem;
+            color: var(--text-light);
         }
-        
-        @media (max-width: 768px) {
-            .col-md-3, .col-sm-6 { width: 100%; }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            border: none;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: white;
+            font-weight: 500;
+            transition: var(--transition);
+            width: 100%;
+            cursor: pointer;
         }
-        
-        .table-responsive {
-            overflow-x: auto;
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+        }
+
+        .action-btn.secondary {
+            background: linear-gradient(135deg, var(--secondary-color), #1976D2);
+        }
+
+        .action-btn.info {
+            background: linear-gradient(135deg, var(--info-color), #138496);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(135deg, var(--warning-color), #e0a800);
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            color: white;
+            text-decoration: none;
+        }
+
+        .status-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-indicator.success {
+            background: var(--success-color);
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .status-indicator.warning {
+            background: var(--warning-color);
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+        }
+
+        .status-indicator.danger {
+            background: var(--danger-color);
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        }
+
+        .status-item span {
+            flex: 1;
+            color: var(--text-dark);
+            font-weight: 500;
+        }
+
+        .status-value {
+            color: var(--text-light);
+            font-size: 0.9rem;
         }
     </style>
-
-    <script src="/js/dashboard.js"></script>
 </body>
 </html> 

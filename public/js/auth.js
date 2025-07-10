@@ -74,7 +74,6 @@ class AuthManager {
     e.preventDefault();
     
     const form = e.target;
-    const clinicName = form.clinicName.value;
     const email = form.email.value;
     const password = form.password.value;
     const confirmPassword = form.confirmPassword.value;
@@ -82,7 +81,7 @@ class AuthManager {
     const loadingSpinner = form.querySelector('.loading-spinner');
     
     // Validation
-    if (!clinicName || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       this.showAlert('Veuillez remplir tous les champs', 'error');
       return;
     }
@@ -106,7 +105,7 @@ class AuthManager {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ clinicName, email, password, confirmPassword })
+        body: JSON.stringify({ email, password, confirmPassword })
       });
 
       const data = await response.json();

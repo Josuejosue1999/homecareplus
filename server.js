@@ -61,7 +61,12 @@ app.get("/dashboard", requireAuth, (req, res) => {
 
 // Route protégée des paramètres
 app.get("/settings", requireAuth, (req, res) => {
-    res.render("settings", { user: req.user });
+    res.render("settings-new", { user: req.user });
+});
+
+// Route protégée pour My Profile
+app.get("/my-profile", requireAuth, (req, res) => {
+    res.render("my-profile", { user: req.user });
 });
 
 // Routes API pour les paramètres
@@ -467,6 +472,105 @@ app.get("/api/settings/clinic-data", requireAuth, async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch clinic data"
+        });
+    }
+});
+
+// Route pour sauvegarder tous les paramètres en une seule fois
+app.post("/api/settings/save-all", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const {
+            // Step 1: Hospital Location
+            hospitalName,
+            latitude,
+            longitude,
+            address,
+            
+            // Step 2: Clinic Profile
+            clinicName,
+            email,
+            phone,
+            about,
+            profileImageUrl,
+            facilities,
+            
+            // Step 3: Schedule (if provided)
+            availableSchedule
+        } = req.body;
+
+        console.log('💾 Saving all settings for user:', userId);
+        console.log('📍 Location data:', { hospitalName, latitude, longitude, address });
+        console.log('🏥 Clinic data:', { clinicName, email, phone, about });
+        console.log('🖼️ Profile image:', profileImageUrl ? 'Provided' : 'Not provided');
+        console.log('🛠️ Facilities:', facilities);
+
+        // Préparer les données de mise à jour
+        const updateData = {
+            updatedAt: new Date(),
+            lastUpdated: new Date(),
+            profileSetupComplete: true
+        };
+
+        // Ajouter les données de localisation si fournies
+        if (hospitalName) updateData.hospitalName = hospitalName;
+        if (latitude) updateData.latitude = parseFloat(latitude);
+        if (longitude) updateData.longitude = parseFloat(longitude);
+        if (address) {
+            updateData.address = address;
+            updateData.location = address; // Compatibilité avec l'app mobile
+        }
+
+        // Ajouter les données de profil de clinique
+        if (clinicName) {
+            updateData.clinicName = clinicName;
+            updateData.name = clinicName; // Compatibilité
+        }
+        if (email) updateData.email = email;
+        if (phone) updateData.phone = phone;
+        if (about) updateData.about = about;
+        if (profileImageUrl) {
+            updateData.profileImageUrl = profileImageUrl;
+            updateData.profileImage = profileImageUrl; // Compatibilité
+        }
+        if (facilities && Array.isArray(facilities)) {
+            updateData.facilities = facilities;
+        }
+
+        // Ajouter les horaires si fournis
+        if (availableSchedule) {
+            updateData.availableSchedule = availableSchedule;
+        }
+
+        // Mettre à jour dans Firebase
+        const clinicDocRef = doc(db, 'clinics', userId);
+        const clinicDoc = await getDoc(clinicDocRef);
+        
+        if (clinicDoc.exists()) {
+            await updateDoc(clinicDocRef, updateData);
+        } else {
+            // Créer le document s'il n'existe pas
+            await setDoc(clinicDocRef, {
+                ...updateData,
+                createdAt: new Date(),
+                id: userId
+            });
+        }
+
+        console.log('✅ All settings saved successfully');
+
+        res.json({
+            success: true,
+            message: "All settings saved successfully",
+            data: updateData
+        });
+
+    } catch (error) {
+        console.error("❌ Save all settings error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to save settings",
+            error: error.message
         });
     }
 });
@@ -2242,6 +2346,133 @@ function calculateGeodesicDistance(lat1, lng1, lat2, lng2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+// 🔧 Route pour sauvegarder le profil complet de l'hôpital
+app.post('/api/save-hospital-profile', requireAuth, async (req, res) => {
+  try {
+    console.log('📋 Saving hospital profile...');
+    console.log('Request body:', req.body);
+    
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    const {
+      // Step 1: Hospital Location (Google Places)
+      hospitalName,
+      hospitalAddress,
+      latitude,
+      longitude,
+      placeId,
+      placeDetails,
+      
+      // Step 2: Profile Information
+      clinicName,
+      clinicDescription,
+      clinicPhone,
+      services,
+      customServices,
+      
+      // Scheduling Data
+      appointmentDuration,
+      bufferTime,
+      weeklySchedule,
+      
+      // Step 3: Photos (will be handled separately)
+      profileImage,
+      certificateImage,
+      clinicPhotos
+    } = req.body;
+
+    // Préparer les données complètes pour Firebase
+    const hospitalData = {
+      // Informations de base
+      name: clinicName || hospitalName,
+      clinicName: clinicName || hospitalName,
+      email: user.email || '',
+      about: clinicDescription || 'This healthcare facility is committed to providing exceptional medical care and services.',
+      
+      // Localisation
+      address: hospitalAddress,
+      location: hospitalAddress,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
+      
+      // Contact
+      phone: clinicPhone || '',
+      
+      // Services (combiner services standard et personnalisés)
+      facilities: [...(services || []), ...(customServices || [])],
+      services: [...(services || []), ...(customServices || [])],
+      
+      // Google Places Integration
+      placeId: placeId || null,
+      isFromGooglePlaces: !!placeId,
+      googlePlaceDetails: placeDetails || null,
+      
+      // Scheduling
+      appointmentDuration: appointmentDuration ? parseInt(appointmentDuration) : 30,
+      bufferTime: bufferTime ? parseInt(bufferTime) : 10,
+      availableSchedule: weeklySchedule || {},
+      
+      // Images
+      profileImageUrl: profileImage || null,
+      certificateUrl: certificateImage || null,
+      clinicPhotos: clinicPhotos || [],
+      
+      // Statut
+      isVerified: false,
+      verified: true, // Pour compatibilité avec l'app Flutter
+      status: 'active',
+      profileSetupComplete: true,
+      
+      // Timestamps
+      updatedAt: new Date(),
+      lastUpdated: new Date()
+    };
+
+    // Si des détails Google Places sont fournis, les ajouter
+    if (placeDetails) {
+      hospitalData.rating = placeDetails.rating || null;
+      hospitalData.userRatingsTotal = placeDetails.user_ratings_total || null;
+      hospitalData.priceLevel = placeDetails.price_level || null;
+      hospitalData.openingHours = placeDetails.opening_hours || null;
+      hospitalData.googlePhoneNumber = placeDetails.formatted_phone_number || null;
+      hospitalData.googleWebsite = placeDetails.website || null;
+    }
+
+    console.log('💾 Updating hospital data in Firebase for UID:', user.uid);
+    console.log('📝 Collection: clinics');
+    console.log('🔑 Document ID:', user.uid);
+    console.log('Data to update:', hospitalData);
+
+    // Mettre à jour le document existant dans la collection "clinics"
+    await setDoc(doc(db, "clinics", user.uid), hospitalData, { merge: true });
+
+    console.log('✅ Hospital profile updated successfully in collection "clinics" for UID:', user.uid);
+    console.log('📊 Profile setup complete:', hospitalData.profileSetupComplete);
+    
+    res.json({ 
+      success: true, 
+      message: 'Hospital profile saved successfully',
+      hospitalData: {
+        name: hospitalData.name,
+        address: hospitalData.address,
+        services: hospitalData.services,
+        profileSetupComplete: hospitalData.profileSetupComplete
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error saving hospital profile:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to save hospital profile',
+      details: error.message 
+    });
+  }
+});
 
 
 

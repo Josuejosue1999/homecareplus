@@ -301,361 +301,339 @@ class _HospitalAboutPageState extends State<HospitalAboutPage> with TickerProvid
                       topRight: Radius.circular(30),
                     ),
                   ),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        // Image de l'hôpital
-                        Container(
-                          width: double.infinity,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(16),
-                            color: Colors.grey[200],
+                  child: Column(
+                    children: [
+                      // Top image container with rounded bottom corners
+                      Container(
+                        width: double.infinity,
+                        height: 200,
+                        decoration: BoxDecoration(
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(30),
+                            bottomRight: Radius.circular(30),
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: _buildHospitalImage(),
-                          ),
+                          color: Colors.grey[200],
                         ),
-                        const SizedBox(height: 24),
-                        
-                        // Section About
-                        const Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'About',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF159BBD),
-                            ),
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            bottomLeft: Radius.circular(30),
+                            bottomRight: Radius.circular(30),
                           ),
+                          child: _buildHospitalImage(),
                         ),
-                        const SizedBox(height: 12),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            widget.hospitalAbout,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black87,
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.justify,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Adresse
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF159BBD).withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF159BBD).withOpacity(0.1),
-                            ),
-                          ),
-                          child: Row(
+                      ),
+                      
+                      // Content container below the image
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
-                              Icon(
-                                Icons.location_on,
-                                color: const Color(0xFF159BBD),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
+                              const SizedBox(height: 24),
+                              
+                              // Section About
+                              const Align(
+                                alignment: Alignment.centerLeft,
                                 child: Text(
-                                  widget.hospitalLocation,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black87,
-                                    fontWeight: FontWeight.w500,
+                                  'About',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF159BBD),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Available Time
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF159BBD).withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF159BBD).withOpacity(0.1),
-                            ),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.access_time,
-                                color: const Color(0xFF159BBD),
-                                size: 20,
+                              const SizedBox(height: 12),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  widget.hospitalAbout,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.black87,
+                                    height: 1.5,
+                                  ),
+                                  textAlign: TextAlign.justify,
+                                ),
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              const SizedBox(height: 24),
+                              
+                              // Adresse
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF159BBD).withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                                  ),
+                                ),
+                                child: Row(
                                   children: [
-                                    const Text(
-                                      'Available Time',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF159BBD),
-                                      ),
+                                    Icon(
+                                      Icons.location_on,
+                                      color: const Color(0xFF159BBD),
+                                      size: 20,
                                     ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Monday - Friday: 8:00 AM - 6:00 PM\nSaturday: 9:00 AM - 4:00 PM\nSunday: Closed',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                        height: 1.3,
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        widget.hospitalLocation,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          color: Colors.black87,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Available Facilities
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF159BBD).withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: const Color(0xFF159BBD).withOpacity(0.1),
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.medical_services,
-                                    color: const Color(0xFF159BBD),
-                                    size: 20,
-                                  ),
-                                  const SizedBox(width: 12),
-                                  const Text(
-                                    'Available Facilities',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF159BBD),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 12),
-                              if (widget.hospitalFacilities.isNotEmpty)
-                                Wrap(
-                                  spacing: 8,
-                                  runSpacing: 8,
-                                  children: widget.hospitalFacilities.map((facility) {
-                                    return Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 6,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF159BBD).withOpacity(0.1),
-                                        borderRadius: BorderRadius.circular(20),
-                                        border: Border.all(
-                                          color: const Color(0xFF159BBD).withOpacity(0.3),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        facility,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                          color: Color(0xFF159BBD),
-                                        ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                )
-                              else
-                                Text(
-                                  'No specific facilities listed',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                    fontStyle: FontStyle.italic,
+                              const SizedBox(height: 24),
+                              
+                              // Available Time
+                              Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF159BBD).withOpacity(0.05),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: const Color(0xFF159BBD).withOpacity(0.1),
                                   ),
                                 ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        
-                        // Section Reviews
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Text(
-                                  'Reviews',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.access_time,
+                                      color: const Color(0xFF159BBD),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            'Available Time',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF159BBD),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            'Monday - Friday: 8:00 AM - 6:00 PM\nSaturday: 9:00 AM - 4:00 PM\nSunday: Closed',
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
+                                              height: 1.3,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              
+                              // Facilities Section
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Facilities',
                                   style: TextStyle(
-                                    fontSize: 18,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFF159BBD),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Row(
-                                  children: List.generate(
-                                    5,
-                                    (index) => const Icon(
-                                      Icons.star,
-                                      size: 18,
-                                      color: Colors.amber,
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: widget.hospitalFacilities.map((facility) {
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Text(
+                                      facility,
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF159BBD),
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                              const SizedBox(height: 24),
+                              
+                              // Booking Button
+                              Container(
+                                width: double.infinity,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF159BBD).withOpacity(0.3),
+                                      spreadRadius: 0,
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => BookAppointmentPage(
+                                          hospitalName: widget.hospitalName,
+                                          hospitalImage: widget.hospitalImage,
+                                          hospitalLocation: widget.hospitalLocation,
+                                          hospitalFacilities: widget.hospitalFacilities,
+                                          hospitalAbout: widget.hospitalAbout,
+                                          hospitalSchedule: const {},
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'Book Appointment',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
-                              ],
-                            ),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => const ReviewsPage()),
-                                );
-                              },
-                              child: const Text(
-                                'See all',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF159BBD),
-                                  decoration: TextDecoration.underline,
-                                ),
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        
-                        // Carousel des reviews
-                        SizedBox(
-                          height: 120,
-                          child: PageView.builder(
-                            itemCount: 4,
-                            itemBuilder: (context, index) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x26159BBD),
-                                    borderRadius: BorderRadius.circular(12),
+                              const SizedBox(height: 24),
+                              
+                              // Reviews Section
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Text(
+                                    'Reviews',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF159BBD),
+                                    ),
                                   ),
-                                  padding: const EdgeInsets.all(12),
-                                  child: Row(
-                                    children: [
-                                      ClipOval(
-                                        child: Image.asset(
-                                          'assets/pp1.png',
-                                          width: 40,
-                                          height: 40,
-                                          fit: BoxFit.cover,
-                                        ),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (context) => const ReviewsPage()),
+                                      );
+                                    },
+                                    child: const Text(
+                                      'See all',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF159BBD),
+                                        decoration: TextDecoration.underline,
                                       ),
-                                      const SizedBox(width: 12),
-                                      const Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          mainAxisAlignment: MainAxisAlignment.center,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              
+                              // Carousel des reviews
+                              SizedBox(
+                                height: 120,
+                                child: PageView.builder(
+                                  itemCount: 4,
+                                  itemBuilder: (context, index) {
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x26159BBD),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        padding: const EdgeInsets.all(12),
+                                        child: Row(
                                           children: [
-                                            Text(
-                                              'Jeannette Jeanne',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.black,
+                                            ClipOval(
+                                              child: Image.asset(
+                                                'assets/pp1.png',
+                                                width: 40,
+                                                height: 40,
+                                                fit: BoxFit.cover,
                                               ),
                                             ),
-                                            SizedBox(height: 2),
-                                            Text(
-                                              '1 day ago',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey,
+                                            const SizedBox(width: 12),
+                                            const Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    'Jeannette Jeanne',
+                                                    style: TextStyle(
+                                                      fontSize: 14,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.black,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 2),
+                                                  Text(
+                                                    '1 day ago',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.grey,
+                                                    ),
+                                                  ),
+                                                  SizedBox(height: 4),
+                                                  Text(
+                                                    'Many thanks to this hospital, they are professional',
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: Colors.black87,
+                                                    ),
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                  ),
+                                                ],
                                               ),
-                                            ),
-                                            SizedBox(height: 4),
-                                            Text(
-                                              'Many thanks to this hospital, they are professional',
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.black87,
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
+                                            )
                                           ],
                                         ),
-                                      )
-                                    ],
-                                  ),
+                                      ),
+                                    );
+                                  },
                                 ),
-                              );
-                            },
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 32),
-                        
-                        // Bouton Book an appointment
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BookAppointmentPage(
-                                    hospitalName: widget.hospitalName,
-                                    hospitalImage: widget.hospitalImage,
-                                    hospitalLocation: widget.hospitalLocation,
-                                    hospitalFacilities: widget.hospitalFacilities,
-                                    hospitalAbout: widget.hospitalAbout,
-                                    hospitalSchedule: {},
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF159BBD),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 2,
-                            ),
-                            child: const Text(
-                              'Book an appointment',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),

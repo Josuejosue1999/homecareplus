@@ -22,6 +22,7 @@
     <link rel="stylesheet" href="/css/dashboard-styles.css">
     <link rel="stylesheet" href="/css/chat-avatars.css">
     <link rel="stylesheet" href="/css/chat-professional.css">
+    <link rel="stylesheet" href="/css/my-profile-styles.css">
     
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -82,6 +83,12 @@
                     <a href="#settings" class="nav-link" id="settings-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#my-profile" class="nav-link" id="my-profile-link">
+                        <i class="fas fa-user-edit"></i>
+                        <span>My Profile</span>
                     </a>
                 </li>
             </ul>
@@ -1231,6 +1238,473 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- My Profile Content (Hidden by default) -->
+            <div id="my-profile-content" class="dashboard-content" style="display: none;">
+                <!-- My Profile Header -->
+                <div class="my-profile-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="header-content">
+                                <h2 class="mb-2">
+                                    <i class="fas fa-user-edit text-primary me-3"></i>
+                                    My Profile Setup
+                                    <span class="badge bg-warning text-dark ms-2">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>
+                                        Unverified
+                                    </span>
+                                </h2>
+                                <p class="text-muted mb-0">Complete your clinic profile to enhance patient experience</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="header-actions">
+                                <div class="profile-completion-indicator">
+                                    <div class="completion-circle">
+                                        <svg class="progress-ring" width="60" height="60">
+                                            <circle class="progress-ring-circle" cx="30" cy="30" r="25" fill="transparent" stroke="#e0e0e0" stroke-width="4"/>
+                                            <circle class="progress-ring-circle-fill" cx="30" cy="30" r="25" fill="transparent" stroke="#20c997" stroke-width="4" stroke-linecap="round"/>
+                                        </svg>
+                                        <span class="completion-text">45%</span>
+                                    </div>
+                                    <span class="completion-label">Profile Complete</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Steps -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="profile-steps-container">
+                            <!-- Step Navigation -->
+                            <div class="steps-nav mb-4">
+                                <div class="steps-indicator">
+                                    <div class="step-item active" data-step="1">
+                                        <div class="step-circle">
+                                            <i class="fas fa-map-marker-alt"></i>
+                                        </div>
+                                        <span class="step-label">Find My Hospital</span>
+                                    </div>
+                                    <div class="step-connector"></div>
+                                    <div class="step-item" data-step="2">
+                                        <div class="step-circle">
+                                            <i class="fas fa-info-circle"></i>
+                                        </div>
+                                        <span class="step-label">Profile Information</span>
+                                    </div>
+                                    <div class="step-connector"></div>
+                                    <div class="step-item" data-step="3">
+                                        <div class="step-circle">
+                                            <i class="fas fa-images"></i>
+                                        </div>
+                                        <span class="step-label">Upload Photos</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step Content -->
+                            <div class="steps-content">
+                                <!-- Step 1: Find My Hospital -->
+                                <div class="step-content active" id="step-1">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h4 class="mb-0">
+                                                <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                                Find My Hospital
+                                            </h4>
+                                            <p class="text-muted mb-0">Help patients find your hospital easily</p>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="search-section">
+                                                        <div class="form-group">
+                                                            <label for="hospitalSearch">Search for your hospital</label>
+                                                            <div class="search-input-group">
+                                                                <input type="text" class="form-control" id="hospitalSearch" placeholder="Enter hospital name or address...">
+                                                                <button class="btn btn-outline-primary" type="button" id="searchBtn">
+                                                                    <i class="fas fa-search"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        <div class="search-results" id="searchResults">
+                                                            <!-- Search results will appear here -->
+                                                        </div>
+                                                        <div class="selected-hospital" id="selectedHospital" style="display: none;">
+                                                            <h6>Selected Hospital:</h6>
+                                                            <div class="hospital-info">
+                                                                <h5 id="selectedHospitalName"></h5>
+                                                                <p id="selectedHospitalAddress"></p>
+                                                                <input type="hidden" id="selectedLat">
+                                                                <input type="hidden" id="selectedLng">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="map-section">
+                                                        <div id="map" style="height: 400px; border-radius: 10px; overflow: hidden;"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 2: Profile Information -->
+                                <div class="step-content" id="step-2">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h4 class="mb-0">
+                                                <i class="fas fa-info-circle text-success me-2"></i>
+                                                Profile Information
+                                            </h4>
+                                            <p class="text-muted mb-0">Tell patients about your clinic and services</p>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="clinicNameProfile">Clinic Name</label>
+                                                        <input type="text" class="form-control" id="clinicNameProfile" placeholder="Enter your clinic name">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="clinicPhone">Phone Number</label>
+                                                        <input type="tel" class="form-control" id="clinicPhone" placeholder="+250 123 456 789">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label for="clinicDescription">About Your Clinic</label>
+                                                        <textarea class="form-control" id="clinicDescription" rows="5" placeholder="Describe your clinic's services, specialties, and mission..."></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Services Grid -->
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="form-group">
+                                                        <label>Services Offered</label>
+                                                        <div class="services-grid" id="servicesGrid">
+                                                            <div class="service-item">
+                                                                <input type="checkbox" id="general" name="services" value="General Medicine">
+                                                                <label for="general">General Medicine</label>
+                                                            </div>
+                                                            <div class="service-item">
+                                                                <input type="checkbox" id="pediatrics" name="services" value="Pediatrics">
+                                                                <label for="pediatrics">Pediatrics</label>
+                                                            </div>
+                                                            <div class="service-item">
+                                                                <input type="checkbox" id="cardiology" name="services" value="Cardiology">
+                                                                <label for="cardiology">Cardiology</label>
+                                                            </div>
+                                                            <div class="service-item">
+                                                                <input type="checkbox" id="orthopedics" name="services" value="Orthopedics">
+                                                                <label for="orthopedics">Orthopedics</label>
+                                                            </div>
+                                                            <div class="service-item">
+                                                                <input type="checkbox" id="dermatology" name="services" value="Dermatology">
+                                                                <label for="dermatology">Dermatology</label>
+                                                            </div>
+                                                            <div class="service-item">
+                                                                <input type="checkbox" id="laboratory" name="services" value="Laboratory">
+                                                                <label for="laboratory">Laboratory</label>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- Custom Service Addition -->
+                                                        <div class="custom-service-section mt-3">
+                                                            <div class="input-group">
+                                                                <input type="text" class="form-control" id="customServiceInput" placeholder="Add custom service...">
+                                                                <button class="btn btn-outline-primary" type="button" id="addCustomService">
+                                                                    <i class="fas fa-plus me-1"></i>Add
+                                                                </button>
+                                                            </div>
+                                                            <div class="custom-services-list mt-2" id="customServicesList"></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Appointment Scheduling Settings -->
+                                            <div class="row mt-4">
+                                                <div class="col-12">
+                                                    <h5 class="mb-3">
+                                                        <i class="fas fa-calendar-alt me-2 text-primary"></i>
+                                                        Appointment Scheduling
+                                                    </h5>
+                                                </div>
+                                                
+                                                <!-- Appointment Duration -->
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Default Appointment Duration</label>
+                                                        <select class="form-select" id="appointmentDuration">
+                                                            <option value="15">15 minutes</option>
+                                                            <option value="30" selected>30 minutes</option>
+                                                            <option value="45">45 minutes</option>
+                                                            <option value="60">1 hour</option>
+                                                            <option value="90">1.5 hours</option>
+                                                            <option value="120">2 hours</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- Buffer Time -->
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Buffer Time Between Appointments</label>
+                                                        <select class="form-select" id="bufferTime">
+                                                            <option value="0">No buffer</option>
+                                                            <option value="5">5 minutes</option>
+                                                            <option value="10" selected>10 minutes</option>
+                                                            <option value="15">15 minutes</option>
+                                                            <option value="30">30 minutes</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Weekly Schedule -->
+                                            <div class="row mt-4">
+                                                <div class="col-12">
+                                                    <h6 class="mb-3">Available Time Slots</h6>
+                                                    <div class="schedule-container">
+                                                        <div class="schedule-day" data-day="monday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="monday-active" class="day-checkbox" checked>
+                                                                <label for="monday-active" class="day-label">Monday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="08:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="17:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="schedule-day" data-day="tuesday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="tuesday-active" class="day-checkbox" checked>
+                                                                <label for="tuesday-active" class="day-label">Tuesday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="08:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="17:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="schedule-day" data-day="wednesday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="wednesday-active" class="day-checkbox" checked>
+                                                                <label for="wednesday-active" class="day-label">Wednesday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="08:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="17:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="schedule-day" data-day="thursday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="thursday-active" class="day-checkbox" checked>
+                                                                <label for="thursday-active" class="day-label">Thursday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="08:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="17:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="schedule-day" data-day="friday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="friday-active" class="day-checkbox" checked>
+                                                                <label for="friday-active" class="day-label">Friday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="08:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="17:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="schedule-day" data-day="saturday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="saturday-active" class="day-checkbox">
+                                                                <label for="saturday-active" class="day-label">Saturday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="09:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="15:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+
+                                                        <div class="schedule-day" data-day="sunday">
+                                                            <div class="day-header">
+                                                                <input type="checkbox" id="sunday-active" class="day-checkbox">
+                                                                <label for="sunday-active" class="day-label">Sunday</label>
+                                                            </div>
+                                                            <div class="time-slots">
+                                                                <div class="time-slot">
+                                                                    <input type="time" class="form-control form-control-sm" value="10:00">
+                                                                    <span class="time-separator">to</span>
+                                                                    <input type="time" class="form-control form-control-sm" value="14:00">
+                                                                    <button class="btn btn-sm btn-outline-danger remove-slot">
+                                                                        <i class="fas fa-times"></i>
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-sm btn-outline-primary add-slot">
+                                                                <i class="fas fa-plus me-1"></i>Add Time Slot
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Step 3: Upload Photos -->
+                                <div class="step-content" id="step-3">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h4 class="mb-0">
+                                                <i class="fas fa-images text-warning me-2"></i>
+                                                Upload Photos
+                                            </h4>
+                                            <p class="text-muted mb-0">Add photos to showcase your clinic</p>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="upload-section">
+                                                <div class="upload-grid">
+                                                    <!-- Profile Photo Section -->
+                                                    <div class="upload-item profile-photo">
+                                                        <div class="upload-placeholder profile-display">
+                                                            <div class="profile-image-container">
+                                                                <img id="profileImagePreview" src="" alt="Profile Photo" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                                                                <div class="profile-placeholder" id="profilePlaceholder">
+                                                                    <i class="fas fa-user-circle"></i>
+                                                                    <p>Profile Photo</p>
+                                                                </div>
+                                                            </div>
+                                                            <button class="btn btn-primary btn-sm" id="uploadProfilePhoto">Upload Photo</button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Certificate/ID Card Section -->
+                                                    <div class="upload-item certificate-upload">
+                                                        <div class="upload-placeholder">
+                                                            <i class="fas fa-id-card"></i>
+                                                            <p>Medical Certificate / ID Card</p>
+                                                            <button class="btn btn-outline-primary btn-sm">Upload Document</button>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div class="upload-item">
+                                                        <div class="upload-placeholder">
+                                                            <i class="fas fa-building"></i>
+                                                            <p>Clinic Main Photo</p>
+                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="upload-item">
+                                                        <div class="upload-placeholder">
+                                                            <i class="fas fa-door-open"></i>
+                                                            <p>Reception Area</p>
+                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="upload-item">
+                                                        <div class="upload-placeholder">
+                                                            <i class="fas fa-procedures"></i>
+                                                            <p>Treatment Room</p>
+                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
+                                                        </div>
+                                                    </div>
+                                                    <div class="upload-item">
+                                                        <div class="upload-placeholder">
+                                                            <i class="fas fa-users"></i>
+                                                            <p>Team Photo</p>
+                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step Navigation Buttons -->
+                            <div class="steps-navigation">
+                                <button class="btn btn-outline-secondary" id="prevBtn" onclick="profileSteps.previousStep()" disabled>
+                                    <i class="fas fa-chevron-left me-2"></i>Previous
+                                </button>
+                                <button class="btn btn-primary" id="nextBtn" onclick="profileSteps.nextStep()">
+                                    Next<i class="fas fa-chevron-right ms-2"></i>
+                                </button>
+                                <button class="btn btn-success" id="saveBtn" onclick="profileSteps.saveProfile()" style="display: none;">
+                                    <i class="fas fa-save me-2"></i>Save Profile
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
     
@@ -1284,6 +1758,7 @@
     <script src="/js/appointments-page.js"></script>
     <script src="/js/messages-page.js"></script>
     <script src="/js/settings-page.js"></script>
+    <script src="/js/my-profile-steps.js"></script>
     <script src="/js/notification-service.js"></script>
     <script src="/js/chat-notifications.js"></script>
     

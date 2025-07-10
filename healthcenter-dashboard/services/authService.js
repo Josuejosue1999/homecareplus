@@ -74,7 +74,7 @@ class AuthService {
   }
 
   // Register avec Firebase
-  async register(clinicName, email, password, req) {
+  async register(email, password, req) {
     try {
       // Créer l"utilisateur dans Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -82,19 +82,24 @@ class AuthService {
 
       console.log('User created with UID:', user.uid);
 
+      // Générer un nom de clinique par défaut basé sur l'email
+      const emailPrefix = email.split('@')[0];
+      const defaultClinicName = `${emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)} Health Center`;
+
       // Sauvegarder les données de la clinique dans Firestore
       await this.saveClinicData(user.uid, {
-        clinicName,
-        name: clinicName, // Ajouter aussi 'name' pour compatibilité
+        clinicName: defaultClinicName,
+        name: defaultClinicName, // Ajouter aussi 'name' pour compatibilité
         email,
         createdAt: new Date(),
         status: "active",
-        about: `${clinicName} is a healthcare facility committed to providing exceptional medical care and services.`,
+        about: `Welcome to ${defaultClinicName}. We are committed to providing exceptional medical care and services. Please update your clinic information in your profile settings.`,
         address: 'Address to be updated',
         location: 'Location to be updated',
         phone: 'Phone to be updated',
         facilities: ['General Medicine'],
         isVerified: false,
+        profileSetupComplete: false, // Flag to indicate profile needs completion
         availableSchedule: {
           'Monday': {'start': '08:00', 'end': '17:00'},
           'Tuesday': {'start': '08:00', 'end': '17:00'},
@@ -106,7 +111,7 @@ class AuthService {
         }
       });
 
-      console.log('Clinic registration completed for:', clinicName);
+      console.log('Clinic registration completed for:', defaultClinicName);
 
       // Ne pas créer de session après l'inscription
       // L'utilisateur devra se connecter manuellement

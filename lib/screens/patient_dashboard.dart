@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:lottie/lottie.dart';
 import '../models/hospital.dart';
 import '../services/hospital_service.dart';
+import '../services/enhanced_hospital_service.dart';
 import '../services/location_service.dart';
 import '../widgets/distance_badge.dart';
 import 'facilities.dart';
@@ -53,6 +54,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     _bubble2Controller.dispose();
     _bubble3Controller.dispose();
     _bubble4Controller.dispose();
+    EnhancedHospitalService.dispose();
     super.dispose();
   }
 
@@ -64,12 +66,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     try {
       // Use the enhanced location service with Google Maps API
       final userLocation = await LocationService.getCurrentLocation();
-      
+        
       if (userLocation != null) {
-        setState(() {
+            setState(() {
           _userLocation = userLocation;
           _isLocationLoading = false;
-        });
+            });
       } else {
         setState(() {
           _isLocationLoading = false;
@@ -77,9 +79,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
       }
     } catch (e) {
       print('Error initializing location: $e');
-      setState(() {
-        _isLocationLoading = false;
-      });
+        setState(() {
+          _isLocationLoading = false;
+        });
     }
   }
 
@@ -627,21 +629,28 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
           SliverToBoxAdapter(
               child: StreamBuilder<List<Hospital>>(
                 stream: searchQuery.isEmpty 
-                    ? HospitalService.getHospitals()
-                    : HospitalService.searchHospitals(searchQuery),
+                    ? EnhancedHospitalService.getNearbyHospitals()
+                    : EnhancedHospitalService.getNearbyHospitals().map((hospitals) {
+                        return hospitals.where((hospital) {
+                          return hospital.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                                 hospital.location!.toLowerCase().contains(searchQuery.toLowerCase()) ||
+                                 hospital.facilities.any((facility) => 
+                                     facility.toLowerCase().contains(searchQuery.toLowerCase()));
+                        }).toList();
+                      }),
                 builder: (context, snapshot) {
-                  print('StreamBuilder state: ${snapshot.connectionState}');
-                  print('StreamBuilder hasError: ${snapshot.hasError}');
-                  print('StreamBuilder error: ${snapshot.error}');
-                  print('StreamBuilder hasData: ${snapshot.hasData}');
-                  print('StreamBuilder data length: ${snapshot.data?.length}');
+                  print('🔄 StreamBuilder state: ${snapshot.connectionState}');
+                  print('❌ StreamBuilder hasError: ${snapshot.hasError}');
+                  print('📝 StreamBuilder error: ${snapshot.error}');
+                  print('✅ StreamBuilder hasData: ${snapshot.hasData}');
+                  print('📊 StreamBuilder data length: ${snapshot.data?.length}');
                   
                   if (snapshot.connectionState == ConnectionState.waiting) {
                   return _buildLoadingState();
                   }
 
                   if (snapshot.hasError) {
-                    print('StreamBuilder error details: ${snapshot.error}');
+                    print('❌ StreamBuilder error details: ${snapshot.error}');
                     // Try to fetch data once as a fallback
                     return FutureBuilder<List<Hospital>>(
                       future: _fetchHospitalsOnce(),
@@ -661,7 +670,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                   }
 
                   final hospitals = snapshot.data ?? [];
-                  print('Final hospitals list length: ${hospitals.length}');
+                  print('🎉 Final hospitals list length: ${hospitals.length}');
+                  print('📍 Verified hospitals: ${hospitals.where((h) => h.verified).length}');
+                  print('🌍 Google Places hospitals: ${hospitals.where((h) => h.isFromGooglePlaces).length}');
                   return _buildHospitalsList(hospitals);
                 },
                                               ),
@@ -775,8 +786,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                   searchQuery = value;
                 });
               },
-            ),
-          ),
+                  ),
+                ),
           
           const SizedBox(height: 20),
           
@@ -858,8 +869,8 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
               ),
             ),
           ),
-        ],
-      ),
+              ],
+            ),
     );
   }
 
@@ -889,13 +900,46 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
               ),
             ),
           const SizedBox(height: 8),
+          Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.place_rounded,
+                    size: 16,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 6),
               Text(
-            'Please wait while we load available hospitals...',
+                    'Nearby hospitals from Google Places',
                 style: TextStyle(
-              fontSize: 14,
+                      fontSize: 12,
               color: Colors.grey[600],
             ),
-            textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+                                Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.verified_rounded,
+                        size: 16,
+                        color: const Color(0xFF159BBD),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Verified hospitals update in real-time',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+            ],
           ),
         ],
       ),
@@ -982,24 +1026,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                                     facilities: hospital.facilities.isNotEmpty 
                                                         ? hospital.facilities 
                                                         : ['General Care', 'Consultation'],
-                                                    rating: 4.5,
-                                                    reviewCount: 50,
+                                                    rating: hospital.displayRating,
+                                                    reviewCount: hospital.displayRatingCount,
+                                                    reviews: [], // Will be fetched from Google Places if available
                                                     aboutText: hospital.about ?? 'This healthcare facility is committed to providing exceptional medical care and services.',
                                                     hospitalSchedule: hospital.availableSchedule,
-                                                    reviews: [
-                                                      {
-                                                        'name': 'John Doe',
-                  'rating': '5',
-                  'comment': 'Excellent service and professional staff.',
-                  'date': '2024-01-15',
-                                                      },
-                                                      {
-                                                        'name': 'Jane Smith',
-                  'rating': '4',
-                  'comment': 'Good experience, clean facility.',
-                  'date': '2024-01-10',
-                                                      },
-                                                    ],
+                                                    supportsBooking: hospital.supportsBooking,
+                                                    isFromGooglePlaces: hospital.isFromGooglePlaces,
+                                                    placeId: hospital.placeId,
                                                   ),
                                                 ),
                                               );
@@ -1059,8 +1093,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                       ),
                     ),
                   ),
-                  // Verification Badge
-                  if (hospital.isVerified)
+                  // Status Badges (Verified or Not Verified)
+                  if (hospital.verified)
+                    // Verified Badge for all verified hospitals (Firebase + Google Places approved by admin)
                     Positioned(
                       top: 16,
                       right: 16,
@@ -1089,6 +1124,46 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                             const SizedBox(width: 4),
                             const Text(
                               'Verified',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    // Not Verified Badge for unverified hospitals
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              spreadRadius: 0,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.cancel_outlined,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Not Verified',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -1139,6 +1214,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                   Row(
                     children: [
                       Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                  Row(
+                    children: [
+                      Expanded(
                         child: Text(
                           hospital.name,
                           style: const TextStyle(
@@ -1148,6 +1229,100 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                           ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                // Verified badge for all verified hospitals
+                                if (hospital.verified) ...[
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFF159BBD).withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: const Color(0xFF159BBD).withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.verified_rounded,
+                                          size: 12,
+                                          color: const Color(0xFF159BBD),
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          'Verified',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: const Color(0xFF159BBD),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ] else ...[
+                                  // Not Verified badge for unverified hospitals
+                                  const SizedBox(width: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red.withOpacity(0.1),
+                                      borderRadius: BorderRadius.circular(6),
+                                      border: Border.all(
+                                        color: Colors.red.withOpacity(0.3),
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.cancel_outlined,
+                                          size: 12,
+                                          color: Colors.red[700],
+                                        ),
+                                        const SizedBox(width: 2),
+                                        Text(
+                                          'Not Verified',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.red[700],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            // Google Places indicator
+                            if (hospital.isFromGooglePlaces) ...[
+                              const SizedBox(height: 2),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.place_rounded,
+                                    size: 12,
+                                    color: Colors.grey[600],
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Google Places',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: Colors.grey[600],
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1166,9 +1341,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                               color: Colors.amber,
                       ),
                       const SizedBox(width: 4),
-                            const Text(
-                        '4.5',
-                                              style: TextStyle(
+                            Text(
+                              hospital.displayRating.toStringAsFixed(1),
+                              style: const TextStyle(
                                                 fontSize: 12,
                           fontWeight: FontWeight.w600,
                                 color: Color(0xFF1A1A1A),
@@ -1279,15 +1454,19 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                     width: double.infinity,
                     height: 44,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                      gradient: LinearGradient(
+                        colors: hospital.supportsBooking 
+                            ? [const Color(0xFF159BBD), const Color(0xFF0D7A94)]
+                            : [Colors.grey[600]!, Colors.grey[700]!],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF159BBD).withOpacity(0.3),
+                          color: hospital.supportsBooking 
+                              ? const Color(0xFF159BBD).withOpacity(0.3)
+                              : Colors.grey.withOpacity(0.2),
                           spreadRadius: 0,
                           blurRadius: 8,
                           offset: const Offset(0, 2),
@@ -1309,36 +1488,54 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                 facilities: hospital.facilities.isNotEmpty 
                                     ? hospital.facilities 
                                     : ['General Care', 'Consultation'],
-                                rating: 4.5,
-                                reviewCount: 50,
+                                rating: hospital.displayRating,
+                                reviewCount: hospital.displayRatingCount,
+                                reviews: [],
                                 aboutText: hospital.about ?? 'This healthcare facility is committed to providing exceptional medical care and services.',
                                 hospitalSchedule: hospital.availableSchedule,
-                                reviews: [
-                                  {
-                                    'name': 'John Doe',
-                                    'rating': '5',
-                                    'comment': 'Excellent service and professional staff.',
-                                    'date': '2024-01-15',
-                                  },
-                                  {
-                                    'name': 'Jane Smith',
-                                    'rating': '4',
-                                    'comment': 'Good experience, clean facility.',
-                                    'date': '2024-01-10',
-                                  },
-                                ],
+                                supportsBooking: hospital.supportsBooking,
+                                isFromGooglePlaces: hospital.isFromGooglePlaces,
+                                placeId: hospital.placeId,
                               ),
                             ),
                           );
                         },
-                        child: const Center(
-                          child: Text(
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (hospital.supportsBooking) ...[
+                                const Icon(
+                                  Icons.calendar_today_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Book Appointment',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ] else ...[
+                                const Icon(
+                                  Icons.info_outline_rounded,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
                             'View Details',
                             style: TextStyle(
                               color: Colors.white,
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
+                                ),
+                              ],
+                            ],
                           ),
                         ),
                       ),

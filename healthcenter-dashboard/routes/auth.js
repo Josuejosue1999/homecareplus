@@ -47,10 +47,10 @@ router.post("/login", async (req, res) => {
 // Route de register
 router.post("/register", async (req, res) => {
   try {
-    const { clinicName, email, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
     
     // Validation
-    if (!clinicName || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
         message: "Tous les champs sont requis"
@@ -81,7 +81,7 @@ router.post("/register", async (req, res) => {
     }
     
     // Créer le compte
-    const result = await authService.register(clinicName, email, password, req);
+    const result = await authService.register(email, password, req);
     
     if (result.success) {
       // Cookie de session

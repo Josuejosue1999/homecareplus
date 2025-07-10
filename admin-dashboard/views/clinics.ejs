@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinics Management - HomeCare Plus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        /* Color scheme matching the login form */
+        :root {
+            --primary-color: #159BBD;
+            --secondary-color: #20c997;
+            --accent-color: #fd7e14;
+            --text-dark: #2d3748;
+            --text-light: #718096;
+            --bg-light: #f8f9fa;
+            --bg-white: #ffffff;
+            --border-color: #e2e8f0;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Dashboard Content Specific Styles */
+        .dashboard-content {
+            padding: 2rem;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.6; }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-white);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .clinics-section {
+            background: var(--bg-white);
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            border: none;
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background-color: rgba(21, 155, 189, 0.05);
+        }
+
+        .clinic-info {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .clinic-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .clinic-details h6 {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .clinic-details small {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-verified {
+            background: rgba(32, 201, 151, 0.1);
+            color: var(--secondary-color);
+        }
+
+        .status-pending {
+            background: rgba(253, 126, 20, 0.1);
+            color: var(--accent-color);
+        }
+
+        .status-incomplete {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+        }
+
+        .data-source-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .source-google {
+            background: rgba(66, 133, 244, 0.1);
+            color: #4285f4;
+        }
+
+        .source-manual {
+            background: rgba(156, 163, 175, 0.2);
+            color: #6b7280;
+        }
+
+        .rating-display {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .rating-display .fas, .rating-display .far {
+            color: #fbbf24;
+            font-size: 0.7rem;
+        }
+
+        .rating-display .rating-text {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-left: 0.25rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-action {
+            padding: 0.4rem 0.8rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            cursor: pointer;
+        }
+
+        .btn-view {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #128aa3;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-approve {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            background: #17a085;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-reject, .btn-unapprove {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-reject:hover, .btn-unapprove:hover {
+            background: #c82333;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-action i {
+            font-size: 0.7rem;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-header {
+            background: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 1.5rem 2rem;
+        }
+
+        .modal-title {
+            font-weight: 600;
+            font-size: 1.25rem;
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .clinic-detail-section {
+            background: var(--bg-light);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .clinic-detail-section .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .clinic-detail-section .section-title i {
+            color: var(--primary-color);
+            margin-right: 0.5rem;
+        }
+
+        .schedule-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .schedule-day {
+            background: var(--bg-white);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .day-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .day-slots {
+            color: var(--text-light);
+            font-size: 0.8rem;
+        }
+
+        .clinic-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+        }
+
+        .clinic-photo img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 8px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .approval-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .approve-btn, .reject-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+        }
+
+        .approve-btn {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .approve-btn:hover {
+            background: #17a085;
+            transform: translateY(-2px);
+        }
+
+        .reject-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .reject-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            opacity: 0.8;
+        }
+
+        .btn-close:hover {
+            opacity: 1;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .dashboard-content {
+                padding: 1rem;
+            }
+            
+            .hero-title {
+                font-size: 1.5rem;
+            }
+            
+            .stats-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+
+        /* Clinics page active state */
+        .nav-item a[href="/clinics"] {
+            background: rgba(21, 155, 189, 0.1);
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Floating Particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HomeCare Plus</span>
+                </div>
+                <div class="sidebar-user">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="user-info">
+                        <h6>Admin System</h6>
+                        <span>Super Administrator</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/clinics" class="nav-link active">
+                        <i class="fas fa-hospital"></i>
+                        <span>Healthcare Centers</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/user-management" class="nav-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>User Management</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/settings" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" onclick="handleLogout(); return false;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Clinics Management</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Search healthcare centers, users...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <div class="user-menu" id="userMenu">
+                        <div class="user-avatar-small">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <h1 class="hero-title">
+                            <i class="fas fa-hospital-alt me-3"></i>
+                            Clinics Management
+                        </h1>
+                        <p class="hero-subtitle">
+                            Comprehensive clinic management system with approval workflows
+                        </p>
+                    </div>
+                </div>
+
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalClinics">0</div>
+                        <div class="stat-label">Total Clinics</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="verifiedClinics">0</div>
+                        <div class="stat-label">Verified Clinics</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingClinics">0</div>
+                        <div class="stat-label">Pending Approval</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="incompleteClinics">0</div>
+                        <div class="stat-label">Incomplete Profiles</div>
+                    </div>
+                </div>
+
+                <div class="clinics-section">
+                    <div class="section-header">
+                        <h2 class="section-title">
+                            <i class="fas fa-list"></i>
+                            All Clinics
+                        </h2>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search clinics..." onkeyup="filterClinics()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Clinic</th>
+                                    <th>Contact</th>
+                                    <th>Data Source</th>
+                                    <th>Rating</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="clinicsTable">
+                                <tr>
+                                    <td colspan="6" class="text-center">
+                                        <div class="empty-state">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            <p>Loading clinics...</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Clinic Details Modal -->
+    <div class="modal fade" id="clinicDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-hospital-alt me-2"></i>
+                        Clinic Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="clinicDetailsBody">
+                    <!-- Clinic details will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/dashboard.js"></script>
+    <script>
+        let clinicsData = [];
+
+        // Load clinics data
+        async function loadClinics() {
+            console.log('🔄 LOADING CLINICS...');
+            
+            try {
+                const response = await fetch('/api/clinics');
+                console.log('📡 API Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📄 API Response data:', data);
+                
+                if (data.success && data.clinics) {
+                    clinicsData = data.clinics;
+                    console.log('✅ Clinics loaded successfully:', clinicsData.length, 'clinics');
+                    console.log('📋 First few clinics:', clinicsData.slice(0, 3));
+                    
+                    displayClinics(clinicsData);
+                    updateStats(clinicsData);
+                } else {
+                    console.error('❌ Invalid response format:', data);
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('💥 Error loading clinics:', error);
+                
+                // Show error message to user
+                document.getElementById('clinicsTable').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger">
+                            <div class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Error loading clinics: ${error.message}</p>
+                                <button class="btn btn-primary btn-sm mt-2" onclick="loadClinics()">
+                                    <i class="fas fa-retry"></i> Retry
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        function displayClinics(clinics) {
+            const tableBody = document.getElementById('clinicsTable');
+            
+            console.log('📊 DISPLAYING CLINICS:', clinics.length, 'clinics');
+            
+            if (clinics.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <div class="empty-state">
+                                <i class="fas fa-hospital-alt"></i>
+                                <p>No clinics found</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = clinics.map((clinic, index) => {
+                // Enhanced ID resolution with multiple fallbacks
+                const clinicId = clinic.id || clinic.docId || clinic.email || `clinic_${index}`;
+                console.log('🏥 Processing clinic:', {
+                    index: index,
+                    id: clinic.id,
+                    docId: clinic.docId,
+                    email: clinic.email,
+                    finalId: clinicId,
+                    verified: clinic.verified,
+                    isVerified: clinic.isVerified,
+                    name: clinic.name || clinic.clinicName
+                });
+                
+                // Determine verification status
+                const isVerified = clinic.verified === true || clinic.isVerified === true;
+                
+                return `
+                <tr data-clinic-id="${clinicId}">
+                    <td>
+                        <div class="clinic-info">
+                            <div class="clinic-avatar">
+                                <i class="fas fa-hospital-alt"></i>
+                            </div>
+                            <div class="clinic-details">
+                                <h6>${clinic.name || clinic.clinicName || 'Unknown Name'}</h6>
+                                <small>${clinic.address || clinic.location || 'No address'}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>
+                            <small class="text-muted d-block">${clinic.email || 'No email'}</small>
+                            <small class="text-muted">${clinic.phone || clinic.googlePhoneNumber || 'No phone'}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="data-source-badge ${clinic.isFromGooglePlaces ? 'source-google' : 'source-manual'}">
+                            <i class="fas fa-${clinic.isFromGooglePlaces ? 'google' : 'user'}"></i>
+                            ${clinic.isFromGooglePlaces ? 'Google' : 'Manual'}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="rating-display">
+                            <div class="stars">
+                                ${generateStars(clinic.rating || 0)}
+                            </div>
+                            <span class="rating-text">${clinic.rating || 'N/A'}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${getStatusClass(clinic)}">
+                            ${getStatusText(clinic)}
+                        </span>
+                    </td>
+                    <td class="actions-cell">
+                        <div class="action-buttons">
+                            <button class="btn-action btn-view" onclick="console.log('🔧 View button clicked for:', '${clinicId}'); viewClinic('${clinicId}')" title="View clinic details">
+                                <i class="fas fa-eye"></i>
+                                View
+                            </button>
+                            ${!isVerified ? `
+                                <button class="btn-action btn-approve" onclick="console.log('🔧 Approve button clicked for:', '${clinicId}'); approveClinic('${clinicId}')" title="Approve this clinic">
+                                    <i class="fas fa-check"></i>
+                                    Approve
+                                </button>
+                                <button class="btn-action btn-reject" onclick="console.log('🔧 Reject button clicked for:', '${clinicId}'); rejectClinic('${clinicId}')" title="Reject this clinic">
+                                    <i class="fas fa-times"></i>
+                                    Reject
+                                </button>
+                            ` : `
+                                <button class="btn-action btn-unapprove" onclick="console.log('🔧 Unapprove button clicked for:', '${clinicId}'); unapproveClinic('${clinicId}')" title="Remove approval from this clinic">
+                                    <i class="fas fa-times"></i>
+                                    Unapprove
+                                </button>
+                            `}
+                        </div>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+            
+            console.log('✅ Clinics table generated successfully');
+        }
+
+        function updateStats(clinics) {
+            const total = clinics.length;
+            const verified = clinics.filter(c => c.verified || c.isVerified).length;
+            const pending = clinics.filter(c => !c.verified && !c.isVerified && c.profileSetupComplete).length;
+            const incomplete = clinics.filter(c => !c.profileSetupComplete).length;
+
+            document.getElementById('totalClinics').textContent = total;
+            document.getElementById('verifiedClinics').textContent = verified;
+            document.getElementById('pendingClinics').textContent = pending;
+            document.getElementById('incompleteClinics').textContent = incomplete;
+        }
+
+        function getStatusClass(clinic) {
+            if (clinic.verified || clinic.isVerified) return 'status-verified';
+            if (clinic.profileSetupComplete) return 'status-pending';
+            return 'status-incomplete';
+        }
+
+        function getStatusText(clinic) {
+            if (clinic.verified || clinic.isVerified) return 'Verified';
+            if (clinic.profileSetupComplete) return 'Pending';
+            return 'Incomplete';
+        }
+
+        function generateStars(rating) {
+            const stars = [];
+            const fullStars = Math.floor(rating);
+            const hasHalfStar = rating % 1 !== 0;
+            
+            for (let i = 0; i < fullStars; i++) {
+                stars.push('<i class="fas fa-star"></i>');
+            }
+            
+            if (hasHalfStar) {
+                stars.push('<i class="fas fa-star-half-alt"></i>');
+            }
+            
+            const emptyStars = 5 - Math.ceil(rating);
+            for (let i = 0; i < emptyStars; i++) {
+                stars.push('<i class="far fa-star"></i>');
+            }
+            
+            return stars.join('');
+        }
+
+        function viewClinic(clinicId) {
+            console.log('🔍 VIEW CLINIC CALLED with ID:', clinicId);
+            console.log('🔍 Current clinics data:', clinicsData);
+            console.log('🧪 SweetAlert2 available:', typeof Swal);
+            
+            // Try multiple ways to find the clinic
+            let clinic = clinicsData.find(c => c.id === clinicId);
+            if (!clinic) {
+                clinic = clinicsData.find(c => c.docId === clinicId);
+            }
+            if (!clinic) {
+                clinic = clinicsData.find(c => c.email === clinicId);
+            }
+            
+            if (!clinic) {
+                console.error('Clinic not found with ID:', clinicId);
+                console.error('Available clinic IDs:', clinicsData.map(c => c.id || c.docId || c.email));
+                
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Clinic not found',
+                    icon: 'error',
+                    confirmButtonColor: '#159BBD'
+                });
+                return;
+            }
+
+            const modalBody = document.getElementById('clinicDetailsBody');
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="clinic-detail-section">
+                            <div class="section-title">
+                                <i class="fas fa-info-circle"></i>
+                                Basic Information
+                            </div>
+                            <p><strong>Name:</strong> ${clinic.name || clinic.clinicName}</p>
+                            <p><strong>Email:</strong> ${clinic.email}</p>
+                            <p><strong>Phone:</strong> ${clinic.phone || clinic.googlePhoneNumber || 'N/A'}</p>
+                            <p><strong>Address:</strong> ${clinic.address || clinic.location || 'N/A'}</p>
+                            <p><strong>About:</strong> ${clinic.about || 'No description available'}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="clinic-detail-section">
+                            <div class="section-title">
+                                <i class="fas fa-cog"></i>
+                                System Information
+                            </div>
+                            <p><strong>Data Source:</strong> 
+                                <span class="data-source-badge ${clinic.isFromGooglePlaces ? 'source-google' : 'source-manual'}">
+                                    <i class="fas fa-${clinic.isFromGooglePlaces ? 'google' : 'user'}"></i>
+                                    ${clinic.isFromGooglePlaces ? 'Google Places' : 'Manual Entry'}
+                                </span>
+                            </p>
+                            <p><strong>Status:</strong> 
+                                <span class="status-badge ${getStatusClass(clinic)}">
+                                    ${getStatusText(clinic)}
+                                </span>
+                            </p>
+                            <p><strong>Profile Complete:</strong> ${clinic.profileSetupComplete ? 'Yes' : 'No'}</p>
+                            <p><strong>Created:</strong> ${new Date(clinic.createdAt?.toDate?.() || clinic.createdAt).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="clinic-detail-section">
+                    <div class="section-title">
+                        <i class="fas fa-star"></i>
+                        Rating & Reviews
+                    </div>
+                    <div class="rating-display">
+                        <div class="stars">
+                            ${generateStars(clinic.rating || 0)}
+                        </div>
+                        <span class="ms-2 fs-5">${clinic.rating || 'No rating'}</span>
+                    </div>
+                    ${clinic.googleWebsite ? `<p><strong>Website:</strong> <a href="${clinic.googleWebsite}" target="_blank">${clinic.googleWebsite}</a></p>` : ''}
+                </div>
+                
+                <div class="clinic-detail-section">
+                    <div class="section-title">
+                        <i class="fas fa-heartbeat"></i>
+                        Services & Facilities
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Services:</h6>
+                            <ul class="list-unstyled">
+                                ${(clinic.services || []).map(service => `<li><i class="fas fa-check text-success me-2"></i>${service}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Facilities:</h6>
+                            <ul class="list-unstyled">
+                                ${(clinic.facilities || []).map(facility => `<li><i class="fas fa-check text-success me-2"></i>${facility}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                ${clinic.availableSchedule ? `
+                    <div class="clinic-detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            Schedule
+                        </div>
+                        <div class="schedule-grid">
+                            ${Object.entries(clinic.availableSchedule).map(([day, schedule]) => `
+                                <div class="schedule-day">
+                                    <div class="day-name">${day.charAt(0).toUpperCase() + day.slice(1)}</div>
+                                    <div class="day-slots">
+                                        ${schedule.active ? 
+                                            schedule.slots.map(slot => `${slot.start} - ${slot.end}`).join('<br>') : 
+                                            'Closed'
+                                        }
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${clinic.clinicPhotos && clinic.clinicPhotos.length > 0 ? `
+                    <div class="clinic-detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-images"></i>
+                            Photos
+                        </div>
+                        <div class="clinic-photos">
+                            ${clinic.clinicPhotos.map(photo => `
+                                <div class="clinic-photo">
+                                    <img src="${photo}" alt="Clinic photo" class="img-fluid">
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${clinic.profileImageUrl ? `
+                    <div class="clinic-detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-image"></i>
+                            Profile Image
+                        </div>
+                        <div class="text-center">
+                            <img src="${clinic.profileImageUrl}" alt="Profile" class="img-fluid" style="max-width: 200px; border-radius: 10px;">
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${clinic.certificateUrl ? `
+                    <div class="clinic-detail-section">
+                        <div class="section-title">
+                            <i class="fas fa-certificate"></i>
+                            Certificate
+                        </div>
+                        <div class="text-center">
+                            <img src="${clinic.certificateUrl}" alt="Certificate" class="img-fluid" style="max-width: 300px; border-radius: 10px;">
+                        </div>
+                    </div>
+                ` : ''}
+                
+                <div class="approval-controls">
+                    ${!clinic.verified && !clinic.isVerified ? `
+                        <button class="btn approve-btn" onclick="approveClinic('${clinic.id}')">
+                            <i class="fas fa-check me-2"></i>
+                            Approve Clinic
+                        </button>
+                        <button class="btn reject-btn" onclick="rejectClinic('${clinic.id}')">
+                            <i class="fas fa-times me-2"></i>
+                            Reject Clinic
+                        </button>
+                    ` : `
+                        <button class="btn reject-btn" onclick="unapproveClinic('${clinic.id}')">
+                            <i class="fas fa-times me-2"></i>
+                            Unapprove Clinic
+                        </button>
+                    `}
+                </div>
+            `;
+
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('clinicDetailsModal'));
+            modal.show();
+        }
+
+        async function approveClinic(clinicId) {
+            console.log('🔄 APPROVE CLINIC CALLED with ID:', clinicId);
+            console.log('🔍 Current clinics data:', clinicsData);
+            console.log('🧪 SweetAlert2 available:', typeof Swal);
+            
+            // Enhanced ID resolution
+            let targetClinic = null;
+            if (clinicsData && clinicsData.length > 0) {
+                targetClinic = clinicsData.find(c => c.id === clinicId) || 
+                              clinicsData.find(c => c.docId === clinicId) ||
+                              clinicsData.find(c => c.email === clinicId);
+                              
+                console.log('🎯 Found target clinic:', targetClinic);
+            }
+            
+            if (!targetClinic) {
+                console.error('❌ Clinic not found with ID:', clinicId);
+                console.error('📋 Available clinics:', clinicsData.map(c => ({id: c.id, email: c.email, name: c.name})));
+                
+                // Fallback alert if SweetAlert2 not available
+                if (typeof Swal === 'undefined') {
+                    alert('Clinic not found!');
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Clinic not found. Please refresh the page and try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#159BBD'
+                });
+                return;
+            }
+            
+            // Check if SweetAlert2 is loaded
+            if (typeof Swal === 'undefined') {
+                console.error('❌ SweetAlert2 not loaded');
+                const confirmed = confirm('Are you sure you want to approve this clinic?');
+                if (!confirmed) return;
+            } else {
+                console.log('✅ SweetAlert2 is available, showing confirmation dialog');
+                
+                const result = await Swal.fire({
+                    title: 'Approve Clinic',
+                    text: `Are you sure you want to approve "${targetClinic.name || targetClinic.clinicName}"?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#159BBD',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, approve it!',
+                    cancelButtonText: 'Cancel',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+
+                if (!result.isConfirmed) {
+                    console.log('❌ User cancelled approval');
+                    return;
+                }
+            }
+            
+            try {
+                console.log('🚀 Sending approve request to:', `/api/clinics/${clinicId}/approve`);
+                
+                const response = await fetch(`/api/clinics/${clinicId}/approve`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Response status:', response.status);
+                const responseData = await response.json();
+                console.log('📄 Response data:', responseData);
+                
+                if (response.ok) {
+                    console.log('✅ Clinic approved successfully');
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Approved!',
+                            text: 'Clinic has been approved successfully.',
+                            icon: 'success',
+                            confirmButtonColor: '#159BBD',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        alert('Clinic approved successfully!');
+                    }
+                    
+                    // Update the UI dynamically
+                    updateClinicButtons(clinicId, true);
+                    loadClinics();
+                    
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('clinicDetailsModal'));
+                    if (modal) modal.hide();
+                } else {
+                    console.error('❌ Failed to approve clinic:', responseData);
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Error!',
+                            text: responseData.error || 'Failed to approve clinic. Please try again.',
+                            icon: 'error',
+                            confirmButtonColor: '#159BBD'
+                        });
+                    } else {
+                        alert('Failed to approve clinic. Please try again.');
+                    }
+                }
+            } catch (error) {
+                console.error('💥 Error approving clinic:', error);
+                
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while approving the clinic.',
+                        icon: 'error',
+                        confirmButtonColor: '#159BBD'
+                    });
+                } else {
+                    alert('An error occurred while approving the clinic.');
+                }
+            }
+        }
+
+        async function rejectClinic(clinicId) {
+            console.log('🔄 REJECT CLINIC CALLED with ID:', clinicId);
+            console.log('🔍 Current clinics data:', clinicsData);
+            console.log('🧪 SweetAlert2 available:', typeof Swal);
+            
+            // Enhanced ID resolution
+            let targetClinic = null;
+            if (clinicsData && clinicsData.length > 0) {
+                targetClinic = clinicsData.find(c => c.id === clinicId) || 
+                              clinicsData.find(c => c.docId === clinicId) ||
+                              clinicsData.find(c => c.email === clinicId);
+                              
+                console.log('🎯 Found target clinic:', targetClinic);
+            }
+            
+            if (!targetClinic) {
+                console.error('❌ Clinic not found with ID:', clinicId);
+                console.error('📋 Available clinics:', clinicsData.map(c => ({id: c.id, email: c.email, name: c.name})));
+                
+                // Fallback alert if SweetAlert2 not available
+                if (typeof Swal === 'undefined') {
+                    alert('Clinic not found!');
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Clinic not found. Please refresh the page and try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#159BBD'
+                });
+                return;
+            }
+            
+            // Check if SweetAlert2 is loaded
+            if (typeof Swal === 'undefined') {
+                console.error('❌ SweetAlert2 not loaded');
+                const confirmed = confirm('Are you sure you want to reject this clinic?');
+                if (!confirmed) return;
+            } else {
+                console.log('✅ SweetAlert2 is available, showing confirmation dialog');
+                
+                const result = await Swal.fire({
+                    title: 'Reject Clinic',
+                    text: `Are you sure you want to reject "${targetClinic.name || targetClinic.clinicName}"?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, reject it!',
+                    cancelButtonText: 'Cancel',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+
+                if (!result.isConfirmed) {
+                    console.log('❌ User cancelled rejection');
+                    return;
+                }
+            }
+            
+            try {
+                console.log('🚀 Sending reject request to:', `/api/clinics/${clinicId}/reject`);
+                
+                const response = await fetch(`/api/clinics/${clinicId}/reject`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Response status:', response.status);
+                const responseData = await response.json();
+                console.log('📄 Response data:', responseData);
+                
+                if (response.ok) {
+                    console.log('✅ Clinic rejected successfully');
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Rejected!',
+                            text: 'Clinic has been rejected successfully.',
+                            icon: 'success',
+                            confirmButtonColor: '#159BBD',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        alert('Clinic rejected successfully!');
+                    }
+                    
+                    // Reload clinics to refresh the table
+                    loadClinics();
+                    
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('clinicDetailsModal'));
+                    if (modal) modal.hide();
+                } else {
+                    console.error('❌ Failed to reject clinic:', responseData);
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Error!',
+                            text: responseData.error || 'Failed to reject clinic. Please try again.',
+                            icon: 'error',
+                            confirmButtonColor: '#159BBD'
+                        });
+                    } else {
+                        alert('Failed to reject clinic. Please try again.');
+                    }
+                }
+            } catch (error) {
+                console.error('💥 Error rejecting clinic:', error);
+                
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while rejecting the clinic.',
+                        icon: 'error',
+                        confirmButtonColor: '#159BBD'
+                    });
+                } else {
+                    alert('An error occurred while rejecting the clinic.');
+                }
+            }
+        }
+
+        async function unapproveClinic(clinicId) {
+            console.log('🔄 UNAPPROVE CLINIC CALLED with ID:', clinicId);
+            console.log('🔍 Current clinics data:', clinicsData);
+            console.log('🧪 SweetAlert2 available:', typeof Swal);
+            
+            // Enhanced ID resolution
+            let targetClinic = null;
+            if (clinicsData && clinicsData.length > 0) {
+                targetClinic = clinicsData.find(c => c.id === clinicId) || 
+                              clinicsData.find(c => c.docId === clinicId) ||
+                              clinicsData.find(c => c.email === clinicId);
+                              
+                console.log('🎯 Found target clinic:', targetClinic);
+            }
+            
+            if (!targetClinic) {
+                console.error('❌ Clinic not found with ID:', clinicId);
+                console.error('📋 Available clinics:', clinicsData.map(c => ({id: c.id, email: c.email, name: c.name})));
+                
+                // Fallback alert if SweetAlert2 not available
+                if (typeof Swal === 'undefined') {
+                    alert('Clinic not found!');
+                    return;
+                }
+                
+                Swal.fire({
+                    title: 'Error!',
+                    text: 'Clinic not found. Please refresh the page and try again.',
+                    icon: 'error',
+                    confirmButtonColor: '#159BBD'
+                });
+                return;
+            }
+            
+            // Check if SweetAlert2 is loaded
+            if (typeof Swal === 'undefined') {
+                console.error('❌ SweetAlert2 not loaded');
+                const confirmed = confirm('Are you sure you want to unapprove this clinic?');
+                if (!confirmed) return;
+            } else {
+                console.log('✅ SweetAlert2 is available, showing confirmation dialog');
+                
+                const result = await Swal.fire({
+                    title: 'Unapprove Clinic',
+                    text: `Are you sure you want to unapprove "${targetClinic.name || targetClinic.clinicName}"?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Yes, unapprove it!',
+                    cancelButtonText: 'Cancel',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                });
+
+                if (!result.isConfirmed) {
+                    console.log('❌ User cancelled unapproval');
+                    return;
+                }
+            }
+            
+            try {
+                console.log('🚀 Sending unapprove request to:', `/api/clinics/${clinicId}/unapprove`);
+                
+                const response = await fetch(`/api/clinics/${clinicId}/unapprove`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Response status:', response.status);
+                const responseData = await response.json();
+                console.log('📄 Response data:', responseData);
+                
+                if (response.ok) {
+                    console.log('✅ Clinic unapproved successfully');
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Unapproved!',
+                            text: 'Clinic has been unapproved successfully.',
+                            icon: 'success',
+                            confirmButtonColor: '#159BBD',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        alert('Clinic unapproved successfully!');
+                    }
+                    
+                    // Update the UI dynamically
+                    updateClinicButtons(clinicId, false);
+                    loadClinics();
+                    
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('clinicDetailsModal'));
+                    if (modal) modal.hide();
+                } else {
+                    console.error('❌ Failed to unapprove clinic:', responseData);
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Error!',
+                            text: responseData.error || 'Failed to unapprove clinic. Please try again.',
+                            icon: 'error',
+                            confirmButtonColor: '#159BBD'
+                        });
+                    } else {
+                        alert('Failed to unapprove clinic. Please try again.');
+                    }
+                }
+            } catch (error) {
+                console.error('💥 Error unapproving clinic:', error);
+                
+                if (typeof Swal !== 'undefined') {
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while unapproving the clinic.',
+                        icon: 'error',
+                        confirmButtonColor: '#159BBD'
+                    });
+                } else {
+                    alert('An error occurred while unapproving the clinic.');
+                }
+            }
+        }
+
+        function updateClinicButtons(clinicId, isApproved) {
+            // Update buttons in the table view
+            const tableRow = document.querySelector(`tr[data-clinic-id="${clinicId}"]`);
+            if (tableRow) {
+                const actionCell = tableRow.querySelector('.actions-cell');
+                if (actionCell) {
+                    const buttonContainer = actionCell.querySelector('.action-buttons');
+                    if (buttonContainer) {
+                        // Find and update the approve/unapprove buttons
+                        const approveBtn = buttonContainer.querySelector('.btn-approve');
+                        const unapproveBtn = buttonContainer.querySelector('.btn-unapprove');
+                        
+                        if (isApproved) {
+                            // Clinic is now approved, show unapprove button
+                            if (approveBtn) {
+                                approveBtn.outerHTML = `
+                                    <button class="btn-action btn-unapprove" onclick="unapproveClinic('${clinicId}')">
+                                        <i class="fas fa-times"></i>
+                                        Unapprove
+                                    </button>
+                                `;
+                            }
+                        } else {
+                            // Clinic is now unapproved, show approve button
+                            if (unapproveBtn) {
+                                unapproveBtn.outerHTML = `
+                                    <button class="btn-action btn-approve" onclick="approveClinic('${clinicId}')">
+                                        <i class="fas fa-check"></i>
+                                        Approve
+                                    </button>
+                                `;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Update the clinic data in memory
+            const clinicIndex = clinicsData.findIndex(clinic => clinic.id === clinicId);
+            if (clinicIndex !== -1) {
+                clinicsData[clinicIndex].verified = isApproved;
+                clinicsData[clinicIndex].isVerified = isApproved;
+            }
+        }
+
+        function filterClinics() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredClinics = clinicsData.filter(clinic => 
+                (clinic.name || clinic.clinicName).toLowerCase().includes(searchTerm) ||
+                clinic.email.toLowerCase().includes(searchTerm) ||
+                (clinic.address || clinic.location || '').toLowerCase().includes(searchTerm)
+            );
+            displayClinics(filteredClinics);
+        }
+
+        // View clinic function
+        async function viewClinic(clinicId) {
+            console.log('🔍 VIEW CLINIC CALLED with ID:', clinicId);
+            
+            try {
+                // Show loading
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Loading...',
+                        text: 'Fetching clinic details',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                }
+                
+                console.log('🚀 Fetching clinic details from:', `/api/clinics/${clinicId}`);
+                
+                const response = await fetch(`/api/clinics/${clinicId}`);
+                const responseData = await response.json();
+                
+                console.log('📡 Response status:', response.status);
+                console.log('📄 Response data:', responseData);
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                }
+                
+                if (response.ok && responseData.success) {
+                    const clinic = responseData.clinic;
+                    console.log('✅ Clinic details fetched successfully:', clinic);
+                    
+                    // Show clinic details in modal
+                    showClinicDetailsModal(clinic);
+                } else {
+                    console.error('❌ Failed to fetch clinic details:', responseData);
+                    
+                    if (typeof Swal !== 'undefined') {
+                        await Swal.fire({
+                            title: 'Error!',
+                            text: responseData.error || 'Failed to fetch clinic details. Please try again.',
+                            icon: 'error',
+                            confirmButtonColor: '#159BBD'
+                        });
+                    } else {
+                        alert('Failed to fetch clinic details. Please try again.');
+                    }
+                }
+            } catch (error) {
+                console.error('💥 Error fetching clinic details:', error);
+                
+                if (typeof Swal !== 'undefined') {
+                    Swal.close();
+                    await Swal.fire({
+                        title: 'Error!',
+                        text: 'An error occurred while fetching clinic details.',
+                        icon: 'error',
+                        confirmButtonColor: '#159BBD'
+                    });
+                } else {
+                    alert('An error occurred while fetching clinic details.');
+                }
+            }
+        }
+
+        function showClinicDetailsModal(clinic) {
+            console.log('📋 Showing clinic details modal for:', clinic);
+            
+            // Navigate to clinic's full profile page in the admin dashboard
+            const clinicProfileUrl = `/clinic-profile/${clinic.id}`;
+            
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'View Clinic Profile',
+                    html: `
+                        <div style="text-align: left; margin: 1rem 0;">
+                            <h5 style="color: var(--primary-color); margin-bottom: 1rem;">
+                                <i class="fas fa-hospital-alt me-2"></i>
+                                ${clinic.clinicName || clinic.name || 'Clinic Name'}
+                            </h5>
+                            <div style="background: #f8f9fa; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;">
+                                <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> ${clinic.email || 'Not provided'}</p>
+                                <p><strong><i class="fas fa-map-marker-alt me-2"></i>Address:</strong> ${clinic.address || clinic.location || 'Not provided'}</p>
+                                <p><strong><i class="fas fa-phone me-2"></i>Phone:</strong> ${clinic.phone || clinic.googlePhoneNumber || 'Not provided'}</p>
+                                <p><strong><i class="fas fa-star me-2"></i>Rating:</strong> ${clinic.rating || 0}/5</p>
+                                <p><strong><i class="fas fa-check-circle me-2"></i>Status:</strong> 
+                                    <span style="color: ${clinic.verified ? 'green' : 'orange'};">
+                                        ${clinic.verified ? 'Verified' : 'Pending'}
+                                    </span>
+                                </p>
+                            </div>
+                            <p style="color: #666; font-size: 0.9rem;">
+                                <i class="fas fa-info-circle me-1"></i>
+                                View the complete clinic profile with all details and photos
+                            </p>
+                        </div>
+                    `,
+                    showCancelButton: true,
+                    confirmButtonColor: '#159BBD',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fas fa-external-link-alt me-2"></i>View Full Profile',
+                    cancelButtonText: 'Close',
+                    width: '600px'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.open(clinicProfileUrl, '_blank');
+                    }
+                });
+            } else {
+                // Fallback for browsers without SweetAlert2
+                const confirmed = confirm(`View full profile for ${clinic.clinicName || clinic.name}?\n\nThis will open in a new tab.`);
+                if (confirmed) {
+                    window.open(clinicProfileUrl, '_blank');
+                }
+            }
+        }
+
+        // Add comprehensive debug logging
+        console.log('🔧 DEBUG: Script loaded, setting up event listeners...');
+        
+        // Test button click events
+        function testButtonClicks() {
+            console.log('🔧 DEBUG: Testing if buttons are clickable...');
+            
+            // Wait for DOM to be ready
+            setTimeout(() => {
+                const buttons = document.querySelectorAll('.btn-action');
+                console.log('🔧 DEBUG: Found buttons:', buttons.length);
+                
+                buttons.forEach((button, index) => {
+                    console.log(`🔧 DEBUG: Button ${index}:`, {
+                        class: button.className,
+                        onclick: button.getAttribute('onclick'),
+                        text: button.textContent.trim()
+                    });
+                });
+                
+                // Test if functions exist in global scope
+                console.log('🔧 DEBUG: Global function availability:', {
+                    viewClinic: typeof window.viewClinic,
+                    approveClinic: typeof window.approveClinic,
+                    unapproveClinic: typeof window.unapproveClinic,
+                    rejectClinic: typeof window.rejectClinic,
+                    loadClinics: typeof window.loadClinics
+                });
+            }, 1000);
+        }
+        
+        // Check if functions exist before assigning
+        console.log('🔧 DEBUG: Function types before assignment:', {
+            viewClinic: typeof viewClinic,
+            approveClinic: typeof approveClinic,
+            unapproveClinic: typeof unapproveClinic,
+            rejectClinic: typeof rejectClinic,
+            loadClinics: typeof loadClinics
+        });
+        
+        // Verify functions are available globally
+        window.viewClinic = viewClinic;
+        window.approveClinic = approveClinic;
+        window.unapproveClinic = unapproveClinic;
+        window.rejectClinic = rejectClinic;
+        window.loadClinics = loadClinics;
+        
+        console.log('🔧 DEBUG: Functions added to window:', {
+            viewClinic: typeof window.viewClinic,
+            approveClinic: typeof window.approveClinic,
+            unapproveClinic: typeof window.unapproveClinic,
+            rejectClinic: typeof window.rejectClinic,
+            loadClinics: typeof window.loadClinics
+        });
+
+        // Load clinics on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔧 DEBUG: DOMContentLoaded event fired');
+            loadClinics();
+            testButtonClicks();
+        });
+
+        // Logout function with confirmation popup
+        function handleLogout() {
+            Swal.fire({
+                title: 'Are you sure you want to log out?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, log out',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/logout'; // Redirect to logout endpoint
+                }
+            });
+        }
+    </script>
+</body>
+</html> 

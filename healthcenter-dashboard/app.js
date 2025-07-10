@@ -276,7 +276,7 @@ app.get("/settings", requireAuth, async (req, res) => {
             };
         }
         
-        res.render("settings", { 
+        res.render("settings-new", { 
             user: {
                 ...req.user,
                 ...hospitalData
@@ -552,6 +552,48 @@ app.get("/api/settings/clinic-data", requireAuth, async (req, res) => {
         res.status(500).json({
             success: false,
             message: "Failed to fetch clinic data"
+        });
+    }
+});
+
+// Route pour sauvegarder toutes les données des paramètres (nouvelle méthode)
+app.post("/api/settings/save-all", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const { clinicName, phone, about, address, latitude, longitude, facilities } = req.body;
+
+        console.log('💾 Saving all settings for user:', userId);
+        console.log('📋 Data received:', req.body);
+
+        // Prepare update data
+        const updateData = {
+            name: clinicName,
+            clinicName: clinicName,
+            phone: phone || '',
+            about: about || '',
+            address: address || '',
+            latitude: latitude ? parseFloat(latitude) : null,
+            longitude: longitude ? parseFloat(longitude) : null,
+            facilities: facilities || [],
+            updatedAt: new Date(),
+            profileSetupComplete: true // Mark profile as complete
+        };
+
+        // Update in Firestore
+        await updateDoc(doc(db, 'clinics', userId), updateData);
+
+        console.log('✅ All settings saved successfully');
+
+        res.json({
+            success: true,
+            message: 'Settings saved successfully'
+        });
+
+    } catch (error) {
+        console.error('❌ Error saving all settings:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Failed to save settings'
         });
     }
 });

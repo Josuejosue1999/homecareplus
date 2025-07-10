@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Health Center Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g&libraries=places"></script>
+    
+    <style>
+        :root {
+            --primary-color: #159BBD;
+            --primary-dark: #0D5C73;
+            --secondary-color: #42A5F5;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-gray: #f8f9fa;
+            --border-color: #e9ecef;
+            --text-muted: #6c757d;
+            --stepper-active: #159BBD;
+            --stepper-completed: #28a745;
+            --stepper-inactive: #dee2e6;
+        }
+
+        body {
+            background-color: var(--light-gray);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .settings-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .settings-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .settings-header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .settings-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Modern Stepper */
+        .stepper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 20%;
+            right: 20%;
+            height: 3px;
+            background: var(--stepper-inactive);
+            z-index: 1;
+        }
+
+        .stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .stepper-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: white;
+            background: var(--stepper-inactive);
+            border: 4px solid var(--stepper-inactive);
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .stepper-step.active .stepper-circle {
+            background: var(--stepper-active);
+            border-color: var(--stepper-active);
+            animation: pulse 2s infinite;
+        }
+
+        .stepper-step.completed .stepper-circle {
+            background: var(--stepper-completed);
+            border-color: var(--stepper-completed);
+        }
+
+        .stepper-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .stepper-step.active .stepper-label {
+            color: var(--stepper-active);
+        }
+
+        .stepper-step.completed .stepper-label {
+            color: var(--stepper-completed);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(21, 155, 189, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(21, 155, 189, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(21, 155, 189, 0); }
+        }
+
+        /* Step Content */
+        .step-content {
+            background: white;
+            border-radius: 15px;
+            padding: 2.5rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            min-height: 500px;
+        }
+
+        .step-content h2 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .step-content .step-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .step-description {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Hospital Search */
+        .hospital-search {
+            position: relative;
+        }
+
+        .search-input {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .search-result-item:hover {
+            background: var(--light-gray);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .map-container {
+            height: 300px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 1rem;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+        }
+
+        .profile-image-upload {
+            text-align: center;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            transition: border-color 0.3s ease;
+        }
+
+        .profile-image-upload:hover {
+            border-color: var(--primary-color);
+        }
+
+        .profile-image-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+
+        /* Navigation Buttons */
+        .step-navigation {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+        }
+
+        .btn-step {
+            padding: 0.75rem 2rem;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-step:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-previous {
+            background: var(--text-muted);
+            color: white;
+        }
+
+        .btn-next {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-finish {
+            background: var(--success-color);
+            color: white;
+        }
+
+        /* Support Cards */
+        .support-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .support-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .support-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .support-card-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin: 0 auto 1rem;
+        }
+
+        .support-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .settings-container {
+                padding: 1rem;
+            }
+            
+            .stepper {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stepper::before {
+                display: none;
+            }
+            
+            .step-content {
+                padding: 1.5rem;
+            }
+        }
+
+        /* Animation */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <%- include('partials/sidebar') %>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Header -->
+            <%- include('partials/header') %>
+            
+            <!-- Settings Content -->
+            <div class="settings-container">
+                <!-- Settings Header -->
+                <div class="settings-header">
+                    <h1><i class="fas fa-cogs"></i> Clinic Setup</h1>
+                    <p>Complete your clinic setup in just 3 simple steps</p>
+                </div>
+
+                <!-- Progress Stepper -->
+                <div class="stepper">
+                    <div class="stepper-step active" data-step="1">
+                        <div class="stepper-circle">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="stepper-label">Find My Hospital</div>
+                    </div>
+                    <div class="stepper-step" data-step="2">
+                        <div class="stepper-circle">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                        <div class="stepper-label">Clinic Profile</div>
+                    </div>
+                    <div class="stepper-step" data-step="3">
+                        <div class="stepper-circle">
+                            <i class="fas fa-life-ring"></i>
+                        </div>
+                        <div class="stepper-label">Help & Support</div>
+                    </div>
+                </div>
+
+                <!-- Step Content -->
+                <div class="step-content fade-in" id="step1">
+                    <h2>
+                        <div class="step-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        Step 1: Find My Hospital
+                    </h2>
+                    <p class="step-description">
+                        Search for your hospital or clinic location using our integrated Google Maps. This will help patients find you easily and improve your visibility on our platform.
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="hospitalSearch" class="form-label">Search for your hospital</label>
+                                <div class="hospital-search">
+                                    <input type="text" 
+                                           class="form-control search-input" 
+                                           id="hospitalSearch" 
+                                           placeholder="Enter hospital name or address..."
+                                           autocomplete="off">
+                                    <div class="search-results" id="searchResults" style="display: none;"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="selectedAddress" class="form-label">Selected Address</label>
+                                <textarea class="form-control" 
+                                          id="selectedAddress" 
+                                          rows="3" 
+                                          placeholder="Your selected address will appear here..."
+                                          readonly></textarea>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="latitude" class="form-label">Latitude</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="latitude" 
+                                               step="any" 
+                                               placeholder="Auto-filled"
+                                               readonly>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="longitude" class="form-label">Longitude</label>
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="longitude" 
+                                               step="any" 
+                                               placeholder="Auto-filled"
+                                               readonly>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Hospital Location</label>
+                                <div class="map-container">
+                                    <div id="map"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="step-content fade-in" id="step2" style="display: none;">
+                    <h2>
+                        <div class="step-icon">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                        Step 2: Clinic Profile
+                    </h2>
+                    <p class="step-description">
+                        Complete your clinic profile with detailed information that will help patients understand your services and build trust.
+                    </p>
+
+                    <form id="profileForm">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">Hospital Image</label>
+                                    <div class="profile-image-upload" onclick="document.getElementById('profileImageInput').click()">
+                                        <img id="profileImagePreview" 
+                                             class="profile-image-preview" 
+                                             src="/assets/hospital.PNG" 
+                                             alt="Hospital Image">
+                                        <div>
+                                            <i class="fas fa-camera fa-2x text-primary mb-2"></i>
+                                            <p class="text-muted">Click to upload hospital image</p>
+                                            <small class="text-muted">Recommended: 400x400px</small>
+                                        </div>
+                                    </div>
+                                    <input type="file" 
+                                           id="profileImageInput" 
+                                           accept="image/*" 
+                                           style="display: none;">
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <div class="form-group">
+                                    <label for="clinicName" class="form-label">Clinic Name *</label>
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="clinicName" 
+                                           value="<%= user.clinicName %>" 
+                                           required>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="clinicEmail" class="form-label">Email Address *</label>
+                                    <input type="email" 
+                                           class="form-control" 
+                                           id="clinicEmail" 
+                                           value="<%= user.email %>" 
+                                           readonly>
+                                    <small class="text-muted">Email cannot be changed</small>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label for="clinicPhone" class="form-label">Phone Number *</label>
+                                    <input type="tel" 
+                                           class="form-control" 
+                                           id="clinicPhone" 
+                                           value="<%= user.phone || '' %>" 
+                                           required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="clinicAbout" class="form-label">About Your Clinic</label>
+                            <textarea class="form-control" 
+                                      id="clinicAbout" 
+                                      rows="4" 
+                                      placeholder="Describe your clinic, services, and mission..."><%= user.about || '' %></textarea>
+                            <small class="text-muted">This information will be displayed to patients</small>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Services & Facilities</label>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="generalMedicine" value="General Medicine">
+                                        <label class="form-check-label" for="generalMedicine">General Medicine</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="cardiology" value="Cardiology">
+                                        <label class="form-check-label" for="cardiology">Cardiology</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="dermatology" value="Dermatology">
+                                        <label class="form-check-label" for="dermatology">Dermatology</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="orthopedics" value="Orthopedics">
+                                        <label class="form-check-label" for="orthopedics">Orthopedics</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="pediatrics" value="Pediatrics">
+                                        <label class="form-check-label" for="pediatrics">Pediatrics</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="gynecology" value="Gynecology">
+                                        <label class="form-check-label" for="gynecology">Gynecology</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="ophthalmology" value="Ophthalmology">
+                                        <label class="form-check-label" for="ophthalmology">Ophthalmology</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="dental" value="Dental Care">
+                                        <label class="form-check-label" for="dental">Dental Care</label>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="laboratory" value="Laboratory Services">
+                                        <label class="form-check-label" for="laboratory">Laboratory Services</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="emergency" value="Emergency Care">
+                                        <label class="form-check-label" for="emergency">Emergency Care</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="physiotherapy" value="Physiotherapy">
+                                        <label class="form-check-label" for="physiotherapy">Physiotherapy</label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="mental" value="Mental Health">
+                                        <label class="form-check-label" for="mental">Mental Health</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="step-content fade-in" id="step3" style="display: none;">
+                    <h2>
+                        <div class="step-icon">
+                            <i class="fas fa-life-ring"></i>
+                        </div>
+                        Step 3: Help & Support
+                    </h2>
+                    <p class="step-description">
+                        Need help getting started? Here are some resources to help you make the most of your clinic dashboard.
+                    </p>
+
+                    <div class="support-grid">
+                        <div class="support-card">
+                            <div class="support-card-icon">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <h3>Getting Started Guide</h3>
+                            <p>Learn how to set up your clinic dashboard and start managing appointments.</p>
+                            <button class="btn btn-primary">View Guide</button>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-card-icon">
+                                <i class="fas fa-video"></i>
+                            </div>
+                            <h3>Video Tutorials</h3>
+                            <p>Watch step-by-step video tutorials to master all features of your dashboard.</p>
+                            <button class="btn btn-primary">Watch Videos</button>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-card-icon">
+                                <i class="fas fa-headset"></i>
+                            </div>
+                            <h3>24/7 Support</h3>
+                            <p>Our support team is available 24/7 to help you with any questions or issues.</p>
+                            <button class="btn btn-primary">Contact Support</button>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-card-icon">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3>Community Forum</h3>
+                            <p>Join our community of healthcare professionals to share tips and best practices.</p>
+                            <button class="btn btn-primary">Join Forum</button>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-card-icon">
+                                <i class="fas fa-mobile-alt"></i>
+                            </div>
+                            <h3>Mobile App</h3>
+                            <p>Download our mobile app to manage your clinic on the go.</p>
+                            <button class="btn btn-primary">Download App</button>
+                        </div>
+                        
+                        <div class="support-card">
+                            <div class="support-card-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <h3>Security & Privacy</h3>
+                            <p>Learn about our security measures and privacy policies to keep your data safe.</p>
+                            <button class="btn btn-primary">Learn More</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Navigation -->
+                <div class="step-navigation">
+                    <button class="btn btn-step btn-previous" id="prevBtn" onclick="changeStep(-1)" style="display: none;">
+                        <i class="fas fa-chevron-left"></i> Previous
+                    </button>
+                    <button class="btn btn-step btn-next" id="nextBtn" onclick="changeStep(1)">
+                        Next <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="btn btn-step btn-finish" id="finishBtn" onclick="finishSetup()" style="display: none;">
+                        <i class="fas fa-check"></i> Finish Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script>
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeSettings();
+            initializeGoogleMaps();
+            bindEvents();
+            loadExistingData();
+        });
+
+        let currentStep = 1;
+        let map;
+        let marker;
+        let autocomplete;
+        let placesService;
+
+        function initializeSettings() {
+            console.log('🚀 Initializing Modern Settings...');
+            AOS.init();
+        }
+
+        function initializeGoogleMaps() {
+            // Initialize map
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: -1.9441, lng: 30.0619 }, // Kigali, Rwanda
+                zoom: 13,
+                styles: [
+                    {
+                        featureType: 'poi.business',
+                        stylers: [{ visibility: 'on' }]
+                    },
+                    {
+                        featureType: 'poi.medical',
+                        stylers: [{ visibility: 'on' }]
+                    }
+                ]
+            });
+
+            // Initialize Places service
+            placesService = new google.maps.places.PlacesService(map);
+
+            // Initialize autocomplete
+            const input = document.getElementById('hospitalSearch');
+            autocomplete = new google.maps.places.Autocomplete(input, {
+                types: ['establishment'],
+                fields: ['name', 'formatted_address', 'geometry', 'place_id', 'types']
+            });
+
+            autocomplete.addListener('place_changed', handlePlaceSelect);
+        }
+
+        function handlePlaceSelect() {
+            const place = autocomplete.getPlace();
+            
+            if (!place.geometry) {
+                console.log('No geometry available for place');
+                return;
+            }
+
+            // Update map
+            map.setCenter(place.geometry.location);
+            map.setZoom(15);
+
+            // Remove existing marker
+            if (marker) {
+                marker.setMap(null);
+            }
+
+            // Add new marker
+            marker = new google.maps.Marker({
+                position: place.geometry.location,
+                map: map,
+                title: place.name,
+                icon: {
+                    url: 'https://maps.google.com/mapfiles/ms/icons/hospitals.png',
+                    scaledSize: new google.maps.Size(40, 40)
+                }
+            });
+
+            // Update form fields
+            document.getElementById('selectedAddress').value = place.formatted_address;
+            document.getElementById('latitude').value = place.geometry.location.lat();
+            document.getElementById('longitude').value = place.geometry.location.lng();
+
+            // Show success message
+            Swal.fire({
+                icon: 'success',
+                title: 'Location Found!',
+                text: `Selected: ${place.name}`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        function bindEvents() {
+            // Profile image upload
+            document.getElementById('profileImageInput').addEventListener('change', handleImageUpload);
+            
+            // Form validation
+            document.getElementById('clinicName').addEventListener('input', validateForm);
+            document.getElementById('clinicPhone').addEventListener('input', validateForm);
+        }
+
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profileImagePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function validateForm() {
+            const name = document.getElementById('clinicName').value.trim();
+            const phone = document.getElementById('clinicPhone').value.trim();
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (currentStep === 2) {
+                nextBtn.disabled = !name || !phone;
+            }
+        }
+
+        function loadExistingData() {
+            // Load existing clinic data
+            fetch('/api/settings/clinic-data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data) {
+                        populateFormData(data.data);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading clinic data:', error);
+                });
+        }
+
+        function populateFormData(data) {
+            // Populate form fields
+            if (data.clinicName) document.getElementById('clinicName').value = data.clinicName;
+            if (data.phone) document.getElementById('clinicPhone').value = data.phone;
+            if (data.about) document.getElementById('clinicAbout').value = data.about;
+            if (data.address) document.getElementById('selectedAddress').value = data.address;
+            if (data.latitude) document.getElementById('latitude').value = data.latitude;
+            if (data.longitude) document.getElementById('longitude').value = data.longitude;
+
+            // Populate facilities
+            if (data.facilities && Array.isArray(data.facilities)) {
+                data.facilities.forEach(facility => {
+                    const checkbox = document.querySelector(`input[value="${facility}"]`);
+                    if (checkbox) checkbox.checked = true;
+                });
+            }
+
+            // Update map if location exists
+            if (data.latitude && data.longitude) {
+                const lat = parseFloat(data.latitude);
+                const lng = parseFloat(data.longitude);
+                const location = new google.maps.LatLng(lat, lng);
+                
+                map.setCenter(location);
+                map.setZoom(15);
+                
+                if (marker) marker.setMap(null);
+                marker = new google.maps.Marker({
+                    position: location,
+                    map: map,
+                    title: data.clinicName,
+                    icon: {
+                        url: 'https://maps.google.com/mapfiles/ms/icons/hospitals.png',
+                        scaledSize: new google.maps.Size(40, 40)
+                    }
+                });
+            }
+        }
+
+        function changeStep(direction) {
+            const totalSteps = 3;
+            const newStep = currentStep + direction;
+            
+            if (newStep < 1 || newStep > totalSteps) return;
+            
+            // Validate current step before proceeding
+            if (direction === 1 && !validateCurrentStep()) return;
+            
+            // Hide current step
+            document.getElementById(`step${currentStep}`).style.display = 'none';
+            
+            // Update stepper
+            updateStepper(newStep);
+            
+            // Show new step
+            document.getElementById(`step${newStep}`).style.display = 'block';
+            document.getElementById(`step${newStep}`).classList.add('fade-in');
+            
+            currentStep = newStep;
+            updateNavigation();
+        }
+
+        function validateCurrentStep() {
+            if (currentStep === 1) {
+                const address = document.getElementById('selectedAddress').value.trim();
+                if (!address) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Location Required',
+                        text: 'Please search and select your hospital location first.'
+                    });
+                    return false;
+                }
+            } else if (currentStep === 2) {
+                const name = document.getElementById('clinicName').value.trim();
+                const phone = document.getElementById('clinicPhone').value.trim();
+                if (!name || !phone) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Required Fields',
+                        text: 'Please fill in all required fields (Clinic Name and Phone Number).'
+                    });
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function updateStepper(activeStep) {
+            const steps = document.querySelectorAll('.stepper-step');
+            steps.forEach((step, index) => {
+                const stepNum = index + 1;
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum === activeStep) {
+                    step.classList.add('active');
+                } else if (stepNum < activeStep) {
+                    step.classList.add('completed');
+                    step.querySelector('.stepper-circle').innerHTML = '<i class="fas fa-check"></i>';
+                } else {
+                    // Reset icon for future steps
+                    const icons = ['fas fa-map-marker-alt', 'fas fa-hospital', 'fas fa-life-ring'];
+                    step.querySelector('.stepper-circle').innerHTML = `<i class="${icons[index]}"></i>`;
+                }
+            });
+        }
+
+        function updateNavigation() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const finishBtn = document.getElementById('finishBtn');
+            
+            prevBtn.style.display = currentStep > 1 ? 'block' : 'none';
+            nextBtn.style.display = currentStep < 3 ? 'block' : 'none';
+            finishBtn.style.display = currentStep === 3 ? 'block' : 'none';
+        }
+
+        async function finishSetup() {
+            try {
+                // Show loading
+                Swal.fire({
+                    title: 'Saving Settings...',
+                    text: 'Please wait while we save your clinic settings.',
+                    allowOutsideClick: false,
+                    didOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Collect all form data
+                const formData = collectFormData();
+                
+                // Save to backend
+                const response = await fetch('/api/settings/save-all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Setup Complete!',
+                        text: 'Your clinic settings have been saved successfully.',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        window.location.href = '/dashboard';
+                    });
+                } else {
+                    throw new Error(result.message || 'Failed to save settings');
+                }
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'Failed to save settings. Please try again.'
+                });
+            }
+        }
+
+        function collectFormData() {
+            // Collect facilities
+            const facilities = [];
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                facilities.push(checkbox.value);
+            });
+
+            return {
+                clinicName: document.getElementById('clinicName').value.trim(),
+                phone: document.getElementById('clinicPhone').value.trim(),
+                about: document.getElementById('clinicAbout').value.trim(),
+                address: document.getElementById('selectedAddress').value.trim(),
+                latitude: document.getElementById('latitude').value,
+                longitude: document.getElementById('longitude').value,
+                facilities: facilities
+            };
+        }
+    </script>
+</body>
+</html> 

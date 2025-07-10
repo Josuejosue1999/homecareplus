@@ -16,17 +16,19 @@ class DashboardNavigation {
         const dashboardLink = document.querySelector('a[href="#dashboard"]');
         const appointmentsLink = document.querySelector('a[href="#appointments"]');
         const messagesLink = document.querySelector('a[href="#messages"]');
+        const myProfileLink = document.getElementById('my-profile-link');
         
         const dashboardContent = document.querySelector('.dashboard-content');
         const settingsContent = document.getElementById('settings-content');
         const appointmentsContent = document.getElementById('appointments-content');
         const messagesContent = document.getElementById('messages-content');
+        const myProfileContent = document.getElementById('my-profile-content');
 
         // Settings navigation
         if (settingsLink) {
             settingsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('settings', dashboardContent, settingsContent, appointmentsContent, messagesContent);
+                this.showSection('settings', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
                 this.updateHeaderTitle('Settings');
                 // Initialize settings page if not already done
                 if (typeof settingsPage !== 'undefined' && settingsPage.init) {
@@ -39,7 +41,7 @@ class DashboardNavigation {
         if (dashboardLink) {
             dashboardLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('dashboard', dashboardContent, settingsContent, appointmentsContent, messagesContent);
+                this.showSection('dashboard', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
                 this.updateHeaderTitle('Dashboard');
             });
         }
@@ -48,7 +50,7 @@ class DashboardNavigation {
         if (appointmentsLink) {
             appointmentsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('appointments', dashboardContent, settingsContent, appointmentsContent, messagesContent);
+                this.showSection('appointments', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
                 this.updateHeaderTitle('Appointments');
                 // Initialize appointments page if not already done
                 if (typeof appointmentsPage !== 'undefined' && appointmentsPage.init) {
@@ -61,7 +63,7 @@ class DashboardNavigation {
         if (messagesLink) {
             messagesLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('messages', dashboardContent, settingsContent, appointmentsContent, messagesContent);
+                this.showSection('messages', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
                 this.updateHeaderTitle('Messages');
                 // Initialize messages page if not already done
                 if (typeof messagesPage !== 'undefined' && messagesPage.init) {
@@ -69,15 +71,29 @@ class DashboardNavigation {
                 }
             });
         }
+
+        // My Profile navigation
+        if (myProfileLink) {
+            myProfileLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSection('my-profile', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
+                this.updateHeaderTitle('My Profile');
+                // Initialize profile steps if not already done
+                if (typeof profileSteps !== 'undefined' && profileSteps.init) {
+                    setTimeout(() => profileSteps.init(), 100);
+                }
+            });
+        }
     }
 
     // Show specific section
-    showSection(section, dashboardContent, settingsContent, appointmentsContent, messagesContent) {
+    showSection(section, dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent) {
         // Hide all sections
         if (dashboardContent) dashboardContent.style.display = 'none';
         if (settingsContent) settingsContent.style.display = 'none';
         if (appointmentsContent) appointmentsContent.style.display = 'none';
         if (messagesContent) messagesContent.style.display = 'none';
+        if (myProfileContent) myProfileContent.style.display = 'none';
 
         // Show selected section
         switch (section) {
@@ -92,6 +108,9 @@ class DashboardNavigation {
                 break;
             case 'messages':
                 if (messagesContent) messagesContent.style.display = 'block';
+                break;
+            case 'my-profile':
+                if (myProfileContent) myProfileContent.style.display = 'block';
                 break;
         }
 
@@ -111,7 +130,8 @@ class DashboardNavigation {
             'dashboard': 'a[href="#dashboard"]',
             'appointments': 'a[href="#appointments"]', 
             'messages': 'a[href="#messages"]',
-            'settings': 'a[href="#settings"]'
+            'settings': 'a[href="#settings"]',
+            'my-profile': 'a[href="#my-profile"]'
         };
 
         const selector = sectionMap[section];
@@ -131,7 +151,8 @@ class DashboardNavigation {
                 'Dashboard': 'fas fa-tachometer-alt',
                 'Settings': 'fas fa-cog',
                 'Appointments': 'fas fa-calendar-check',
-                'Messages': 'fas fa-comments'
+                'Messages': 'fas fa-comments',
+                'My Profile': 'fas fa-user-edit'
             };
             const icon = icons[title] || 'fas fa-home';
             headerTitle.innerHTML = `<i class="${icon} me-2"></i>${title}`;

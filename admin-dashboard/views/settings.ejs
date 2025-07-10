@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - HomeCare Plus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Floating Particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HomeCare Plus</span>
+                </div>
+                <div class="sidebar-user">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="user-info">
+                        <h6>Admin System</h6>
+                        <span>Super Administrator</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/clinics" class="nav-link">
+                        <i class="fas fa-hospital"></i>
+                        <span>Healthcare Centers</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/user-management" class="nav-link">
+                        <i class="fas fa-users-cog"></i>
+                        <span>User Management</span>
+                    </a>
+                </div>
+                <div class="nav-item active">
+                    <a href="/settings" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        <span>Settings</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" onclick="handleLogout(); return false;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>System Settings</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Search settings...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <div class="user-menu" id="userMenu">
+                        <div class="user-avatar-small">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Content -->
+            <div class="dashboard-content">
+                <!-- Page Header -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-cogs"></i>
+                                    Admin Settings Panel
+                                </h5>
+                                <div class="card-actions">
+                                    <span class="text-primary">Configure your system preferences</span>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <p class="text-light">Manage your HomeCare Plus platform settings, security, and system preferences.</p>
+                                    </div>
+                                    <div class="col-md-4 text-center">
+                                        <div class="settings-illustration">
+                                            <i class="fas fa-tools text-primary" style="font-size: 3rem; opacity: 0.3;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- General Settings -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-sliders-h"></i>
+                                    General Settings
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="action-btn primary" onclick="saveGeneralSettings()">
+                                        <i class="fas fa-save"></i>
+                                        Save Changes
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="form-group">
+                                    <label>Application Name</label>
+                                    <input type="text" class="form-control" value="HomeCare Plus" id="appName">
+                                </div>
+                                <div class="form-group">
+                                    <label>Admin Email</label>
+                                    <input type="email" class="form-control" value="admin@homecareplus.com" id="adminEmail">
+                                </div>
+                                <div class="form-group">
+                                    <label>Timezone</label>
+                                    <select class="form-control" id="timezone">
+                                        <option value="UTC">UTC (GMT+0)</option>
+                                        <option value="EST">Eastern Time (GMT-5)</option>
+                                        <option value="PST">Pacific Time (GMT-8)</option>
+                                        <option value="EAT" selected>East Africa Time (GMT+3)</option>
+                                        <option value="CET">Central European Time (GMT+1)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Language</label>
+                                    <select class="form-control" id="language">
+                                        <option value="en" selected>English</option>
+                                        <option value="fr">French</option>
+                                        <option value="es">Spanish</option>
+                                        <option value="sw">Swahili</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Currency</label>
+                                    <select class="form-control" id="currency">
+                                        <option value="USD" selected>USD ($)</option>
+                                        <option value="EUR">EUR (€)</option>
+                                        <option value="RWF">RWF (₹)</option>
+                                        <option value="KES">KES (KSh)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-shield-alt"></i>
+                                    Security Settings
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="action-btn warning" onclick="saveSecuritySettings()">
+                                        <i class="fas fa-lock"></i>
+                                        Update Security
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="form-group">
+                                    <label>Change Password</label>
+                                    <input type="password" class="form-control" placeholder="Current Password" id="currentPassword">
+                                    <input type="password" class="form-control mt-2" placeholder="New Password" id="newPassword">
+                                    <input type="password" class="form-control mt-2" placeholder="Confirm New Password" id="confirmPassword">
+                                </div>
+                                <div class="form-group">
+                                    <label>Two-Factor Authentication</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="twoFactorAuth">
+                                        <label for="twoFactorAuth" class="switch-label">
+                                            <span class="switch-inner"></span>
+                                            <span class="switch-switch"></span>
+                                        </label>
+                                        <span class="switch-text">Enable 2FA</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Session Timeout (minutes)</label>
+                                    <select class="form-control" id="sessionTimeout">
+                                        <option value="30">30 minutes</option>
+                                        <option value="60" selected>1 hour</option>
+                                        <option value="120">2 hours</option>
+                                        <option value="480">8 hours</option>
+                                        <option value="1440">24 hours</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Login Attempts</label>
+                                    <select class="form-control" id="loginAttempts">
+                                        <option value="3">3 attempts</option>
+                                        <option value="5" selected>5 attempts</option>
+                                        <option value="10">10 attempts</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notification & System Settings -->
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-bell"></i>
+                                    Notification Settings
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="action-btn info" onclick="saveNotificationSettings()">
+                                        <i class="fas fa-bell"></i>
+                                        Save Notifications
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="form-group">
+                                    <label>Email Notifications</label>
+                                    <div class="notification-options">
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="newUserNotif" checked>
+                                            <label for="newUserNotif" class="switch-label">
+                                                <span class="switch-inner"></span>
+                                                <span class="switch-switch"></span>
+                                            </label>
+                                            <span class="switch-text">New user registrations</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="clinicNotif" checked>
+                                            <label for="clinicNotif" class="switch-label">
+                                                <span class="switch-inner"></span>
+                                                <span class="switch-switch"></span>
+                                            </label>
+                                            <span class="switch-text">Clinic approval requests</span>
+                                        </div>
+                                        <div class="toggle-switch">
+                                            <input type="checkbox" id="systemNotif">
+                                            <label for="systemNotif" class="switch-label">
+                                                <span class="switch-inner"></span>
+                                                <span class="switch-switch"></span>
+                                            </label>
+                                            <span class="switch-text">System alerts</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>SMS Notifications</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="smsNotif">
+                                        <label for="smsNotif" class="switch-label">
+                                            <span class="switch-inner"></span>
+                                            <span class="switch-switch"></span>
+                                        </label>
+                                        <span class="switch-text">Enable SMS alerts</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Push Notifications</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="pushNotif" checked>
+                                        <label for="pushNotif" class="switch-label">
+                                            <span class="switch-inner"></span>
+                                            <span class="switch-switch"></span>
+                                        </label>
+                                        <span class="switch-text">Enable push notifications</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-6">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-server"></i>
+                                    System Settings
+                                </h5>
+                                <div class="card-actions">
+                                    <button class="action-btn secondary" onclick="saveSystemSettings()">
+                                        <i class="fas fa-cog"></i>
+                                        Apply Settings
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="form-group">
+                                    <label>Maintenance Mode</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="maintenanceMode">
+                                        <label for="maintenanceMode" class="switch-label">
+                                            <span class="switch-inner"></span>
+                                            <span class="switch-switch"></span>
+                                        </label>
+                                        <span class="switch-text">Enable maintenance mode</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Auto Backup</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="autoBackup" checked>
+                                        <label for="autoBackup" class="switch-label">
+                                            <span class="switch-inner"></span>
+                                            <span class="switch-switch"></span>
+                                        </label>
+                                        <span class="switch-text">Daily automatic backups</span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Data Retention (days)</label>
+                                    <select class="form-control" id="dataRetention">
+                                        <option value="30">30 days</option>
+                                        <option value="90" selected>90 days</option>
+                                        <option value="180">180 days</option>
+                                        <option value="365">1 year</option>
+                                        <option value="0">Forever</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Log Level</label>
+                                    <select class="form-control" id="logLevel">
+                                        <option value="error">Error only</option>
+                                        <option value="warning" selected>Warning & Error</option>
+                                        <option value="info">Info, Warning & Error</option>
+                                        <option value="debug">All (Debug mode)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="content-card fade-in-up glass-effect">
+                            <div class="card-header">
+                                <h5>
+                                    <i class="fas fa-bolt"></i>
+                                    Quick Actions
+                                </h5>
+                                <div class="card-actions">
+                                    <span class="text-light">Perform system operations</span>
+                                </div>
+                            </div>
+                            <div class="card-content">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <button class="action-btn primary full-width" onclick="clearCache()">
+                                            <i class="fas fa-trash-alt"></i>
+                                            <span>Clear Cache</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button class="action-btn info full-width" onclick="createBackup()">
+                                            <i class="fas fa-download"></i>
+                                            <span>Create Backup</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button class="action-btn warning full-width" onclick="checkHealth()">
+                                            <i class="fas fa-heartbeat"></i>
+                                            <span>System Health</span>
+                                        </button>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button class="action-btn secondary full-width" onclick="viewLogs()">
+                                            <i class="fas fa-file-alt"></i>
+                                            <span>View Logs</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+    <script>
+        // Settings Functions
+        function saveGeneralSettings() {
+            const appName = document.getElementById('appName').value;
+            const adminEmail = document.getElementById('adminEmail').value;
+            const timezone = document.getElementById('timezone').value;
+            const language = document.getElementById('language').value;
+            const currency = document.getElementById('currency').value;
+            
+            if (!appName || !adminEmail) {
+                Swal.fire('Error', 'Please fill in all required fields.', 'error');
+                return;
+            }
+            
+            Swal.fire({
+                title: 'Save General Settings',
+                text: 'Are you sure you want to save these changes?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Save Changes',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Saved!', 'General settings have been updated successfully.', 'success');
+                }
+            });
+        }
+
+        function saveSecuritySettings() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            if (newPassword && newPassword !== confirmPassword) {
+                Swal.fire('Error', 'New passwords do not match.', 'error');
+                return;
+            }
+            
+            Swal.fire({
+                title: 'Update Security Settings',
+                text: 'Are you sure you want to update security settings?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Update Security',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Updated!', 'Security settings have been updated successfully.', 'success');
+                    // Clear password fields
+                    document.getElementById('currentPassword').value = '';
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                }
+            });
+        }
+
+        function saveNotificationSettings() {
+            Swal.fire({
+                title: 'Save Notification Settings',
+                text: 'Update your notification preferences?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Save Settings',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Saved!', 'Notification settings have been updated.', 'success');
+                }
+            });
+        }
+
+        function saveSystemSettings() {
+            Swal.fire({
+                title: 'Apply System Settings',
+                text: 'Some changes may require system restart. Continue?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Apply Changes',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Applied!', 'System settings have been updated.', 'success');
+                }
+            });
+        }
+
+        function clearCache() {
+            Swal.fire({
+                title: 'Clear System Cache',
+                text: 'This will clear all cached data. Continue?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Clear Cache',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Cache Cleared!', 'System cache has been cleared successfully.', 'success');
+                }
+            });
+        }
+
+        function createBackup() {
+            Swal.fire({
+                title: 'Create Backup',
+                text: 'This will create a full system backup. This may take a few minutes.',
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Create Backup',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Backup Started!', 'System backup is being created. You will be notified when complete.', 'info');
+                }
+            });
+        }
+
+        function checkHealth() {
+            Swal.fire({
+                title: 'System Health Check',
+                html: `
+                    <div class="health-check">
+                        <div class="health-item">
+                            <span class="health-label">Database Connection:</span>
+                            <span class="health-status success">✓ Healthy</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Server Performance:</span>
+                            <span class="health-status success">✓ Optimal</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Memory Usage:</span>
+                            <span class="health-status warning">⚠ 68% Used</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">Storage Space:</span>
+                            <span class="health-status success">✓ 82% Available</span>
+                        </div>
+                        <div class="health-item">
+                            <span class="health-label">API Response Time:</span>
+                            <span class="health-status success">✓ 142ms</span>
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'Close'
+            });
+        }
+
+        function viewLogs() {
+            Swal.fire({
+                title: 'System Logs',
+                html: `
+                    <div class="logs-container">
+                        <div class="log-entry">
+                            <span class="log-time">2024-01-15 10:30:25</span>
+                            <span class="log-level info">INFO</span>
+                            <span class="log-message">User login successful</span>
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-time">2024-01-15 10:25:10</span>
+                            <span class="log-level success">SUCCESS</span>
+                            <span class="log-message">Backup completed successfully</span>
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-time">2024-01-15 10:20:05</span>
+                            <span class="log-level warning">WARNING</span>
+                            <span class="log-message">High memory usage detected</span>
+                        </div>
+                        <div class="log-entry">
+                            <span class="log-time">2024-01-15 10:15:30</span>
+                            <span class="log-level info">INFO</span>
+                            <span class="log-message">New clinic registration</span>
+                        </div>
+                    </div>
+                `,
+                width: '600px',
+                confirmButtonText: 'Close'
+            });
+        }
+
+        // Logout function
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout Confirmation',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Logout',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#159BBD'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                        window.location.href = '/login';
+                    });
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: var(--transition);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .switch-label {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+            cursor: pointer;
+        }
+
+        .switch-label input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            border-radius: 24px;
+            transition: var(--transition);
+        }
+
+        .switch-switch {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: var(--transition);
+        }
+
+        input:checked + .switch-label .switch-inner {
+            background-color: var(--primary-color);
+        }
+
+        input:checked + .switch-label .switch-switch {
+            transform: translateX(26px);
+        }
+
+        .switch-text {
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+
+        .notification-options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .full-width {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .health-check {
+            text-align: left;
+            margin-top: 1rem;
+        }
+
+        .health-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .health-item:last-child {
+            border-bottom: none;
+        }
+
+        .health-label {
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        .health-status {
+            font-weight: 600;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .health-status.success {
+            color: var(--success-color);
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .health-status.warning {
+            color: var(--warning-color);
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .logs-container {
+            text-align: left;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            display: flex;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .log-time {
+            color: var(--text-light);
+            min-width: 120px;
+        }
+
+        .log-level {
+            font-weight: 600;
+            min-width: 80px;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+        }
+
+        .log-level.info {
+            color: var(--info-color);
+            background: rgba(23, 162, 184, 0.1);
+        }
+
+        .log-level.success {
+            color: var(--success-color);
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .log-level.warning {
+            color: var(--warning-color);
+            background: rgba(255, 193, 7, 0.1);
+        }
+
+        .log-message {
+            color: var(--text-dark);
+            flex: 1;
+        }
+
+        .settings-illustration {
+            opacity: 0.5;
+        }
+    </style>
+</body>
+</html> 

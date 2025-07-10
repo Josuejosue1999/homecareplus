@@ -555,14 +555,6 @@
             <form id="registerForm">
                     <div class="form-row">
                 <div class="form-group">
-                            <label for="clinicName" class="form-label">Clinic Name</label>
-                            <input type="text" class="form-control" id="clinicName" name="clinicName" required>
-                            <i class="fas fa-hospital form-icon"></i>
-                        </div>
-                </div>
-
-                    <div class="form-row">
-                <div class="form-group">
                             <label for="email" class="form-label">Email Address</label>
                             <input type="email" class="form-control" id="email" name="email" required>
                             <i class="fas fa-envelope form-icon"></i>
@@ -671,7 +663,6 @@
             
             const formData = new FormData(e.target);
             const data = {
-                clinicName: formData.get('clinicName'),
                 email: formData.get('email'),
                 password: formData.get('password'),
                 confirmPassword: formData.get('confirmPassword')

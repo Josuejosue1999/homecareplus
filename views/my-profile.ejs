@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Health Center Dashboard</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    
+    <!-- Google Maps -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g&libraries=places"></script>
+    
+    <style>
+        :root {
+            --primary-color: #159BBD;
+            --primary-dark: #0D5C73;
+            --secondary-color: #42A5F5;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --light-gray: #f8f9fa;
+            --border-color: #e9ecef;
+            --text-muted: #6c757d;
+            --stepper-active: #159BBD;
+            --stepper-completed: #28a745;
+            --stepper-inactive: #dee2e6;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 3rem;
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .profile-header h1 {
+            color: var(--primary-color);
+            font-weight: 700;
+            font-size: 2.8rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .profile-header .header-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .profile-header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 0;
+        }
+
+        .profile-header .subtitle {
+            color: var(--primary-color);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Navigation Pills */
+        .nav-pills {
+            background: white;
+            border-radius: 15px;
+            padding: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .nav-pills .nav-link {
+            color: var(--text-muted);
+            font-weight: 600;
+            padding: 0.8rem 1.5rem;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-pills .nav-link:hover {
+            background: var(--light-gray);
+            color: var(--primary-color);
+        }
+
+        .nav-pills .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        /* Modern Stepper */
+        .stepper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 3rem;
+            position: relative;
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 25%;
+            right: 25%;
+            height: 3px;
+            background: var(--stepper-inactive);
+            z-index: 1;
+        }
+
+        .stepper-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+            max-width: 250px;
+        }
+
+        .stepper-circle {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: white;
+            background: var(--stepper-inactive);
+            border: 4px solid var(--stepper-inactive);
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .stepper-step.active .stepper-circle {
+            background: var(--stepper-active);
+            border-color: var(--stepper-active);
+            animation: pulse 2s infinite;
+            transform: scale(1.1);
+        }
+
+        .stepper-step.completed .stepper-circle {
+            background: var(--stepper-completed);
+            border-color: var(--stepper-completed);
+        }
+
+        .stepper-label {
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: center;
+            transition: color 0.3s ease;
+            font-size: 1.1rem;
+        }
+
+        .stepper-step.active .stepper-label {
+            color: var(--stepper-active);
+        }
+
+        .stepper-step.completed .stepper-label {
+            color: var(--stepper-completed);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(21, 155, 189, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(21, 155, 189, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(21, 155, 189, 0); }
+        }
+
+        /* Step Content */
+        .step-content {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            min-height: 600px;
+        }
+
+        .step-content h2 {
+            color: var(--primary-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .step-content .step-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+        }
+
+        .step-description {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            line-height: 1.6;
+        }
+
+        /* Hospital Search */
+        .hospital-search {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .search-input {
+            padding: 1.2rem;
+            border: 2px solid var(--border-color);
+            border-radius: 15px;
+            font-size: 1.2rem;
+            width: 100%;
+            transition: all 0.3s ease;
+            background: var(--light-gray);
+        }
+
+        .search-input:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+            background: white;
+        }
+
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 15px 15px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .search-result-item {
+            padding: 1rem;
+            cursor: pointer;
+            transition: background 0.3s ease;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-result-item:hover {
+            background: var(--light-gray);
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Form Styling */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .form-control {
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            background: var(--light-gray);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+            background: white;
+        }
+
+        .form-control.is-valid {
+            border-color: var(--success-color);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--danger-color);
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(21, 155, 189, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--text-muted);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #495057;
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .btn-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 3rem;
+        }
+
+        /* Map Container */
+        .map-container {
+            height: 300px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+
+        /* Profile Image Upload */
+        .profile-image-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .profile-preview {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            border: 3px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-preview:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.05);
+        }
+
+        .profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .profile-container {
+                padding: 1rem;
+            }
+            
+            .profile-header h1 {
+                font-size: 2rem;
+                flex-direction: column;
+            }
+            
+            .stepper {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .stepper::before {
+                display: none;
+            }
+            
+            .step-content {
+                padding: 2rem;
+            }
+            
+            .nav-pills {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+
+        /* Loading Animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="profile-container">
+        <!-- Header -->
+        <div class="profile-header" data-aos="fade-down" data-aos-duration="600">
+            <h1>
+                <div class="header-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                My Profile
+            </h1>
+            <p>Complete your healthcare facility profile in simple steps</p>
+            <div class="subtitle">Build trust with patients through a comprehensive profile</div>
+        </div>
+
+        <!-- Navigation Pills -->
+        <div class="nav-pills" data-aos="fade-up" data-aos-duration="600" data-aos-delay="100">
+            <a href="/dashboard" class="nav-link">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="/my-profile" class="nav-link active">
+                <i class="fas fa-user"></i> My Profile
+            </a>
+            <a href="/settings" class="nav-link">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </div>
+
+        <!-- Stepper -->
+        <div class="stepper" data-aos="fade-up" data-aos-duration="600" data-aos-delay="200">
+            <div class="stepper-step active" id="step1">
+                <div class="stepper-circle">
+                    <i class="fas fa-search"></i>
+                </div>
+                <div class="stepper-label">Find My Hospital</div>
+            </div>
+            <div class="stepper-step" id="step2">
+                <div class="stepper-circle">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                <div class="stepper-label">Profile Information</div>
+            </div>
+        </div>
+
+        <!-- Step 1: Find My Hospital -->
+        <div class="step-content" id="step1-content" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
+            <h2>
+                <div class="step-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                Find My Hospital
+            </h2>
+            <p class="step-description">
+                Search and select your hospital from our database or Google Maps integration. 
+                This helps patients find your location easily and builds trust through verified information.
+            </p>
+
+            <div class="hospital-search">
+                <input type="text" 
+                       class="search-input" 
+                       id="hospitalSearchInput" 
+                       placeholder="🏥 Search for your hospital (e.g., City Hospital, Medical Center...)">
+                <div class="search-results" id="searchResults"></div>
+            </div>
+
+            <div class="map-container">
+                <div id="map" style="height: 100%; width: 100%;"></div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Hospital Name</label>
+                        <input type="text" class="form-control" id="selectedHospitalName" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Address</label>
+                        <input type="text" class="form-control" id="selectedHospitalAddress" readonly>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Latitude</label>
+                        <input type="text" class="form-control" id="selectedLatitude" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Longitude</label>
+                        <input type="text" class="form-control" id="selectedLongitude" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Profile Information -->
+        <div class="step-content" id="step2-content" style="display: none;" data-aos="fade-up" data-aos-duration="600" data-aos-delay="300">
+            <h2>
+                <div class="step-icon">
+                    <i class="fas fa-id-card"></i>
+                </div>
+                Profile Information
+            </h2>
+            <p class="step-description">
+                Complete your profile with essential information that patients need to know. 
+                This information will be displayed on your public profile and helps build credibility.
+            </p>
+
+            <div class="profile-image-upload">
+                <div class="profile-preview" id="profilePreview">
+                    <i class="fas fa-camera"></i>
+                </div>
+                <input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+                <button type="button" class="btn btn-secondary" onclick="document.getElementById('profileImageInput').click()">
+                    <i class="fas fa-upload"></i> Upload Profile Photo
+                </button>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Clinic Name *</label>
+                        <input type="text" class="form-control" id="clinicName" placeholder="Enter your clinic name">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Email Address *</label>
+                        <input type="email" class="form-control" id="clinicEmail" placeholder="clinic@example.com">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Phone Number *</label>
+                        <input type="tel" class="form-control" id="clinicPhone" placeholder="+1 (555) 123-4567">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Website (Optional)</label>
+                        <input type="url" class="form-control" id="clinicWebsite" placeholder="https://www.yourclinic.com">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">About Your Clinic</label>
+                <textarea class="form-control" id="clinicAbout" rows="5" 
+                          placeholder="Tell patients about your clinic, services, specialties, and what makes you unique..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Services & Specialties</label>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service1" value="General Medicine">
+                            <label class="form-check-label" for="service1">General Medicine</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service2" value="Cardiology">
+                            <label class="form-check-label" for="service2">Cardiology</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service3" value="Pediatrics">
+                            <label class="form-check-label" for="service3">Pediatrics</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service4" value="Orthopedics">
+                            <label class="form-check-label" for="service4">Orthopedics</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service5" value="Dermatology">
+                            <label class="form-check-label" for="service5">Dermatology</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service6" value="Gynecology">
+                            <label class="form-check-label" for="service6">Gynecology</label>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service7" value="Neurology">
+                            <label class="form-check-label" for="service7">Neurology</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service8" value="Ophthalmology">
+                            <label class="form-check-label" for="service8">Ophthalmology</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="service9" value="Emergency Care">
+                            <label class="form-check-label" for="service9">Emergency Care</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="btn-navigation">
+            <button type="button" class="btn btn-secondary" id="prevBtn" onclick="previousStep()" style="display: none;">
+                <i class="fas fa-arrow-left"></i> Previous
+            </button>
+            <button type="button" class="btn btn-primary" id="nextBtn" onclick="nextStep()">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+            <button type="button" class="btn btn-success" id="saveBtn" onclick="saveProfile()" style="display: none;">
+                <i class="fas fa-save"></i> Save Profile
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 600,
+            once: true
+        });
+
+        let currentStep = 1;
+        let map;
+        let marker;
+        let selectedHospital = null;
+
+        // Initialize Google Maps
+        function initMap() {
+            map = new google.maps.Map(document.getElementById('map'), {
+                zoom: 13,
+                center: { lat: 40.7128, lng: -74.0060 }, // Default to New York
+                styles: [
+                    {
+                        featureType: 'poi.business',
+                        stylers: [{ visibility: 'off' }]
+                    }
+                ]
+            });
+
+            // Get user's location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    const userLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    map.setCenter(userLocation);
+                });
+            }
+        }
+
+        // Hospital search functionality
+        document.getElementById('hospitalSearchInput').addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length > 2) {
+                searchHospitals(query);
+            } else {
+                hideSearchResults();
+            }
+        });
+
+        function searchHospitals(query) {
+            const service = new google.maps.places.PlacesService(map);
+            const request = {
+                query: query + ' hospital',
+                fields: ['name', 'place_id', 'geometry', 'formatted_address', 'rating'],
+                type: 'hospital'
+            };
+
+            service.textSearch(request, function(results, status) {
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    displaySearchResults(results);
+                }
+            });
+        }
+
+        function displaySearchResults(results) {
+            const searchResults = document.getElementById('searchResults');
+            searchResults.innerHTML = '';
+            
+            results.slice(0, 5).forEach(place => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'search-result-item';
+                resultItem.innerHTML = `
+                    <div>
+                        <strong>${place.name}</strong>
+                        <div style="font-size: 0.9em; color: #666;">${place.formatted_address}</div>
+                        ${place.rating ? `<div style="font-size: 0.8em; color: #28a745;">⭐ ${place.rating}</div>` : ''}
+                    </div>
+                `;
+                resultItem.addEventListener('click', () => selectHospital(place));
+                searchResults.appendChild(resultItem);
+            });
+            
+            searchResults.style.display = 'block';
+        }
+
+        function selectHospital(place) {
+            selectedHospital = place;
+            
+            // Update form fields
+            document.getElementById('selectedHospitalName').value = place.name;
+            document.getElementById('selectedHospitalAddress').value = place.formatted_address;
+            document.getElementById('selectedLatitude').value = place.geometry.location.lat();
+            document.getElementById('selectedLongitude').value = place.geometry.location.lng();
+            
+            // Update map
+            map.setCenter(place.geometry.location);
+            map.setZoom(16);
+            
+            // Add marker
+            if (marker) {
+                marker.setMap(null);
+            }
+            marker = new google.maps.Marker({
+                position: place.geometry.location,
+                map: map,
+                title: place.name,
+                icon: {
+                    url: 'https://maps.google.com/mapfiles/ms/icons/hospitals.png',
+                    scaledSize: new google.maps.Size(32, 32)
+                }
+            });
+            
+            // Hide search results
+            hideSearchResults();
+            
+            // Clear search input
+            document.getElementById('hospitalSearchInput').value = place.name;
+            
+            // Validate step
+            validateStep1();
+        }
+
+        function hideSearchResults() {
+            document.getElementById('searchResults').style.display = 'none';
+        }
+
+        function validateStep1() {
+            const isValid = selectedHospital !== null;
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (isValid) {
+                nextBtn.disabled = false;
+                nextBtn.classList.remove('btn-secondary');
+                nextBtn.classList.add('btn-primary');
+            } else {
+                nextBtn.disabled = true;
+                nextBtn.classList.remove('btn-primary');
+                nextBtn.classList.add('btn-secondary');
+            }
+        }
+
+        function validateStep2() {
+            const clinicName = document.getElementById('clinicName').value.trim();
+            const clinicEmail = document.getElementById('clinicEmail').value.trim();
+            const clinicPhone = document.getElementById('clinicPhone').value.trim();
+            
+            const isValid = clinicName && clinicEmail && clinicPhone;
+            const saveBtn = document.getElementById('saveBtn');
+            
+            if (isValid) {
+                saveBtn.disabled = false;
+                saveBtn.classList.remove('btn-secondary');
+                saveBtn.classList.add('btn-success');
+            } else {
+                saveBtn.disabled = true;
+                saveBtn.classList.remove('btn-success');
+                saveBtn.classList.add('btn-secondary');
+            }
+        }
+
+        function nextStep() {
+            if (currentStep === 1) {
+                if (!selectedHospital) {
+                    alert('Please select a hospital first!');
+                    return;
+                }
+                
+                currentStep = 2;
+                showStep(2);
+                updateStepper();
+                updateButtons();
+            }
+        }
+
+        function previousStep() {
+            if (currentStep === 2) {
+                currentStep = 1;
+                showStep(1);
+                updateStepper();
+                updateButtons();
+            }
+        }
+
+        function showStep(step) {
+            // Hide all steps
+            document.getElementById('step1-content').style.display = 'none';
+            document.getElementById('step2-content').style.display = 'none';
+            
+            // Show current step
+            document.getElementById(`step${step}-content`).style.display = 'block';
+            
+            // Re-initialize AOS for new content
+            AOS.refresh();
+        }
+
+        function updateStepper() {
+            // Reset all steps
+            document.querySelectorAll('.stepper-step').forEach(step => {
+                step.classList.remove('active', 'completed');
+            });
+            
+            // Set active step
+            document.getElementById(`step${currentStep}`).classList.add('active');
+            
+            // Set completed steps
+            for (let i = 1; i < currentStep; i++) {
+                document.getElementById(`step${i}`).classList.add('completed');
+            }
+        }
+
+        function updateButtons() {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const saveBtn = document.getElementById('saveBtn');
+            
+            if (currentStep === 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'inline-flex';
+                saveBtn.style.display = 'none';
+                validateStep1();
+            } else if (currentStep === 2) {
+                prevBtn.style.display = 'inline-flex';
+                nextBtn.style.display = 'none';
+                saveBtn.style.display = 'inline-flex';
+                validateStep2();
+            }
+        }
+
+        // Profile image upload
+        document.getElementById('profileImageInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('profilePreview');
+                    preview.innerHTML = `<img src="${e.target.result}" alt="Profile">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form validation
+        document.getElementById('clinicName').addEventListener('input', validateStep2);
+        document.getElementById('clinicEmail').addEventListener('input', validateStep2);
+        document.getElementById('clinicPhone').addEventListener('input', validateStep2);
+
+        function saveProfile() {
+            const profileData = {
+                // Hospital data
+                hospitalName: selectedHospital.name,
+                hospitalAddress: selectedHospital.formatted_address,
+                latitude: selectedHospital.geometry.location.lat(),
+                longitude: selectedHospital.geometry.location.lng(),
+                
+                // Profile data
+                clinicName: document.getElementById('clinicName').value.trim(),
+                email: document.getElementById('clinicEmail').value.trim(),
+                phone: document.getElementById('clinicPhone').value.trim(),
+                website: document.getElementById('clinicWebsite').value.trim(),
+                about: document.getElementById('clinicAbout').value.trim(),
+                
+                // Services
+                services: Array.from(document.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value)
+            };
+
+            const saveBtn = document.getElementById('saveBtn');
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<span class="loading"></span> Saving...';
+            saveBtn.disabled = true;
+
+            // TODO: Send to backend
+            setTimeout(() => {
+                alert('Profile saved successfully!');
+                saveBtn.innerHTML = originalText;
+                saveBtn.disabled = false;
+                
+                // Redirect to dashboard
+                window.location.href = '/dashboard';
+            }, 2000);
+        }
+
+        // Initialize
+        window.onload = function() {
+            initMap();
+            updateButtons();
+        };
+    </script>
+</body>
+</html> 

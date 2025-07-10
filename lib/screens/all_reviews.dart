@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class AllReviewsPage extends StatelessWidget {
   final String hospitalName;
-  final List<Map<String, String>> reviews;
+  final List<Map<String, dynamic>> reviews;
 
   const AllReviewsPage({
     Key? key,
@@ -23,6 +23,13 @@ class AllReviewsPage extends StatelessWidget {
         itemCount: reviews.length,
         itemBuilder: (context, index) {
           final review = reviews[index];
+          
+          // Handle different review formats (Google Places vs regular)
+          final authorName = review['author_name'] ?? review['name'] ?? 'Anonymous';
+          final rating = review['rating']?.toString() ?? '0.0';
+          final comment = review['text'] ?? review['comment'] ?? 'No comment provided';
+          final date = review['relative_time_description'] ?? review['date'] ?? 'Recently';
+          
           return Container(
             margin: const EdgeInsets.only(bottom: 16),
             padding: const EdgeInsets.all(16),
@@ -43,13 +50,26 @@ class AllReviewsPage extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      backgroundColor: Colors.grey[200],
-                      child: Text(
-                        review['name']![0].toUpperCase(),
-                        style: TextStyle(
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.bold,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color(0xFF159BBD).withOpacity(0.8),
+                            const Color(0xFF0D5C73).withOpacity(0.8),
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          authorName[0].toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -59,7 +79,7 @@ class AllReviewsPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            review['name']!,
+                            authorName,
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -67,10 +87,19 @@ class AllReviewsPage extends StatelessWidget {
                           ),
                           Row(
                             children: [
-                              Icon(Icons.star, color: Colors.amber, size: 16),
+                              Row(
+                                children: List.generate(5, (index) {
+                                  final ratingValue = double.tryParse(rating) ?? 0.0;
+                                  return Icon(
+                                    index < ratingValue.floor() ? Icons.star : Icons.star_border,
+                                    color: const Color(0xFFFFD700),
+                                    size: 16,
+                                  );
+                                }),
+                              ),
                               const SizedBox(width: 4),
                               Text(
-                                review['rating']!,
+                                rating,
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                   fontSize: 14,
@@ -82,7 +111,7 @@ class AllReviewsPage extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      review['date']!,
+                      date,
                       style: TextStyle(
                         color: Colors.grey[500],
                         fontSize: 12,
@@ -92,7 +121,7 @@ class AllReviewsPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  review['comment']!,
+                  comment,
                   style: TextStyle(
                     color: Colors.grey[700],
                     fontSize: 14,

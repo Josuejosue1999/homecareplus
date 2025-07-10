@@ -76,10 +76,10 @@ router.post("/login", async (req, res) => {
 // Route de register
 router.post("/register", async (req, res) => {
   try {
-    const { clinicName, email, password, confirmPassword } = req.body;
+    const { email, password, confirmPassword } = req.body;
     
     // Validation
-    if (!clinicName || !email || !password || !confirmPassword) {
+    if (!email || !password || !confirmPassword) {
       return res.status(400).json({
         success: false,
         message: "Tous les champs sont requis"
@@ -104,8 +104,12 @@ router.post("/register", async (req, res) => {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     
+    // Générer un nom de clinique par défaut basé sur l'email
+    const emailPrefix = email.split('@')[0];
+    const defaultClinicName = `${emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)} Health Center`;
+    
     // Générer un avatar par défaut (initiales avec couleur de fond)
-    const initials = clinicName.split(' ').map(word => word.charAt(0).toUpperCase()).join('').substring(0, 2);
+    const initials = defaultClinicName.split(' ').map(word => word.charAt(0).toUpperCase()).join('').substring(0, 2);
     const colors = ['#159BBD', '#28a745', '#dc3545', '#ffc107', '#6f42c1', '#fd7e14', '#20c997'];
     const randomColor = colors[Math.floor(Math.random() * colors.length)];
     
@@ -120,11 +124,12 @@ router.post("/register", async (req, res) => {
     
     // Créer le document clinique avec avatar par défaut
     await setDoc(doc(db, 'clinics', user.uid), {
-      name: clinicName,
-      clinicName: clinicName,
+      name: defaultClinicName,
+      clinicName: defaultClinicName,
       email: email,
       profileImageUrl: defaultAvatar,
       profileImage: defaultAvatar, // Pour compatibilité
+      profileSetupComplete: false, // Flag to indicate profile needs completion
       createdAt: new Date(),
       updatedAt: new Date(),
       lastUpdated: new Date()

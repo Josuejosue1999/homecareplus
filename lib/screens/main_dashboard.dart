@@ -1616,22 +1616,31 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                                               vertical: 8,
                                             ),
                                               decoration: BoxDecoration(
-                                              gradient: const LinearGradient(
-                                                colors: [Color(0xFF159BBD), Color(0xFF0D5C73)],
+                                              gradient: LinearGradient(
+                                                begin: Alignment.topLeft,
+                                                end: Alignment.bottomRight,
+                                                colors: [
+                                                  const Color(0xFF159BBD).withOpacity(0.1),
+                                                  const Color(0xFF0D5C73).withOpacity(0.05),
+                                                ],
                                               ),
                                               borderRadius: BorderRadius.circular(20),
+                                              border: Border.all(
+                                                color: const Color(0xFF159BBD).withOpacity(0.3),
+                                                width: 1,
+                                              ),
                                                 boxShadow: [
                                                   BoxShadow(
-                                                  color: const Color(0xFF159BBD).withOpacity(0.3),
-                                                  blurRadius: 8,
-                                                  offset: const Offset(0, 4),
+                                                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                  blurRadius: 4,
+                                                  offset: const Offset(0, 2),
                                                   ),
                                                 ],
                                               ),
                                             child: const Text(
                                               'View All',
                                               style: TextStyle(
-                                                color: Colors.white,
+                                                color: Color(0xFF159BBD),
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w600,
                                               ),

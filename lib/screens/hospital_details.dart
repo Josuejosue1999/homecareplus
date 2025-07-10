@@ -4,8 +4,9 @@ import 'dart:convert';
 import 'all_reviews.dart';
 import 'book_appointment.dart';
 import 'login.dart';
+import '../services/enhanced_hospital_service.dart';
 
-class HospitalDetailsPage extends StatelessWidget {
+class HospitalDetailsPage extends StatefulWidget {
   final String hospitalName;
   final String hospitalImage;
   final String address;
@@ -15,6 +16,9 @@ class HospitalDetailsPage extends StatelessWidget {
   final List<Map<String, String>> reviews;
   final String aboutText;
   final Map<String, Map<String, String>> hospitalSchedule;
+  final bool supportsBooking;
+  final bool isFromGooglePlaces;
+  final String? placeId;
 
   const HospitalDetailsPage({
     super.key,
@@ -27,39 +31,70 @@ class HospitalDetailsPage extends StatelessWidget {
     required this.reviews,
     required this.aboutText,
     required this.hospitalSchedule,
+    required this.supportsBooking,
+    required this.isFromGooglePlaces,
+    this.placeId,
   });
 
-  // Méthode pour déterminer si c'est un nouvel hôpital
-  bool get isNewHospital {
-    return address == 'Address to be updated' || 
-           address == 'Location to be updated' ||
-           address.isEmpty ||
-           aboutText.isEmpty ||
-           aboutText.contains('healthcare facility committed to providing exceptional medical care');
+  @override
+  State<HospitalDetailsPage> createState() => _HospitalDetailsPageState();
+}
+
+class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
+  List<Map<String, String>> _enhancedFacilities = [];
+  List<Map<String, dynamic>> _googlePlacesReviews = [];
+  Map<String, dynamic>? _hospitalDetails;
+  bool _isLoadingReviews = false;
+  bool _isLoadingDetails = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.isFromGooglePlaces && widget.placeId != null) {
+      _loadHospitalDetails();
+      _loadGooglePlacesReviews();
+    }
   }
 
-  // Méthode pour obtenir l'adresse formatée
-  String get formattedAddress {
-    if (isNewHospital) {
-      return '📍 Location information not available';
+  Future<void> _loadHospitalDetails() async {
+    setState(() {
+      _isLoadingDetails = true;
+    });
+
+    try {
+      final details = await EnhancedHospitalService.getHospitalDetails(widget.placeId!);
+      if (details != null) {
+        setState(() {
+          _hospitalDetails = details;
+          _enhancedFacilities = EnhancedHospitalService.getEnhancedFacilities(details);
+        });
+      }
+    } catch (e) {
+      print('Error loading hospital details: $e');
+    } finally {
+      setState(() {
+        _isLoadingDetails = false;
+      });
     }
-    return address;
   }
 
-  // Méthode pour obtenir le texte "About" amélioré
-  String get enhancedAboutText {
-    if (isNewHospital) {
-      return 'Information about this healthcare facility will be updated soon.';
-    }
-    return aboutText;
-  }
+  Future<void> _loadGooglePlacesReviews() async {
+    setState(() {
+      _isLoadingReviews = true;
+    });
 
-  // Méthode pour obtenir les installations par défaut
-  List<String> get enhancedFacilities {
-    if (isNewHospital) {
-      return ['Information not available'];
+    try {
+      final reviews = await EnhancedHospitalService.getHospitalReviews(widget.placeId!);
+      setState(() {
+        _googlePlacesReviews = reviews;
+      });
+    } catch (e) {
+      print('Error loading reviews: $e');
+    } finally {
+      setState(() {
+        _isLoadingReviews = false;
+      });
     }
-    return facilities;
   }
 
   @override
@@ -68,15 +103,18 @@ class HospitalDetailsPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: CustomScrollView(
         slivers: [
-          // App Bar with Image
+          // App Bar with Hero Image
           SliverAppBar(
             expandedHeight: 250,
+            floating: false,
             pinned: true,
+            backgroundColor: const Color(0xFF159BBD),
             flexibleSpace: FlexibleSpaceBar(
               background: Stack(
                 fit: StackFit.expand,
                 children: [
                   _buildHospitalImage(),
+                  // Gradient overlay
                   Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -84,571 +122,149 @@ class HospitalDetailsPage extends StatelessWidget {
                         end: Alignment.bottomCenter,
                         colors: [
                           Colors.transparent,
-                          Colors.black.withOpacity(0.7),
+                          Colors.black.withOpacity(0.3),
                         ],
                       ),
                     ),
                   ),
-                  // Badge pour nouvel hôpital
-                  if (isNewHospital)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.orange,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.new_releases, color: Colors.white, size: 16),
-                            SizedBox(width: 4),
-                            Text(
-                              'NEW',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            leading: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.arrow_back, color: Color(0xFF159BBD)),
-              ),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
-
-          // Hospital Details
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Hospital Name and Rating
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          hospitalName,
+                  // Hospital Name - Fixed positioning
+                  Positioned(
+                    bottom: 20,
+                    left: 20,
+                    right: 80, // Leave space for rating on the right
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.hospitalName,
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
-                            color: Color(0xFF159BBD),
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(
+                                offset: Offset(1, 1),
+                                blurRadius: 3,
+                                color: Colors.black26,
+                              ),
+                            ],
                           ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF159BBD).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
+                        const SizedBox(height: 8),
+                        Row(
                           children: [
-                            const Icon(
-                              Icons.star,
-                              color: Color(0xFF159BBD),
+                            Icon(
+                              Icons.location_on,
+                              color: Colors.white.withOpacity(0.9),
                               size: 16,
                             ),
                             const SizedBox(width: 4),
-                            Text(
-                              isNewHospital ? 'N/A' : rating.toString(),
-                              style: const TextStyle(
-                                color: Color(0xFF159BBD),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isNewHospital ? '(New)' : '($reviewCount)',
-                              style: const TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
+                            Expanded(
+                              child: Text(
+                                widget.address,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.white.withOpacity(0.9),
+                                  shadows: const [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black26,
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Address
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.location_on,
-                        color: Color(0xFF159BBD),
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          formattedAddress,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: isNewHospital ? Colors.orange[700] : Colors.grey,
-                            fontStyle: isNewHospital ? FontStyle.italic : FontStyle.normal,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  // About Section
-                  Text(
-                    'About',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey[800],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: isNewHospital ? Colors.orange[50] : Colors.grey[50],
-                      borderRadius: BorderRadius.circular(12),
-                      border: isNewHospital ? Border.all(color: Colors.orange[200]!) : null,
-                    ),
-                    child: Text(
-                      enhancedAboutText,
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 14,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Facilities Section
-                  const Text(
-                    'Available Facilities',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF159BBD),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: enhancedFacilities.map((facility) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF159BBD).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          facility,
-                          style: const TextStyle(
-                            color: Color(0xFF159BBD),
-                            fontSize: 14,
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Patient Reviews Section - Masqué pour les nouveaux hôpitaux
-                  if (!isNewHospital) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Patient Reviews',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey[800],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AllReviewsPage(
-                                  hospitalName: hospitalName,
-                                  reviews: reviews,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'View More',
-                            style: TextStyle(
-                              color: const Color(0xFF159BBD),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    // Show only first 3 reviews
-                    ...reviews.take(3).map((review) => Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
+                  ),
+                  // Rating Badge - Fixed positioning
+                  Positioned(
+                    bottom: 30,
+                    right: 20,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.amber,
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.1),
-                            spreadRadius: 1,
+                            color: Colors.black.withOpacity(0.2),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
                         ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.grey[200],
-                                child: Text(
-                                  review['name']?[0].toUpperCase() ?? 'A',
-                                  style: TextStyle(
-                                    color: Colors.grey[800],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      review['name'] ?? 'Anonymous',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    Row(
-                                      children: [
-                                        Icon(Icons.star, color: Colors.amber, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          review['rating'] ?? '0.0',
-                                          style: TextStyle(
-                                            color: Colors.grey[600],
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Text(
-                                review['date'] ?? 'Recently',
-                                style: TextStyle(
-                                  color: Colors.grey[500],
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            review['comment'] ?? 'No comment provided',
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )).toList(),
-                    if (reviews.length > 3)
-                      Center(
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AllReviewsPage(
-                                  hospitalName: hospitalName,
-                                  reviews: reviews,
-                                ),
-                              ),
-                            );
-                          },
-                          child: Text(
-                            'View All ${reviews.length} Reviews',
-                            style: const TextStyle(
-                              color: Color(0xFF159BBD),
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ] else ...[
-                    // Message pour les nouveaux hôpitaux
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.blue[50],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue[200]!),
-                      ),
                       child: Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.info_outline, color: Colors.blue[700], size: 24),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'This is a newly registered healthcare facility. Patient reviews will be available once they start serving the community.',
-                              style: TextStyle(
-                                color: Colors.blue[700],
-                                fontSize: 14,
-                                fontStyle: FontStyle.italic,
-                              ),
+                          const Icon(
+                            Icons.star,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            widget.rating.toStringAsFixed(1),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                  ],
-
-                  // Book Appointment Button
-                  Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.symmetric(vertical: 16),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          barrierDismissible: false,
-                          builder: (BuildContext context) {
-                            return Dialog(
-                              backgroundColor: Colors.transparent,
-                              elevation: 0,
-                              child: Container(
-                                width: MediaQuery.of(context).size.width * 0.9,
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(24),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.15),
-                                      spreadRadius: 0,
-                                      blurRadius: 30,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(32),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      // Professional Icon with gradient background
-                                      Container(
-                                        width: 80,
-                                        height: 80,
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            colors: [
-                                              const Color(0xFF159BBD),
-                                              const Color(0xFF0D7A94),
-                                            ],
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                          ),
-                                          shape: BoxShape.circle,
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFF159BBD).withOpacity(0.3),
-                                              spreadRadius: 0,
-                                              blurRadius: 20,
-                                              offset: const Offset(0, 8),
-                                            ),
-                                          ],
-                                        ),
-                                        child: const Icon(
-                                          Icons.medical_services_rounded,
-                                          color: Colors.white,
-                                          size: 40,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 24),
-                                      
-                                      // Professional Title
-                                      const Text(
-                                        'Authentication Required',
-                                        style: TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.w700,
-                                          color: Color(0xFF1A1A1A),
-                                          letterSpacing: -0.5,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 32),
-                                      
-                                      // Professional Action Buttons
-                                      Row(
-                                        children: [
-                                          // Cancel Button
-                                          Expanded(
-                                            child: Container(
-                                              height: 52,
-                                              decoration: BoxDecoration(
-                                                border: Border.all(
-                                                  color: Colors.grey[300]!,
-                                                  width: 1.5,
-                                                ),
-                                                borderRadius: BorderRadius.circular(16),
-                                              ),
-                                              child: TextButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                style: TextButton.styleFrom(
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(16),
-                                                  ),
-                                                ),
-                                                child: Text(
-                                                  'Cancel',
-                                                  style: TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Colors.grey[700],
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          const SizedBox(width: 16),
-                                          
-                                          // Sign In Button
-                                          Expanded(
-                                            child: Container(
-                                              height: 52,
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  colors: [
-                                                    const Color(0xFF159BBD),
-                                                    const Color(0xFF0D7A94),
-                                                  ],
-                                                  begin: Alignment.topLeft,
-                                                  end: Alignment.bottomRight,
-                                                ),
-                                                borderRadius: BorderRadius.circular(16),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: const Color(0xFF159BBD).withOpacity(0.3),
-                                                    spreadRadius: 0,
-                                                    blurRadius: 12,
-                                                    offset: const Offset(0, 4),
-                                                  ),
-                                                ],
-                                              ),
-                                              child: ElevatedButton(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                  Navigator.pushReplacement(
-                                                    context,
-                                                    MaterialPageRoute(
-                                                      builder: (context) => LoginPage(
-                                                        selectedHospitalName: hospitalName,
-                                                        selectedHospitalImage: hospitalImage,
-                                                        selectedHospitalLocation: address,
-                                                        selectedHospitalFacilities: facilities,
-                                                        selectedHospitalAbout: aboutText,
-                                                        selectedHospitalSchedule: hospitalSchedule,
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                                style: ElevatedButton.styleFrom(
-                                                  backgroundColor: Colors.transparent,
-                                                  shadowColor: Colors.transparent,
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius: BorderRadius.circular(16),
-                                                  ),
-                                                ),
-                                                child: const Row(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Icon(
-                                                      Icons.login_rounded,
-                                                      color: Colors.white,
-                                                      size: 18,
-                                                    ),
-                                                    SizedBox(width: 6),
-                                                    Flexible(
-                                                      child: Text(
-                                                        'Sign In',
-                                                        style: TextStyle(
-                                                          fontSize: 15,
-                                                          fontWeight: FontWeight.w600,
-                                                          color: Colors.white,
-                                                        ),
-                                                        overflow: TextOverflow.ellipsis,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF159BBD),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        'Book Appointment',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            leading: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.arrow_back,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          
+          // Content
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // About Section
+                  _buildAboutSection(),
+                  
                   const SizedBox(height: 24),
+                  
+                  // Available Services Section
+                  _buildAvailableServicesSection(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Reviews Section
+                  _buildReviewsSection(),
+                  
+                  const SizedBox(height: 24),
+                  
+                  // Action Buttons
+                  _buildActionButtons(),
                 ],
               ),
             ),
@@ -659,101 +275,524 @@ class HospitalDetailsPage extends StatelessWidget {
   }
 
   Widget _buildHospitalImage() {
-    if (hospitalImage.isNotEmpty) {
-      // Check if it's a base64 image (starts with data:image)
-      if (hospitalImage.startsWith('data:image')) {
-        // Base64 image from Firestore
+    if (widget.hospitalImage.startsWith('data:image')) {
+      // Handle base64 images
+      try {
+        final bytes = base64Decode(widget.hospitalImage.split(',')[1]);
         return Image.memory(
-          base64Decode(hospitalImage.split(',')[1]),
+          bytes,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholderImage();
+            return _buildFallbackImage();
           },
         );
+      } catch (e) {
+        return _buildFallbackImage();
       }
-      // Check if it's a network URL
-      else if (hospitalImage.startsWith('http')) {
-        // Network image
-        return Image.network(
-          hospitalImage,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholderImage();
-          },
-        );
-      } else if (hospitalImage.startsWith('assets/')) {
-        // Asset image
-        return Image.asset(
-          hospitalImage,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholderImage();
-          },
-        );
-      } else {
-        // Local file path
-        return Image.file(
-          File(hospitalImage),
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return _buildPlaceholderImage();
-          },
-        );
-      }
+    } else if (widget.hospitalImage.startsWith('http')) {
+      // Handle network images
+      return Image.network(
+        widget.hospitalImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackImage();
+        },
+      );
     } else {
-      return _buildPlaceholderImage();
+      // Handle asset images
+      return Image.asset(
+        widget.hospitalImage,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return _buildFallbackImage();
+        },
+      );
     }
   }
 
-  Widget _buildPlaceholderImage() {
+  Widget _buildFallbackImage() {
     return Container(
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            const Color(0xFF159BBD).withOpacity(0.1),
-            const Color(0xFF0D5C73).withOpacity(0.05),
+            const Color(0xFF159BBD).withOpacity(0.8),
+            const Color(0xFF0D7A94).withOpacity(0.8),
           ],
         ),
       ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: const Color(0xFF159BBD).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                isNewHospital ? Icons.medical_services : Icons.local_hospital,
-                size: 48,
+      child: const Center(
+        child: Icon(
+          Icons.local_hospital,
+          size: 60,
+          color: Colors.white,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAboutSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'About',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF159BBD),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          widget.aboutText,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[700],
+            height: 1.5,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvailableServicesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Available Services',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF159BBD),
+          ),
+        ),
+        const SizedBox(height: 16),
+        
+        if (_isLoadingDetails)
+          const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+            ),
+          )
+        else
+          _buildServicesGrid(),
+      ],
+    );
+  }
+
+  Widget _buildServicesGrid() {
+    final services = _enhancedFacilities.isNotEmpty ? _enhancedFacilities : _getDefaultServices();
+    
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
+      children: services.map((service) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF159BBD).withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF159BBD).withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _getIconFromString(service['icon']),
                 color: const Color(0xFF159BBD),
+                size: 18,
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(width: 8),
+              Text(
+                service['name']!,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF159BBD),
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  List<Map<String, String>> _getDefaultServices() {
+    return widget.facilities.map((facility) => {
+      'name': facility,
+      'icon': 'medical_services',
+    }).toList();
+  }
+
+  IconData _getIconFromString(String? iconName) {
+    switch (iconName) {
+      case 'local_hospital':
+        return Icons.local_hospital;
+      case 'medical_services':
+        return Icons.medical_services;
+      case 'local_pharmacy':
+        return Icons.local_pharmacy;
+      case 'emergency':
+        return Icons.emergency;
+      case 'pets':
+        return Icons.pets;
+      case 'healing':
+        return Icons.healing;
+      case 'health_and_safety':
+        return Icons.health_and_safety;
+      case 'person':
+        return Icons.person;
+      default:
+        return Icons.medical_services;
+    }
+  }
+
+  Widget _buildReviewsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
             Text(
-              hospitalName,
+              'Patient Reviews',
               style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF159BBD).withOpacity(0.8),
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isNewHospital ? 'New Healthcare Facility' : 'Professional Medical Care',
-              style: TextStyle(
-                fontSize: 14,
-                color: const Color(0xFF159BBD).withOpacity(0.6),
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF159BBD),
               ),
             ),
+            if (_googlePlacesReviews.isNotEmpty)
+              TextButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => AllReviewsPage(
+                        hospitalName: widget.hospitalName,
+                        reviews: _googlePlacesReviews,
+                      ),
+                    ),
+                  );
+                },
+                child: Text(
+                  'View All (${_googlePlacesReviews.length})',
+                  style: TextStyle(
+                    color: const Color(0xFF159BBD),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
           ],
         ),
+        const SizedBox(height: 16),
+        
+        if (_isLoadingReviews)
+          const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
+            ),
+          )
+        else if (_googlePlacesReviews.isEmpty)
+          _buildNoReviewsState()
+        else
+          _buildReviewsList(),
+      ],
+    );
+  }
+
+  Widget _buildNoReviewsState() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.grey[50],
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey[200]!,
+          width: 1,
+        ),
       ),
+      child: Column(
+        children: [
+          Icon(
+            Icons.star_border,
+            size: 40,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'No reviews available yet',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.grey[600],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Be the first to share your experience',
+            style: TextStyle(
+              fontSize: 12,
+              color: Colors.grey[500],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReviewsList() {
+    return Column(
+      children: [
+        // Overall rating summary
+        Container(
+          padding: const EdgeInsets.all(16),
+          margin: const EdgeInsets.only(bottom: 16),
+          decoration: BoxDecoration(
+            color: Colors.amber.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: Colors.amber.withOpacity(0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                Icons.star,
+                color: Colors.amber,
+                size: 28,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                widget.rating.toStringAsFixed(1),
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.amber,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                'from ${widget.reviewCount} Google reviews',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                ),
+              ),
+            ],
+          ),
+        ),
+        
+        // Review items (show first 3)
+        ...(_googlePlacesReviews.take(3).map((review) => _buildReviewItem(review)).toList()),
+      ],
+    );
+  }
+
+  Widget _buildReviewItem(Map<String, dynamic> review) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.grey[200]!,
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 16,
+                backgroundColor: const Color(0xFF159BBD).withOpacity(0.1),
+                child: review['profile_photo_url'] != null
+                    ? ClipOval(
+                        child: Image.network(
+                          review['profile_photo_url'],
+                          width: 32,
+                          height: 32,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(
+                              Icons.person,
+                              size: 16,
+                              color: const Color(0xFF159BBD),
+                            );
+                          },
+                        ),
+                      )
+                    : Icon(
+                        Icons.person,
+                        size: 16,
+                        color: const Color(0xFF159BBD),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      review['author_name'] ?? 'Anonymous',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Color(0xFF1A1A1A),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        ...List.generate(5, (index) {
+                          return Icon(
+                            index < (review['rating'] ?? 0)
+                                ? Icons.star
+                                : Icons.star_border,
+                            size: 14,
+                            color: Colors.amber,
+                          );
+                        }),
+                        const SizedBox(width: 8),
+                        Text(
+                          review['relative_time_description'] ?? 'Recent',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (review['text'] != null && review['text'].isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              review['text'],
+              style: TextStyle(
+                fontSize: 13,
+                color: Colors.grey[700],
+                height: 1.4,
+              ),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return Column(
+      children: [
+        // Primary action button
+        Container(
+          width: double.infinity,
+          height: 56,
+          decoration: BoxDecoration(
+            gradient: widget.supportsBooking
+                ? const LinearGradient(
+                    colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                  )
+                : null,
+            color: widget.supportsBooking ? null : Colors.grey[400],
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: widget.supportsBooking
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF159BBD).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: widget.supportsBooking
+                  ? () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookAppointmentPage(
+                            hospitalName: widget.hospitalName,
+                            hospitalImage: widget.hospitalImage,
+                            hospitalLocation: widget.address,
+                            hospitalFacilities: widget.facilities,
+                            hospitalAbout: widget.aboutText,
+                            hospitalSchedule: widget.hospitalSchedule,
+                          ),
+                        ),
+                      );
+                    }
+                  : null,
+              child: Center(
+                child: Text(
+                  widget.supportsBooking ? 'Book Appointment' : 'View Details Only',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        
+        const SizedBox(height: 16),
+        
+        // Info message for Google Places hospitals
+        if (widget.isFromGooglePlaces)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.orange.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.info_outline,
+                  color: Colors.orange[700],
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'This hospital is from Google Places. Contact them directly to book appointments.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.orange[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 } 
