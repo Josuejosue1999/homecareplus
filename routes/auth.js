@@ -129,6 +129,9 @@ router.post("/register", async (req, res) => {
       email: email,
       profileImageUrl: defaultAvatar,
       profileImage: defaultAvatar, // Pour compatibilité
+      status: "pending", // Par défaut sur pending
+      verified: false, // Par défaut sur false
+      isVerified: false, // Par défaut sur false
       profileSetupComplete: false, // Flag to indicate profile needs completion
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -96,13 +96,14 @@ class AuthService {
         name: defaultClinicName, // Ajouter aussi 'name' pour compatibilité
         email,
         createdAt: new Date(),
-        status: "active",
+        status: "pending", // Par défaut sur pending
         about: `Welcome to ${defaultClinicName}. We are committed to providing exceptional medical care and services. Please update your clinic information in your profile settings.`,
         address: 'Address to be updated',
         location: 'Location to be updated',
         phone: 'Phone to be updated',
         facilities: ['General Medicine'],
         isVerified: false,
+        verified: false, // Par défaut sur false
         profileSetupComplete: false, // Flag to indicate profile needs completion
         availableSchedule: {
           'Monday': {'start': '08:00', 'end': '17:00'},
@@ -205,8 +206,9 @@ class AuthService {
         certificateUrl: data.certificateUrl || null,
         createdAt: data.createdAt || new Date(),
         updatedAt: new Date(),
-        status: data.status || 'active',
+        status: data.status || 'pending', // Par défaut sur pending
         isVerified: false,
+        verified: data.verified || false, // Par défaut sur false
         availableSchedule: data.availableSchedule || {},
         latitude: data.latitude || null,
         longitude: data.longitude || null,

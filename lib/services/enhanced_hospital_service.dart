@@ -189,6 +189,8 @@ class EnhancedHospitalService {
           openingHours: hospital.openingHours,
           placeId: hospital.placeId,
           distance: distance,
+          // Add a flag to indicate if this hospital exists in Firebase
+          existsInFirebase: existsInFirebase,
         );
         
         updatedHospitals.add(updatedHospital);

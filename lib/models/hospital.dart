@@ -21,6 +21,7 @@ class Hospital {
   final int? priceLevel; // Price level from Google Places
   final Map<String, Map<String, String>>? openingHours; // Google Places opening hours
   final String? placeId; // Google Places ID
+  final bool existsInFirebase; // Flag to identify if this Google Places hospital exists in Firebase
   
   // Distance field for sorting (calculated dynamically)
   double? distance;
@@ -46,6 +47,7 @@ class Hospital {
     this.priceLevel,
     this.openingHours,
     this.placeId,
+    this.existsInFirebase = false,
     this.distance,
   });
 
@@ -77,6 +79,7 @@ class Hospital {
       priceLevel: data['priceLevel'],
       openingHours: data['openingHours'] != null ? _parseSchedule(data['openingHours']) : null,
       placeId: data['placeId'],
+      existsInFirebase: true, // Firebase hospitals exist in Firebase by definition
       distance: data['distance']?.toDouble(),
     );
   }
@@ -116,6 +119,7 @@ class Hospital {
       'priceLevel': priceLevel,
       'openingHours': openingHours,
       'placeId': placeId,
+      'existsInFirebase': existsInFirebase,
       'distance': distance,
     };
   }

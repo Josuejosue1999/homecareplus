@@ -4,147 +4,54 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
+const session = require('express-session');
+const crypto = require('crypto');
 require('dotenv').config();
 
-// Import Firebase configuration from main app
-const { 
-  db, 
-  collection, 
-  getDocs, 
-  getDoc,
-  query, 
-  orderBy, 
-  where, 
-  doc, 
-  updateDoc, 
-  deleteDoc, 
-  setDoc,
-  addDoc,
-  serverTimestamp
-} = require('../config/firebase');
+// Import Firebase Admin configuration for admin dashboard
+const { admin, db, adminUtils } = require('./config/firebase-admin');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-// Firebase utilities pour l'admin
-const adminUtils = {
-  // Approuver une clinique
-  async approveClinic(clinicId) {
-    try {
-      console.log('✅ Approving clinic:', clinicId);
-      
-      const clinicRef = doc(db, 'clinics', clinicId);
-      
-      await updateDoc(clinicRef, {
-        verified: true,
-        isVerified: true,
-        approved: true,
-        status: 'verified',
-        approvedAt: serverTimestamp(),
-        lastUpdated: serverTimestamp()
-      });
-      
-      console.log('✅ Clinic approved successfully:', clinicId);
-      return { success: true, message: 'Clinic approved successfully' };
-    } catch (error) {
-      console.error('❌ Error approving clinic:', error);
-      return { success: false, error: error.message };
-    }
-  },
+// Admin credentials
+const ADMIN_CREDENTIALS = {
+  email: 'admin@homecare.com',
+  password: 'admin123'
+};
 
-  // Désapprouver une clinique
-  async unapproveClinic(clinicId) {
-    try {
-      console.log('❌ Unapproving clinic:', clinicId);
-      
-      const clinicRef = doc(db, 'clinics', clinicId);
-      
-      await updateDoc(clinicRef, {
-        verified: false,
-        isVerified: false,
-        approved: false,
-        status: 'pending',
-        unapprovedAt: serverTimestamp(),
-        lastUpdated: serverTimestamp()
-      });
-      
-      console.log('❌ Clinic unapproved successfully:', clinicId);
-      return { success: true, message: 'Clinic unapproved successfully' };
-    } catch (error) {
-      console.error('❌ Error unapproving clinic:', error);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Rejeter une clinique
-  async rejectClinic(clinicId) {
-    try {
-      console.log('🚫 Rejecting clinic:', clinicId);
-      
-      const clinicRef = doc(db, 'clinics', clinicId);
-      
-      await updateDoc(clinicRef, {
-        verified: false,
-        isVerified: false,
-        approved: false,
-        status: 'rejected',
-        rejectedAt: serverTimestamp(),
-        lastUpdated: serverTimestamp()
-      });
-      
-      console.log('🚫 Clinic rejected successfully:', clinicId);
-      return { success: true, message: 'Clinic rejected successfully' };
-    } catch (error) {
-      console.error('❌ Error rejecting clinic:', error);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Obtenir toutes les cliniques
-  async getAllClinics() {
-    try {
-      const clinicsRef = collection(db, 'clinics');
-      const q = query(clinicsRef, orderBy('createdAt', 'desc'));
-      const snapshot = await getDocs(q);
-      
-      const clinics = [];
-      snapshot.forEach(doc => {
-        clinics.push({
-          id: doc.id,
-          ...doc.data()
-        });
-      });
-      
-      return { success: true, clinics };
-    } catch (error) {
-      console.error('❌ Error fetching clinics:', error);
-      return { success: false, error: error.message };
-    }
-  },
-
-  // Obtenir une clinique spécifique
-  async getClinic(clinicId) {
-    try {
-      const clinicRef = doc(db, 'clinics', clinicId);
-      const docSnap = await getDoc(clinicRef);
-      
-      if (!docSnap.exists()) {
-        return { success: false, error: 'Clinic not found' };
-      }
-      
-      return { 
-        success: true, 
-        clinic: {
-          id: docSnap.id,
-          ...docSnap.data()
-        }
-      };
-    } catch (error) {
-      console.error('❌ Error fetching clinic:', error);
-      return { success: false, error: error.message };
-    }
+// Session configuration
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 };
+
+// Authentication middleware
+const requireAuth = (req, res, next) => {
+  if (req.session && req.session.adminAuthenticated) {
+    next();
+  } else {
+    res.redirect('/login');
+  }
+};
+
+// Redirect if authenticated
+const redirectIfAuthenticated = (req, res, next) => {
+  if (req.session && req.session.adminAuthenticated) {
+    res.redirect('/');
+  } else {
+    next();
+  }
+};
+
+// Firebase Admin utilities are now imported from config/firebase-admin.js
+// adminUtils now provides: getAllClinics(), approveClinic(), unapproveClinic()
 
 // Security middleware
 app.use(helmet({
@@ -168,6 +75,9 @@ app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Session middleware
+app.use(session(sessionConfig));
+
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -175,10 +85,52 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
+// ===== AUTHENTICATION ROUTES =====
+
+// Login page
+app.get('/login', redirectIfAuthenticated, (req, res) => {
+  res.render('login', { title: 'Admin Login - HomeCare Plus' });
+});
+
+// Login API
+app.post('/api/admin/login', (req, res) => {
+  const { email, password, remember } = req.body;
+  
+  console.log('🔑 Admin login attempt:', email);
+  
+  if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
+    req.session.adminAuthenticated = true;
+    req.session.adminEmail = email;
+    
+    if (remember) {
+      req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+    }
+    
+    console.log('✅ Admin login successful');
+    res.json({ success: true, message: 'Login successful' });
+  } else {
+    console.log('❌ Admin login failed - Invalid credentials');
+    res.status(401).json({ success: false, message: 'Invalid credentials' });
+  }
+});
+
+// Logout API
+app.post('/api/admin/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error('❌ Error destroying session:', err);
+      res.status(500).json({ success: false, message: 'Logout failed' });
+    } else {
+      console.log('✅ Admin logout successful');
+      res.json({ success: true, message: 'Logout successful' });
+    }
+  });
+});
+
 // ===== ADMIN API ROUTES =====
 
 // Route pour approuver une clinique
-app.post('/api/clinics/:id/approve', async (req, res) => {
+app.post('/api/clinics/:id/approve', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔄 Admin approving clinic:', id);
@@ -207,7 +159,7 @@ app.post('/api/clinics/:id/approve', async (req, res) => {
 });
 
 // Route pour désapprouver une clinique
-app.post('/api/clinics/:id/unapprove', async (req, res) => {
+app.post('/api/clinics/:id/unapprove', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔄 Admin unapproving clinic:', id);
@@ -236,7 +188,7 @@ app.post('/api/clinics/:id/unapprove', async (req, res) => {
 });
 
 // Route pour rejeter une clinique
-app.post('/api/clinics/:id/reject', async (req, res) => {
+app.post('/api/clinics/:id/reject', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔄 Admin rejecting clinic:', id);
@@ -265,7 +217,7 @@ app.post('/api/clinics/:id/reject', async (req, res) => {
 });
 
 // Route to get individual clinic details
-app.get('/api/clinics/:id', async (req, res) => {
+app.get('/api/clinics/:id', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔍 Fetching clinic details for ID:', id);
@@ -296,25 +248,32 @@ app.get('/api/clinics/:id', async (req, res) => {
 
 // Routes
 // Route for clinics page
-app.get('/clinics', async (req, res) => {
+app.get('/clinics', requireAuth, async (req, res) => {
   try {
     console.log('🏥 Loading clinics page...');
+    console.log('👤 Admin session:', req.session.adminAuthenticated);
+    console.log('📧 Admin email:', req.session.adminEmail);
     
     // Utiliser Firebase Admin pour obtenir les cliniques
+    console.log('🔄 Calling adminUtils.getAllClinics()...');
     const result = await adminUtils.getAllClinics();
+    console.log('📊 AdminUtils result:', result);
     
     if (!result.success) {
+      console.error('❌ AdminUtils failed with error:', result.error);
       throw new Error(result.error);
     }
     
     const clinics = result.clinics;
     const totalClinics = clinics.length;
+    console.log('📋 Total clinics found:', totalClinics);
     
     let verifiedCount = 0;
     let pendingCount = 0;
     let incompleteCount = 0;
     
     clinics.forEach((clinic) => {
+      console.log('🏥 Processing clinic:', clinic.id, '- Verified:', clinic.verified, '- Complete:', clinic.profileSetupComplete);
       if (clinic.verified === true || clinic.isVerified === true) {
         verifiedCount++;
       } else if (clinic.profileSetupComplete) {
@@ -332,16 +291,18 @@ app.get('/clinics', async (req, res) => {
       incompleteClinics: incompleteCount
     };
     
-    console.log('📊 Clinics stats:', clinicsData);
+    console.log('📊 Clinics stats prepared:', clinicsData);
+    console.log('🎨 Rendering clinics page...');
     res.render('clinics', clinicsData);
   } catch (error) {
     console.error('❌ Error loading clinics page:', error);
-    res.status(500).send('Error loading clinics page');
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).send('Error loading clinics page: ' + error.message);
   }
 });
 
 // Route for full clinic profile page
-app.get('/clinic-profile/:id', async (req, res) => {
+app.get('/clinic-profile/:id', requireAuth, async (req, res) => {
   try {
     const clinicId = req.params.id;
     console.log('🏥 Loading full clinic profile for ID:', clinicId);
@@ -422,7 +383,7 @@ app.get('/clinic-profile/:id', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
+app.get('/', requireAuth, (req, res) => {
   const dashboardData = {
     title: 'HomeCare+ Admin Dashboard',
     totalUsers: 1248,
@@ -457,7 +418,7 @@ app.get('/', (req, res) => {
 });
 
 // API Routes for dashboard data
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', requireAuth, (req, res) => {
   res.json({
     users: { total: 1248, thisMonth: 287, growth: '+12.5%' },
     clinics: { total: 35, thisMonth: 9, growth: '+28.6%' },
@@ -466,7 +427,7 @@ app.get('/api/stats', (req, res) => {
   });
 });
 
-app.get('/api/users', (req, res) => {
+app.get('/api/users', requireAuth, (req, res) => {
   // Mock data - in real app, this would come from database
   const users = [
     { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Patient', status: 'Active', joinDate: '2025-01-15', lastLogin: '2025-01-20' },
@@ -478,17 +439,23 @@ app.get('/api/users', (req, res) => {
   res.json(users);
 });
 
-app.get('/api/clinics', async (req, res) => {
+app.get('/api/clinics', requireAuth, async (req, res) => {
   try {
-    console.log('🔍 Fetching clinics from Firebase with Admin SDK...');
+    console.log('🔍 API: Fetching clinics from Firebase with Admin SDK...');
+    console.log('👤 API Admin session:', req.session.adminAuthenticated);
+    console.log('📧 API Admin email:', req.session.adminEmail);
     
     // Utiliser Firebase Admin pour obtenir les cliniques
+    console.log('🔄 API: Calling adminUtils.getAllClinics()...');
     const result = await adminUtils.getAllClinics();
+    console.log('📊 API: AdminUtils result:', result);
     
     if (!result.success) {
+      console.error('❌ API: AdminUtils failed with error:', result.error);
       throw new Error(result.error);
     }
     
+    console.log('📋 API: Processing', result.clinics.length, 'clinics...');
     const clinics = result.clinics.map(clinic => {
       // Format data for admin dashboard
       return {
@@ -523,15 +490,19 @@ app.get('/api/clinics', async (req, res) => {
       };
     });
     
-    console.log(`✅ Found ${clinics.length} clinics in Firebase`);
+    console.log(`✅ API: Found ${clinics.length} clinics in Firebase`);
     
-    res.json({
+    const response = {
       success: true,
       clinics: clinics,
       total: clinics.length
-    });
+    };
+    
+    console.log('📤 API: Sending response with', clinics.length, 'clinics');
+    res.json(response);
   } catch (error) {
-    console.error('❌ Error fetching clinics:', error);
+    console.error('❌ API Error fetching clinics:', error);
+    console.error('❌ API Error stack:', error.stack);
     res.status(500).json({
       success: false,
       error: error.message,
@@ -541,7 +512,7 @@ app.get('/api/clinics', async (req, res) => {
 });
 
 // Route for User Management page
-app.get('/user-management', (req, res) => {
+app.get('/user-management', requireAuth, (req, res) => {
   const userManagementData = {
     title: 'User Management - HomeCare Plus Admin',
     totalUsers: 1248,
@@ -554,7 +525,7 @@ app.get('/user-management', (req, res) => {
 });
 
 // Route for Settings page
-app.get('/settings', (req, res) => {
+app.get('/settings', requireAuth, (req, res) => {
   const settingsData = {
     title: 'Settings - HomeCare Plus Admin',
     applicationName: 'HomeCare Plus',

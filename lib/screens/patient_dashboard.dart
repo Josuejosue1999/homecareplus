@@ -458,14 +458,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                               child: Row(
                                 children: [
                                   Icon(
-                                    Icons.verified_rounded,
+                                    Icons.local_hospital_rounded,
                                     color: Colors.white.withOpacity(0.9),
                                     size: 18,
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: Text(
-                                      'Discover trusted healthcare providers in your area',
+                                      'Discover healthcare providers in your area',
                                       style: TextStyle(
                                         color: Colors.white.withOpacity(0.9),
                                         fontSize: 14,
@@ -671,7 +671,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
 
                   final hospitals = snapshot.data ?? [];
                   print('🎉 Final hospitals list length: ${hospitals.length}');
-                  print('📍 Verified hospitals: ${hospitals.where((h) => h.verified).length}');
                   print('🌍 Google Places hospitals: ${hospitals.where((h) => h.isFromGooglePlaces).length}');
                   return _buildHospitalsList(hospitals);
                 },
@@ -921,24 +920,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                 ],
               ),
               const SizedBox(height: 4),
-                                Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.verified_rounded,
-                        size: 16,
-                        color: const Color(0xFF159BBD),
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Verified hospitals update in real-time',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ],
-                  ),
             ],
           ),
         ],
@@ -1013,6 +994,31 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     print('Building hospital card for: ${hospital.name}');
     print('Profile image URL: ${hospital.profileImageUrl}');
     print('Has profile image: ${hospital.profileImageUrl != null && hospital.profileImageUrl!.isNotEmpty}');
+    
+    // Check if this hospital should show "Under Review" badge
+    // Only show badge if: hospital is from Google Places, has a placeId, 
+    // exists in Firebase, but is not verified
+    bool shouldShowUnderReviewBadge = hospital.isFromGooglePlaces && 
+                                     hospital.placeId != null && 
+                                     hospital.placeId!.isNotEmpty && 
+                                     hospital.existsInFirebase && 
+                                     !hospital.verified;
+    
+    // Check if this hospital should show "Verified" badge
+    // Only show badge if: hospital is from Google Places, has a placeId, 
+    // exists in Firebase, AND is verified
+    bool shouldShowVerifiedBadge = hospital.isFromGooglePlaces && 
+                                  hospital.placeId != null && 
+                                  hospital.placeId!.isNotEmpty && 
+                                  hospital.existsInFirebase && 
+                                  hospital.verified;
+    
+    print('Hospital ${hospital.name} - Should show Under Review: $shouldShowUnderReviewBadge');
+    print('Hospital ${hospital.name} - Should show Verified: $shouldShowVerifiedBadge');
+    print('  - isFromGooglePlaces: ${hospital.isFromGooglePlaces}');
+    print('  - placeId: ${hospital.placeId}');
+    print('  - existsInFirebase: ${hospital.existsInFirebase}');
+    print('  - verified: ${hospital.verified}');
     
     return GestureDetector(
                                             onTap: () {
@@ -1093,87 +1099,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                       ),
                     ),
                   ),
-                  // Status Badges (Verified or Not Verified)
-                  if (hospital.verified)
-                    // Verified Badge for all verified hospitals (Firebase + Google Places approved by admin)
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.green,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.green.withOpacity(0.3),
-                              spreadRadius: 0,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.verified_rounded,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Verified',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    )
-                  else
-                    // Not Verified Badge for unverified hospitals
-                    Positioned(
-                      top: 16,
-                      right: 16,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.red.withOpacity(0.3),
-                              spreadRadius: 0,
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.cancel_outlined,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 4),
-                            const Text(
-                              'Not Verified',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+
                   // Distance Badge
                   Positioned(
                     top: 16,
@@ -1200,6 +1126,88 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                       ),
                     ),
                   ),
+
+                  // Under Review Badge (if hospital is from Google Places but not verified in Firebase)
+                  if (shouldShowUnderReviewBadge)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.orange.withOpacity(0.3),
+                              spreadRadius: 0,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.pending_outlined,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Under Review',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  
+                  // Verified Badge (if hospital is from Google Places and verified in Firebase)
+                  if (shouldShowVerifiedBadge)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.green.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.3),
+                              spreadRadius: 0,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.verified_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Verified',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -1231,73 +1239,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
-                                // Verified badge for all verified hospitals
-                                if (hospital.verified) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFF159BBD).withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: const Color(0xFF159BBD).withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.verified_rounded,
-                                          size: 12,
-                                          color: const Color(0xFF159BBD),
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          'Verified',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: const Color(0xFF159BBD),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ] else ...[
-                                  // Not Verified badge for unverified hospitals
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                      border: Border.all(
-                                        color: Colors.red.withOpacity(0.3),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.cancel_outlined,
-                                          size: 12,
-                                          color: Colors.red[700],
-                                        ),
-                                        const SizedBox(width: 2),
-                                        Text(
-                                          'Not Verified',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.red[700],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+
                               ],
                             ),
                             // Google Places indicator

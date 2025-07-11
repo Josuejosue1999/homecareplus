@@ -2423,8 +2423,8 @@ app.post('/api/save-hospital-profile', requireAuth, async (req, res) => {
       
       // Statut
       isVerified: false,
-      verified: true, // Pour compatibilité avec l'app Flutter
-      status: 'active',
+      verified: false, // Par défaut sur false
+      status: 'pending', // Par défaut sur pending
       profileSetupComplete: true,
       
       // Timestamps
