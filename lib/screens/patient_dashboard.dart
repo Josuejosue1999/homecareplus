@@ -1399,7 +1399,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                       gradient: LinearGradient(
                         colors: hospital.supportsBooking 
                             ? [const Color(0xFF159BBD), const Color(0xFF0D7A94)]
-                            : [Colors.grey[600]!, Colors.grey[700]!],
+                            : shouldShowVerifiedBadge 
+                                ? [const Color(0xFF159BBD), const Color(0xFF0D7A94)] // Bleu pour les hôpitaux vérifiés
+                                : [Colors.grey[600]!, Colors.grey[700]!], // Gris pour les autres
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -1408,7 +1410,9 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                         BoxShadow(
                           color: hospital.supportsBooking 
                               ? const Color(0xFF159BBD).withOpacity(0.3)
-                              : Colors.grey.withOpacity(0.2),
+                              : shouldShowVerifiedBadge 
+                                  ? const Color(0xFF159BBD).withOpacity(0.3) // Ombre bleue pour les hôpitaux vérifiés
+                                  : Colors.grey.withOpacity(0.2), // Ombre grise pour les autres
                           spreadRadius: 0,
                           blurRadius: 8,
                           offset: const Offset(0, 2),
@@ -1435,9 +1439,10 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                 reviews: [],
                                 aboutText: hospital.about ?? 'This healthcare facility is committed to providing exceptional medical care and services.',
                                 hospitalSchedule: hospital.availableSchedule,
-                                supportsBooking: hospital.supportsBooking,
+                                supportsBooking: hospital.supportsBooking || shouldShowVerifiedBadge, // Support booking si vérifié
                                 isFromGooglePlaces: hospital.isFromGooglePlaces,
                                 placeId: hospital.placeId,
+                                isVerified: shouldShowVerifiedBadge, // Passer le statut de vérification
                               ),
                             ),
                           );
@@ -1462,8 +1467,10 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                   ),
                                 ),
                               ] else ...[
-                                const Icon(
-                                  Icons.info_outline_rounded,
+                                Icon(
+                                  shouldShowVerifiedBadge 
+                                      ? Icons.verified_rounded // Icône vérifiée pour les hôpitaux vérifiés
+                                      : Icons.info_outline_rounded, // Icône d'info pour les autres
                                   color: Colors.white,
                                   size: 16,
                                 ),

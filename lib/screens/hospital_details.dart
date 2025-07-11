@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'all_reviews.dart';
 import 'book_appointment.dart';
 import 'login.dart';
+import 'signup.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../services/enhanced_hospital_service.dart';
 
 class HospitalDetailsPage extends StatefulWidget {
@@ -19,6 +21,7 @@ class HospitalDetailsPage extends StatefulWidget {
   final bool supportsBooking;
   final bool isFromGooglePlaces;
   final String? placeId;
+  final bool isVerified;
 
   const HospitalDetailsPage({
     super.key,
@@ -34,6 +37,7 @@ class HospitalDetailsPage extends StatefulWidget {
     required this.supportsBooking,
     required this.isFromGooglePlaces,
     this.placeId,
+    this.isVerified = false,
   });
 
   @override
@@ -135,22 +139,64 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          widget.hospitalName,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [
-                              Shadow(
-                                offset: Offset(1, 1),
-                                blurRadius: 3,
-                                color: Colors.black26,
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                widget.hospitalName,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                  shadows: [
+                                    Shadow(
+                                      offset: Offset(1, 1),
+                                      blurRadius: 3,
+                                      color: Colors.black26,
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (widget.isVerified) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.green,
+                                  borderRadius: BorderRadius.circular(12),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.green.withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.verified_rounded,
+                                      color: Colors.white,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Verified',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+                          ],
                         ),
                         const SizedBox(height: 8),
                         Row(
@@ -697,7 +743,221 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
     );
   }
 
+  void _handleBookAppointment() {
+    // Vérifier si l'utilisateur est connecté
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      // L'utilisateur est connecté, procéder à la réservation
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => BookAppointmentPage(
+            hospitalName: widget.hospitalName,
+            hospitalImage: widget.hospitalImage,
+            hospitalLocation: widget.address,
+            hospitalFacilities: widget.facilities,
+            hospitalAbout: widget.aboutText,
+            hospitalSchedule: widget.hospitalSchedule,
+          ),
+        ),
+      );
+    } else {
+      // L'utilisateur n'est pas connecté, afficher le popup de confirmation
+      _showLoginConfirmationDialog();
+    }
+  }
+
+  void _showLoginConfirmationDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFF159BBD).withOpacity(0.1),
+                  Colors.white,
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Icône
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.account_circle,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                
+                // Titre
+                const Text(
+                  'Login Required',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1A1A1A),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Message
+                Text(
+                  'To book an appointment at ${widget.hospitalName}, please sign in to your account or create a new one.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                  ),
+                ),
+                const SizedBox(height: 30),
+                
+                // Boutons
+                Row(
+                  children: [
+                    // Bouton Sign In
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF159BBD).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Fermer le popup
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => LoginPage(
+                                  selectedHospitalName: widget.hospitalName,
+                                  selectedHospitalImage: widget.hospitalImage,
+                                  selectedHospitalLocation: widget.address,
+                                  selectedHospitalFacilities: widget.facilities,
+                                  selectedHospitalAbout: widget.aboutText,
+                                  selectedHospitalSchedule: widget.hospitalSchedule,
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Sign In',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    
+                    // Bouton Sign Up
+                    Expanded(
+                      child: Container(
+                        height: 48,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0xFF159BBD),
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); // Fermer le popup
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const SignupPage(),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Sign Up',
+                            style: TextStyle(
+                              color: Color(0xFF159BBD),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                
+                // Bouton Cancel
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text(
+                    'Cancel',
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildActionButtons() {
+    // Vérifié si l'hôpital supporte la réservation OU s'il est vérifié
+    bool canBookAppointment = widget.supportsBooking || widget.isVerified;
+    
     return Column(
       children: [
         // Primary action button
@@ -705,14 +965,14 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           width: double.infinity,
           height: 56,
           decoration: BoxDecoration(
-            gradient: widget.supportsBooking
+            gradient: canBookAppointment
                 ? const LinearGradient(
                     colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
                   )
                 : null,
-            color: widget.supportsBooking ? null : Colors.grey[400],
+            color: canBookAppointment ? null : Colors.grey[400],
             borderRadius: BorderRadius.circular(16),
-            boxShadow: widget.supportsBooking
+            boxShadow: canBookAppointment
                 ? [
                     BoxShadow(
                       color: const Color(0xFF159BBD).withOpacity(0.3),
@@ -726,31 +986,39 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
             color: Colors.transparent,
             child: InkWell(
               borderRadius: BorderRadius.circular(16),
-              onTap: widget.supportsBooking
+              onTap: canBookAppointment
                   ? () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BookAppointmentPage(
-                            hospitalName: widget.hospitalName,
-                            hospitalImage: widget.hospitalImage,
-                            hospitalLocation: widget.address,
-                            hospitalFacilities: widget.facilities,
-                            hospitalAbout: widget.aboutText,
-                            hospitalSchedule: widget.hospitalSchedule,
-                          ),
-                        ),
-                      );
+                      _handleBookAppointment();
                     }
                   : null,
               child: Center(
-                child: Text(
-                  widget.supportsBooking ? 'Book Appointment' : 'View Details Only',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.isVerified) ...[
+                      const Icon(
+                        Icons.verified_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                    ] else if (canBookAppointment) ...[
+                      const Icon(
+                        Icons.calendar_today_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      canBookAppointment ? 'Book Appointment' : 'View Details Only',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -764,27 +1032,33 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: widget.isVerified 
+                  ? Colors.green.withOpacity(0.1)
+                  : Colors.orange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Colors.orange.withOpacity(0.2),
+                color: widget.isVerified 
+                    ? Colors.green.withOpacity(0.2)
+                    : Colors.orange.withOpacity(0.2),
                 width: 1,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  Icons.info_outline,
-                  color: Colors.orange[700],
+                  widget.isVerified ? Icons.verified_rounded : Icons.info_outline,
+                  color: widget.isVerified ? Colors.green[700] : Colors.orange[700],
                   size: 20,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    'This hospital is from Google Places. Contact them directly to book appointments.',
+                    widget.isVerified 
+                        ? 'This is a verified hospital. You can book appointments directly through our platform!'
+                        : 'This hospital is from Google Places. Contact them directly to book appointments.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.orange[700],
+                      color: widget.isVerified ? Colors.green[700] : Colors.orange[700],
                       height: 1.4,
                     ),
                   ),
