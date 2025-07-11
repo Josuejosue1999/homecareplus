@@ -21,6 +21,8 @@ import '../models/appointment.dart';
 import '../services/appointment_service.dart';
 import '../services/notification_service.dart';
 import 'package:homecare_app/screens/find_healthcare_page.dart';
+import 'package:homecare_app/screens/booking_hub_page.dart';
+import 'package:homecare_app/screens/patient_dashboard.dart';
 
 class MainDashboard extends StatefulWidget {
   final String? selectedHospitalName;
@@ -229,10 +231,10 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
         );
         break;
       case 2:
-        // Navigate to Find Healthcare page with Google Maps
+        // Navigate to Patient Dashboard page
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const FindHealthcarePage()),
+          MaterialPageRoute(builder: (context) => const PatientDashboardPage()),
         );
         break;
       case 3:
@@ -890,10 +892,17 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                                             lottieAsset: 'assets/book.json',
                                           title: 'Book',
                                           onTap: () {
+                                            print('🎯 === BOOK BUTTON CLICKED ===');
+                                            print('🎯 Navigating to PatientDashboard from main_dashboard');
+                                            print('🎯 Current time: ${DateTime.now()}');
+                                            print('🎯 User clicked book button');
                                             Navigator.push(
                                               context,
-                                              MaterialPageRoute(builder: (context) => const FindHealthcarePage()),
-                                            );
+                                              MaterialPageRoute(builder: (context) => const PatientDashboardPage()),
+                                            ).then((value) {
+                                              print('🎯 Returned from PatientDashboard to main_dashboard');
+                                            });
+                                            print('🎯 === BOOK NAVIGATION INITIATED ===');
                                           },
                                           ),
                                         ),

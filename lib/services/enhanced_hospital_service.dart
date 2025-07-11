@@ -41,22 +41,59 @@ class EnhancedHospitalService {
     }
   }
   
+  /// Force reinitialization of the service (used when navigating from different screens)
+  static void forceReinitialization() {
+    print('🔄 === FORCE REINITIALIZATION STARTED ===');
+    print('🔄 Force reinitializing EnhancedHospitalService...');
+    
+    // Cancel existing subscription
+    if (_firebaseSubscription != null) {
+      _firebaseSubscription!.cancel();
+      _firebaseSubscription = null;
+      print('🔄 Cancelled existing Firebase subscription');
+    }
+    
+    // Close existing stream controller
+    if (_hospitalStreamController != null && !_hospitalStreamController!.isClosed) {
+      _hospitalStreamController!.close();
+      _hospitalStreamController = null;
+      print('🔄 Closed existing stream controller');
+    }
+    
+    // Clear cached data
+    _cachedGooglePlacesHospitals = null;
+    _cachedUserLocation = null;
+    print('🔄 Cleared cached data');
+    
+    print('🔄 === FORCE REINITIALIZATION COMPLETED ===');
+  }
+  
   /// Get nearby hospitals with real-time Firebase verification status updates
   static Stream<List<Hospital>> getNearbyHospitals() async* {
     try {
+      print('🏥 === GET NEARBY HOSPITALS CALLED ===');
       print('🏥 Starting real-time hospital stream...');
+      print('🏥 Current time: ${DateTime.now()}');
+      print('🏥 Stream controller null: ${_hospitalStreamController == null}');
+      print('🏥 Stream controller closed: ${_hospitalStreamController?.isClosed ?? true}');
       
-      // Initialize stream controller if not already done
-      if (_hospitalStreamController == null) {
+      // Initialize stream controller if not already done or if disposed
+      if (_hospitalStreamController == null || _hospitalStreamController!.isClosed) {
+        print('🔄 Reinitializing hospital stream controller...');
         _hospitalStreamController = StreamController<List<Hospital>>.broadcast();
         await _setupRealTimeUpdates();
+      } else {
+        print('🔄 Using existing stream controller');
       }
       
+      print('🏥 About to yield from stream controller');
       // Yield from the stream controller
       yield* _hospitalStreamController!.stream;
       
     } catch (e) {
       print('❌ Error in hospital stream: $e');
+      print('❌ Error type: ${e.runtimeType}');
+      print('❌ Stack trace: $e');
       yield [];
     }
   }
@@ -64,7 +101,11 @@ class EnhancedHospitalService {
   /// Setup real-time updates combining Google Places and Firebase data
   static Future<void> _setupRealTimeUpdates() async {
     try {
+      print('🔧 === SETUP REAL-TIME UPDATES STARTED ===');
+      print('🔧 Setting up real-time updates...');
+      
       // Get user's current location
+      print('📍 Getting user location...');
       _cachedUserLocation = await LocationService.getCurrentLocation();
       if (_cachedUserLocation == null) {
         print('❌ Could not get user location');
@@ -75,6 +116,7 @@ class EnhancedHospitalService {
       print('✓ User location: ${_cachedUserLocation!.latitude}, ${_cachedUserLocation!.longitude}');
       
       // Fetch hospitals from Google Places API (cache them)
+      print('🏥 Fetching hospitals from Google Places...');
       _cachedGooglePlacesHospitals = await GooglePlacesService.getNearbyHospitals(
         latitude: _cachedUserLocation!.latitude,
         longitude: _cachedUserLocation!.longitude,
@@ -84,6 +126,7 @@ class EnhancedHospitalService {
       print('✓ Found ${_cachedGooglePlacesHospitals!.length} hospitals from Google Places');
       
       // Listen to Firebase changes for real-time verification status updates
+      print('🔥 Setting up Firebase listener...');
       _firebaseSubscription = FirebaseFirestore.instance
           .collection('clinics')
           .where('placeId', isNull: false)
@@ -91,6 +134,7 @@ class EnhancedHospitalService {
           .listen((snapshot) async {
         try {
           print('🔄 Firebase verification status updated, refreshing hospitals...');
+          print('🔄 Firebase documents count: ${snapshot.docs.length}');
           
           // Process the updated Firebase data
           final firebaseHospitals = <String, Map<String, dynamic>>{};
@@ -111,6 +155,8 @@ class EnhancedHospitalService {
             }
           }
           
+          print('🔄 Processing ${firebaseHospitals.length} Firebase hospitals...');
+          
           // Update Google Places hospitals with Firebase verification status
           final updatedHospitals = await _processHospitalsWithRealtimeStatus(
             _cachedGooglePlacesHospitals!,
@@ -119,6 +165,7 @@ class EnhancedHospitalService {
           );
           
           print('✓ Updated ${updatedHospitals.length} hospitals with real-time status');
+          print('🔧 === ADDING HOSPITALS TO STREAM ===');
           _hospitalStreamController?.add(updatedHospitals);
           
         } catch (e) {
@@ -126,8 +173,10 @@ class EnhancedHospitalService {
         }
       });
       
+      print('🔧 === SETUP REAL-TIME UPDATES COMPLETED ===');
     } catch (e) {
       print('❌ Error setting up real-time updates: $e');
+      print('❌ Error type: ${e.runtimeType}');
       _hospitalStreamController?.add([]);
     }
   }

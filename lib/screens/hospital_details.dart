@@ -6,6 +6,7 @@ import 'book_appointment.dart';
 import 'login.dart';
 import 'signup.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/enhanced_hospital_service.dart';
 
 class HospitalDetailsPage extends StatefulWidget {
@@ -22,6 +23,7 @@ class HospitalDetailsPage extends StatefulWidget {
   final bool isFromGooglePlaces;
   final String? placeId;
   final bool isVerified;
+  final bool isUnverified;
 
   const HospitalDetailsPage({
     super.key,
@@ -38,6 +40,7 @@ class HospitalDetailsPage extends StatefulWidget {
     required this.isFromGooglePlaces,
     this.placeId,
     this.isVerified = false,
+    this.isUnverified = false,
   });
 
   @override
@@ -98,6 +101,159 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
       setState(() {
         _isLoadingReviews = false;
       });
+    }
+  }
+
+  Future<void> _suggestHospital() async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 16),
+              Text('Suggesting hospital...'),
+            ],
+          ),
+        ),
+      );
+
+      // Prepare hospital suggestion data
+      final suggestionData = {
+        'hospitalName': widget.hospitalName,
+        'address': widget.address,
+        'placeId': widget.placeId,
+        'rating': widget.rating,
+        'reviewCount': widget.reviewCount,
+        'facilities': widget.facilities,
+        'aboutText': widget.aboutText,
+        'hospitalImage': widget.hospitalImage,
+        'googlePlaceDetails': _hospitalDetails,
+        'suggestedAt': FieldValue.serverTimestamp(),
+        'suggestedBy': FirebaseAuth.instance.currentUser?.uid ?? 'anonymous',
+        'status': 'pending',
+        'isFromGooglePlaces': widget.isFromGooglePlaces,
+      };
+
+      // Save to suggestions collection
+      await FirebaseFirestore.instance
+          .collection('suggestions')
+          .add(suggestionData);
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+        
+        // Show success dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            icon: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                color: Colors.green,
+                size: 30,
+              ),
+            ),
+            title: const Text(
+              'Hospital Suggested!',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            content: const Text(
+              'Thank you for suggesting this hospital. Our team will review and verify the information soon.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    color: Color(0xFF159BBD),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if still open
+      if (mounted) {
+        Navigator.of(context).pop();
+        
+        // Show error dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            icon: Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: Colors.red.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.error_outline,
+                color: Colors.red,
+                size: 30,
+              ),
+            ),
+            title: const Text(
+              'Error',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1A1A1A),
+              ),
+            ),
+            content: Text(
+              'Failed to suggest hospital: ${e.toString()}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xFF6B7280),
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text(
+                  'OK',
+                  style: TextStyle(
+                    color: Color(0xFF159BBD),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -1034,20 +1190,32 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
             decoration: BoxDecoration(
               color: widget.isVerified 
                   ? Colors.green.withOpacity(0.1)
-                  : Colors.orange.withOpacity(0.1),
+                  : widget.isUnverified
+                      ? Colors.red.withOpacity(0.1)
+                      : Colors.orange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: widget.isVerified 
                     ? Colors.green.withOpacity(0.2)
-                    : Colors.orange.withOpacity(0.2),
+                    : widget.isUnverified
+                        ? Colors.red.withOpacity(0.2)
+                        : Colors.orange.withOpacity(0.2),
                 width: 1,
               ),
             ),
             child: Row(
               children: [
                 Icon(
-                  widget.isVerified ? Icons.verified_rounded : Icons.info_outline,
-                  color: widget.isVerified ? Colors.green[700] : Colors.orange[700],
+                  widget.isVerified 
+                      ? Icons.verified_rounded 
+                      : widget.isUnverified
+                          ? Icons.warning_rounded
+                          : Icons.info_outline,
+                  color: widget.isVerified 
+                      ? Colors.green[700] 
+                      : widget.isUnverified
+                          ? Colors.red[700]
+                          : Colors.orange[700],
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -1055,10 +1223,16 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
                   child: Text(
                     widget.isVerified 
                         ? 'This is a verified hospital. You can book appointments directly through our platform!'
-                        : 'This hospital is from Google Places. Contact them directly to book appointments.',
+                        : widget.isUnverified
+                            ? 'This hospital is not verified yet. You can suggest it to be added to our platform.'
+                            : 'This hospital is from Google Places. Contact them directly to book appointments.',
                     style: TextStyle(
                       fontSize: 13,
-                      color: widget.isVerified ? Colors.green[700] : Colors.orange[700],
+                      color: widget.isVerified 
+                          ? Colors.green[700] 
+                          : widget.isUnverified
+                              ? Colors.red[700]
+                              : Colors.orange[700],
                       height: 1.4,
                     ),
                   ),
@@ -1066,6 +1240,50 @@ class _HospitalDetailsPageState extends State<HospitalDetailsPage> {
               ],
             ),
           ),
+        
+        // Suggest Hospital Button (only for unverified hospitals)
+        if (widget.isUnverified) ...[
+          const SizedBox(height: 16),
+          Container(
+            width: double.infinity,
+            height: 48,
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: const Color(0xFF159BBD),
+                width: 2,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(12),
+                onTap: _suggestHospital,
+                child: const Center(
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.recommend_rounded,
+                        color: Color(0xFF159BBD),
+                        size: 18,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Suggest This Hospital',
+                        style: TextStyle(
+                          color: Color(0xFF159BBD),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ],
     );
   }

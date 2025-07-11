@@ -21,40 +21,47 @@ class PatientDashboardPage extends StatefulWidget {
   State<PatientDashboardPage> createState() => _PatientDashboardPageState();
 }
 
-class _PatientDashboardPageState extends State<PatientDashboardPage> with TickerProviderStateMixin {
+class _PatientDashboardPageState extends State<PatientDashboardPage> {
   String searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
   UserLocation? _userLocation;
   bool _isLocationLoading = false;
   bool _showLocationPermissionDialog = false;
 
-  // Animation controllers for moving bubbles
-  late AnimationController _bubble1Controller;
-  late AnimationController _bubble2Controller;
-  late AnimationController _bubble3Controller;
-  late AnimationController _bubble4Controller;
-  
-  // Animations for bubble positions
-  late Animation<Offset> _bubble1Animation;
-  late Animation<Offset> _bubble2Animation;
-  late Animation<Offset> _bubble3Animation;
-  late Animation<Offset> _bubble4Animation;
-
   @override
   void initState() {
     super.initState();
+    print('🚀 === PATIENT DASHBOARD INIT STATE ===');
+    print('🚀 Initializing patient dashboard at ${DateTime.now()}');
     _initializeLocation();
-    _initializeAnimations();
+    // Forcer la réinitialisation du service hospital pour garantir le bon fonctionnement
+    _initializeHospitalService();
+    print('🚀 === PATIENT DASHBOARD INIT COMPLETE ===');
+  }
+  
+  /// Force la réinitialisation du service hospital
+  void _initializeHospitalService() {
+    print('🏥 === INITIALIZING HOSPITAL SERVICE ===');
+    print('🏥 Reinitializing hospital service for patient dashboard at ${DateTime.now()}');
+    
+    // Forcer la réinitialisation du service
+    try {
+      EnhancedHospitalService.forceReinitialization();
+      print('🏥 ✅ Hospital service force reinitialization completed');
+    } catch (e) {
+      print('🏥 ❌ Error during hospital service reinitialization: $e');
+    }
+    
+    // Vérifier l'état du service
+    print('🏥 Service state verification...');
+    print('🏥 === HOSPITAL SERVICE INIT COMPLETE ===');
   }
 
   @override
   void dispose() {
     _searchController.dispose();
-    _bubble1Controller.dispose();
-    _bubble2Controller.dispose();
-    _bubble3Controller.dispose();
-    _bubble4Controller.dispose();
-    EnhancedHospitalService.dispose();
+    // Ne pas disposer le service car cela cause des problèmes lors de la navigation
+    // EnhancedHospitalService.dispose();
     super.dispose();
   }
 
@@ -90,68 +97,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
     if (permissionGranted) {
       await _initializeLocation();
     }
-  }
-
-  void _initializeAnimations() {
-    // Initialize bubble animation controllers with different durations for variety
-    _bubble1Controller = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    
-    _bubble2Controller = AnimationController(
-      duration: const Duration(seconds: 12),
-      vsync: this,
-    );
-    
-    _bubble3Controller = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    );
-    
-    _bubble4Controller = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
-
-    // Create different movement patterns for each bubble
-    _bubble1Animation = Tween<Offset>(
-      begin: const Offset(-0.2, 0.3),
-      end: const Offset(1.2, 0.1),
-    ).animate(CurvedAnimation(
-      parent: _bubble1Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble2Animation = Tween<Offset>(
-      begin: const Offset(1.1, 0.8),
-      end: const Offset(-0.1, 0.2),
-    ).animate(CurvedAnimation(
-      parent: _bubble2Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble3Animation = Tween<Offset>(
-      begin: const Offset(0.2, -0.1),
-      end: const Offset(0.8, 0.9),
-    ).animate(CurvedAnimation(
-      parent: _bubble3Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble4Animation = Tween<Offset>(
-      begin: const Offset(0.9, 0.1),
-      end: const Offset(0.1, 0.7),
-    ).animate(CurvedAnimation(
-      parent: _bubble4Controller,
-      curve: Curves.easeInOut,
-    ));
-
-    // Start animations and repeat them
-    _bubble1Controller.repeat(reverse: true);
-    _bubble2Controller.repeat(reverse: true);
-    _bubble3Controller.repeat(reverse: true);
-    _bubble4Controller.repeat(reverse: true);
   }
 
   @override
@@ -203,155 +148,51 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                 ),
                 child: Stack(
                   children: [
-                    // Animated Moving Bubbles for Dynamic Feel
-                    AnimatedBuilder(
-                      animation: _bubble1Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble1Animation.value.dx,
-                          top: 240 * _bubble1Animation.value.dy,
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.15),
-                                  Colors.white.withOpacity(0.08),
-                                  Colors.white.withOpacity(0.03),
-                                ],
-                                stops: const [0.0, 0.6, 1.0],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.1),
-                                  spreadRadius: 0,
-                                  blurRadius: 20,
-                                  offset: const Offset(-5, -5),
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  spreadRadius: 0,
-                                  blurRadius: 15,
-                                  offset: const Offset(5, 5),
-                                ),
-                              ],
-                            ),
+                    // Static Professional Background Elements
+                    Positioned(
+                      right: 40,
+                      top: 50,
+                      child: Container(
+                        width: 120,
+                        height: 120,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.08),
+                              Colors.white.withOpacity(0.04),
+                              Colors.transparent,
+                            ],
                           ),
-                        );
-                      },
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.1),
+                            width: 1,
+                          ),
+                        ),
+                      ),
                     ),
                     
-                    AnimatedBuilder(
-                      animation: _bubble2Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble2Animation.value.dx,
-                          top: 240 * _bubble2Animation.value.dy,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.12),
-                                  Colors.white.withOpacity(0.06),
-                                  Colors.white.withOpacity(0.02),
-                                ],
-                                stops: const [0.0, 0.7, 1.0],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.15),
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.08),
-                                  spreadRadius: 0,
-                                  blurRadius: 18,
-                                  offset: const Offset(-3, -3),
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  spreadRadius: 0,
-                                  blurRadius: 12,
-                                  offset: const Offset(3, 3),
-                                ),
-                              ],
-                            ),
+                    Positioned(
+                      left: 30,
+                      bottom: 30,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: RadialGradient(
+                            colors: [
+                              Colors.white.withOpacity(0.06),
+                              Colors.white.withOpacity(0.03),
+                              Colors.transparent,
+                            ],
                           ),
-                        );
-                      },
-                    ),
-                    
-                    AnimatedBuilder(
-                      animation: _bubble3Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble3Animation.value.dx,
-                          top: 240 * _bubble3Animation.value.dy,
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.08),
-                                  Colors.white.withOpacity(0.04),
-                                  Colors.transparent,
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.1),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.05),
-                                  spreadRadius: 0,
-                                  blurRadius: 10,
-                                  offset: const Offset(-2, -2),
-                                ),
-                              ],
-                            ),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.08),
+                            width: 1,
                           ),
-                        );
-                      },
-                    ),
-                    
-                    AnimatedBuilder(
-                      animation: _bubble4Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble4Animation.value.dx,
-                          top: 240 * _bubble4Animation.value.dy,
-                          child: Container(
-                            width: 120,
-                            height: 120,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.1),
-                                  Colors.white.withOpacity(0.05),
-                                  Colors.transparent,
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.08),
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
+                        ),
+                      ),
                     ),
                     
                     // Main Content - Refined Layout
@@ -639,39 +480,56 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                         }).toList();
                       }),
                 builder: (context, snapshot) {
+                  print('🔄 === STREAMBUILDER DEBUG INFO ===');
                   print('🔄 StreamBuilder state: ${snapshot.connectionState}');
                   print('❌ StreamBuilder hasError: ${snapshot.hasError}');
                   print('📝 StreamBuilder error: ${snapshot.error}');
                   print('✅ StreamBuilder hasData: ${snapshot.hasData}');
                   print('📊 StreamBuilder data length: ${snapshot.data?.length}');
+                  print('🔍 Search query: "$searchQuery"');
+                  print('⏰ Timestamp: ${DateTime.now()}');
+                  print('🔄 === STREAMBUILDER DEBUG END ===');
                   
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                  return _buildLoadingState();
+                    print('⏳ StreamBuilder is waiting for data...');
+                    return _buildLoadingState();
                   }
 
                   if (snapshot.hasError) {
                     print('❌ StreamBuilder error details: ${snapshot.error}');
+                    print('❌ Error type: ${snapshot.error.runtimeType}');
+                    print('❌ Falling back to direct Firebase fetch...');
                     // Try to fetch data once as a fallback
                     return FutureBuilder<List<Hospital>>(
                       future: _fetchHospitalsOnce(),
                       builder: (context, futureSnapshot) {
                         if (futureSnapshot.connectionState == ConnectionState.waiting) {
-                        return _buildLoadingState();
+                          print('⏳ FutureBuilder fallback is waiting...');
+                          return _buildLoadingState();
                         }
                         
                         if (futureSnapshot.hasError) {
-                        return _buildErrorState();
+                          print('❌ FutureBuilder fallback also failed: ${futureSnapshot.error}');
+                          return _buildErrorState();
                         }
                         
                         final hospitals = futureSnapshot.data ?? [];
+                        print('📦 FutureBuilder fallback success: ${hospitals.length} hospitals');
                         return _buildHospitalsList(hospitals);
                       },
                     );
                   }
 
                   final hospitals = snapshot.data ?? [];
+                  print('🎉 === FINAL HOSPITALS DATA ===');
                   print('🎉 Final hospitals list length: ${hospitals.length}');
                   print('🌍 Google Places hospitals: ${hospitals.where((h) => h.isFromGooglePlaces).length}');
+                  print('🏥 Firebase hospitals: ${hospitals.where((h) => !h.isFromGooglePlaces).length}');
+                  if (hospitals.isNotEmpty) {
+                    print('🏥 First hospital: ${hospitals.first.name}');
+                    print('🏥 First hospital location: ${hospitals.first.location}');
+                  }
+                  print('🎉 === FINAL HOSPITALS END ===');
                   return _buildHospitalsList(hospitals);
                 },
                                               ),
@@ -1013,8 +871,17 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                   hospital.existsInFirebase && 
                                   hospital.verified;
     
+    // Check if this hospital should show "Unverified" badge
+    // Only show badge if: hospital is from Google Places, has a placeId, 
+    // but does NOT exist in Firebase yet
+    bool shouldShowUnverifiedBadge = hospital.isFromGooglePlaces && 
+                                    hospital.placeId != null && 
+                                    hospital.placeId!.isNotEmpty && 
+                                    !hospital.existsInFirebase;
+    
     print('Hospital ${hospital.name} - Should show Under Review: $shouldShowUnderReviewBadge');
     print('Hospital ${hospital.name} - Should show Verified: $shouldShowVerifiedBadge');
+    print('Hospital ${hospital.name} - Should show Unverified: $shouldShowUnverifiedBadge');
     print('  - isFromGooglePlaces: ${hospital.isFromGooglePlaces}');
     print('  - placeId: ${hospital.placeId}');
     print('  - existsInFirebase: ${hospital.existsInFirebase}');
@@ -1038,9 +905,10 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                                     aboutText: hospital.about ?? 'This healthcare facility is committed to providing exceptional medical care and services.',
                                                     hospitalSchedule: hospital.availableSchedule,
                                                     supportsBooking: hospital.supportsBooking,
-                                                    isFromGooglePlaces: hospital.isFromGooglePlaces,
-                                                    placeId: hospital.placeId,
-                                                  ),
+                                                                                                    isFromGooglePlaces: hospital.isFromGooglePlaces,
+                                                placeId: hospital.placeId,
+                                                isUnverified: shouldShowUnverifiedBadge,
+                                              ),
                                                 ),
                                               );
                                             },
@@ -1198,6 +1066,47 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                             const SizedBox(width: 4),
                             Text(
                               'Verified',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  
+                  // Unverified Badge (if hospital is from Google Places but not in Firebase)
+                  if (shouldShowUnverifiedBadge)
+                    Positioned(
+                      top: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.95),
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.red.withOpacity(0.3),
+                              spreadRadius: 0,
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.warning_rounded,
+                              size: 14,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Unverified',
                               style: TextStyle(
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
@@ -1443,6 +1352,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> with Ticker
                                 isFromGooglePlaces: hospital.isFromGooglePlaces,
                                 placeId: hospital.placeId,
                                 isVerified: shouldShowVerifiedBadge, // Passer le statut de vérification
+                                isUnverified: shouldShowUnverifiedBadge, // Passer le statut non vérifié
                               ),
                             ),
                           );
