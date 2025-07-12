@@ -50,15 +50,9 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="/user-management" class="nav-link">
-                        <i class="fas fa-users-cog"></i>
-                        <span>User Management</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="/settings" class="nav-link">
-                        <i class="fas fa-cogs"></i>
-                        <span>Settings</span>
+                    <a href="/suggestions" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Suggestions</span>
                     </a>
                 </div>
             </nav>
@@ -318,30 +312,50 @@
                                 </h5>
                             </div>
                             <div class="card-content">
-                                <div class="row">
-                                    <div class="col-sm-6 mb-3">
+                                <div class="quick-actions-grid">
+                                    <div class="action-item">
                                         <a href="/clinics" class="action-btn primary">
-                                            <i class="fas fa-hospital"></i>
-                                            <span>Manage Clinics</span>
+                                            <div class="action-icon">
+                                                <i class="fas fa-hospital"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>Manage Clinics</h6>
+                                                <p>Review and approve healthcare centers</p>
+                                            </div>
                                         </a>
                                     </div>
-                                    <div class="col-sm-6 mb-3">
-                                        <a href="/user-management" class="action-btn secondary">
-                                            <i class="fas fa-users"></i>
-                                            <span>Manage Users</span>
+                                    <div class="action-item">
+                                        <a href="/suggestions" class="action-btn warning">
+                                            <div class="action-icon">
+                                                <i class="fas fa-lightbulb"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>View Suggestions</h6>
+                                                <p>Review user feedback and suggestions</p>
+                                            </div>
                                         </a>
                                     </div>
-                                    <div class="col-sm-6 mb-3">
+                                    <div class="action-item">
                                         <button class="action-btn info" onclick="generateReport()">
-                                            <i class="fas fa-file-alt"></i>
-                                            <span>Generate Report</span>
+                                            <div class="action-icon">
+                                                <i class="fas fa-file-alt"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>Generate Report</h6>
+                                                <p>Create detailed analytics reports</p>
+                                            </div>
                                         </button>
                                     </div>
-                                    <div class="col-sm-6 mb-3">
-                                        <a href="/settings" class="action-btn warning">
-                                            <i class="fas fa-cog"></i>
-                                            <span>System Settings</span>
-                                        </a>
+                                    <div class="action-item">
+                                        <button class="action-btn success" onclick="viewAnalytics()">
+                                            <div class="action-icon">
+                                                <i class="fas fa-chart-bar"></i>
+                                            </div>
+                                            <div class="action-content">
+                                                <h6>View Analytics</h6>
+                                                <p>Monitor platform performance</p>
+                                            </div>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -411,6 +425,32 @@
             });
         }
 
+        function viewAnalytics() {
+            Swal.fire({
+                title: 'Analytics Dashboard',
+                html: `
+                    <div style="text-align: left; margin: 1rem 0;">
+                        <h6>Platform Performance Overview:</h6>
+                        <ul style="margin-left: 1rem;">
+                            <li>Total Users: <strong>1,248</strong></li>
+                            <li>Active Clinics: <strong>36</strong></li>
+                            <li>Monthly Growth: <strong>+15.2%</strong></li>
+                            <li>System Uptime: <strong>99.9%</strong></li>
+                        </ul>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'View Detailed Analytics',
+                showCancelButton: true,
+                cancelButtonText: 'Close'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // In a real application, you would navigate to a detailed analytics page
+                    Swal.fire('Coming Soon!', 'Detailed analytics dashboard is under development.', 'info');
+                }
+            });
+        }
+
         // Logout function
         function handleLogout() {
             Swal.fire({
@@ -424,12 +464,84 @@
                 cancelButtonColor: '#159BBD'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                    // Call logout API first
+                    fetch('/api/admin/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                                window.location.href = '/login';
+                            });
+                        } else {
+                            Swal.fire('Error', 'Failed to logout. Please try again.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        // Even if API call fails, redirect to login
                         window.location.href = '/login';
                     });
                 }
             });
         }
+
+        // Improved dashboard content positioning
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add smooth scrolling for navigation
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Optimize layout for better positioning
+            const contentCards = document.querySelectorAll('.content-card');
+            contentCards.forEach(card => {
+                card.style.marginBottom = '1.5rem';
+            });
+
+            // Auto-adjust grid spacing
+            const statCards = document.querySelectorAll('.stat-card');
+            if (statCards.length > 0) {
+                statCards.forEach(card => {
+                    card.style.marginBottom = '1rem';
+                });
+            }
+
+            // Ensure proper spacing between sections
+            const rows = document.querySelectorAll('.row');
+            rows.forEach(row => {
+                row.style.marginBottom = '2rem';
+            });
+
+            // Improved responsive positioning
+            function adjustLayout() {
+                const screenWidth = window.innerWidth;
+                const dashboardContent = document.querySelector('.dashboard-content');
+                
+                if (screenWidth < 768) {
+                    dashboardContent.style.padding = '1rem';
+                } else if (screenWidth < 1200) {
+                    dashboardContent.style.padding = '1.5rem';
+                } else {
+                    dashboardContent.style.padding = '2rem';
+                }
+            }
+
+            adjustLayout();
+            window.addEventListener('resize', adjustLayout);
+        });
     </script>
 
     <style>
@@ -452,44 +564,117 @@
             color: var(--text-light);
         }
 
+        /* Enhanced Quick Actions Grid */
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .action-item {
+            transition: all 0.3s ease;
+        }
+
+        .action-item:hover {
+            transform: translateY(-2px);
+        }
+
         .action-btn {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 15px;
-            border: none;
-            border-radius: var(--border-radius);
+            gap: 1rem;
+            padding: 1.5rem;
+            border-radius: 12px;
             text-decoration: none;
-            color: white;
-            font-weight: 500;
-            transition: var(--transition);
+            border: none;
             width: 100%;
-            cursor: pointer;
-        }
-
-        .action-btn.primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-        }
-
-        .action-btn.secondary {
-            background: linear-gradient(135deg, var(--secondary-color), #1976D2);
-        }
-
-        .action-btn.info {
-            background: linear-gradient(135deg, var(--info-color), #138496);
-        }
-
-        .action-btn.warning {
-            background: linear-gradient(135deg, var(--warning-color), #e0a800);
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(21, 155, 189, 0.2);
         }
 
         .action-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-lg);
+            box-shadow: 0 6px 20px rgba(21, 155, 189, 0.3);
+            transform: translateY(-1px);
             color: white;
-            text-decoration: none;
         }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, #159BBD, #0EA5E9);
+        }
+
+        .action-btn.warning {
+            background: linear-gradient(135deg, #fd7e14, #f59e0b);
+        }
+
+        .action-btn.info {
+            background: linear-gradient(135deg, #6f42c1, #8b5cf6);
+        }
+
+        .action-btn.success {
+            background: linear-gradient(135deg, #28a745, #22c55e);
+        }
+
+        .action-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        .action-icon i {
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .action-content {
+            flex: 1;
+            text-align: left;
+        }
+
+        .action-content h6 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .action-content p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.4;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .quick-actions-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .action-btn {
+                padding: 1rem;
+                gap: 0.75rem;
+            }
+            
+            .action-icon {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .action-icon i {
+                font-size: 1.2rem;
+            }
+        }
+
+        /* Action buttons are now handled by the enhanced grid styles above */
 
         .status-list {
             display: flex;

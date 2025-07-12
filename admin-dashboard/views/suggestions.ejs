@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suggestions Management - HomeCare Plus</title>
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+        :root {
+            --primary-color: #159BBD;
+            --secondary-color: #0D5C73;
+            --accent-color: #20C997;
+            --danger-color: #DC3545;
+            --warning-color: #FD7E14;
+            --success-color: #28A745;
+            --info-color: #17A2B8;
+            --light-color: #F8F9FA;
+            --dark-color: #212529;
+            --border-color: #E9ECEF;
+            --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+            --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.2);
+            --border-radius: 0.375rem;
+            --transition: all 0.3s ease;
+        }
+
+        /* Dashboard Content Specific Styles */
+        .dashboard-content {
+            padding: 2rem;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.3; }
+            50% { transform: scale(1.1); opacity: 0.6; }
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .hero-subtitle {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 1rem;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-lg);
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .suggestions-section {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            box-shadow: var(--shadow-xl);
+            border: 1px solid var(--border-color);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            color: var(--primary-color);
+            font-size: 1.2rem;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 300px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.75rem 1rem 0.75rem 2.5rem;
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(21, 155, 189, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6c757d;
+        }
+
+        .table-responsive {
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table thead th {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.85rem;
+        }
+
+        .table tbody td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(21, 155, 189, 0.05);
+        }
+
+        .suggestion-info {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .suggestion-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .suggestion-details h6 {
+            margin: 0;
+            color: var(--dark-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .suggestion-details p {
+            margin: 0;
+            color: #6c757d;
+            font-size: 0.8rem;
+            line-height: 1.3;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-reviewed {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-implemented {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .priority-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .priority-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .priority-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .priority-low {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 0.375rem 0.75rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: var(--transition);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .action-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        .action-btn.success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .action-btn.success:hover {
+            background: #1e7e34;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .action-btn.warning:hover {
+            background: #e8590c;
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .suggestion-type {
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: white;
+            background: var(--info-color);
+        }
+
+        .suggestion-type.feature {
+            background: var(--primary-color);
+        }
+
+        .suggestion-type.bug {
+            background: var(--danger-color);
+        }
+
+        .suggestion-type.improvement {
+            background: var(--success-color);
+        }
+
+        .suggestion-type.general {
+            background: var(--info-color);
+        }
+
+        .text-truncate {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 200px;
+        }
+
+        /* Custom Modal Styles */
+        .custom-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .custom-modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 0;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            transform: scale(0.9);
+            transition: all 0.3s ease;
+        }
+
+        .custom-modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0.3;
+        }
+
+        .modal-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin: 0.5rem 0 0 0;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            z-index: 2;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 2rem;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .detail-grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .detail-value {
+            color: var(--dark-color);
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .detail-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-primary {
+            background: rgba(21, 155, 189, 0.1);
+            color: var(--primary-color);
+            border: 1px solid rgba(21, 155, 189, 0.3);
+        }
+
+        .badge-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(40, 167, 69, 0.3);
+        }
+
+        .badge-warning {
+            background: rgba(253, 126, 20, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(253, 126, 20, 0.3);
+        }
+
+        .badge-danger {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+            border: 1px solid rgba(220, 53, 69, 0.3);
+        }
+
+        .modal-actions {
+            padding: 1.5rem 2rem;
+            background: var(--light-color);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .modal-btn.secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .modal-btn.secondary:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .stats-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .section-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .search-box {
+                max-width: 100%;
+            }
+
+            .modal-content {
+                width: 95%;
+                margin: 1rem;
+            }
+
+            .modal-header {
+                padding: 1.5rem;
+            }
+
+            .modal-body {
+                padding: 1.5rem;
+            }
+
+            .modal-actions {
+                padding: 1rem 1.5rem;
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background -->
+    <div class="animated-bg"></div>
+    
+    <!-- Floating Particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-heartbeat"></i>
+                    <span>HomeCare Plus</span>
+                </div>
+                <div class="sidebar-user">
+                    <div class="user-avatar">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <div class="user-info">
+                        <h6>Admin System</h6>
+                        <span>Super Administrator</span>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-item">
+                    <a href="/" class="nav-link">
+                        <i class="fas fa-chart-line"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </div>
+                <div class="nav-item">
+                    <a href="/clinics" class="nav-link">
+                        <i class="fas fa-hospital"></i>
+                        <span>Healthcare Centers</span>
+                    </a>
+                </div>
+                <div class="nav-item active">
+                    <a href="/suggestions" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Suggestions</span>
+                    </a>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <div class="nav-item">
+                    <a href="#" class="nav-link" onclick="handleLogout(); return false;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Logout</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Top Header -->
+            <div class="top-header">
+                <div class="header-left">
+                    <button class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1>Suggestions Management</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-container">
+                        <input type="text" class="search-input" placeholder="Search suggestions...">
+                        <i class="fas fa-search search-icon"></i>
+                    </div>
+                    <div class="user-menu" id="userMenu">
+                        <div class="user-avatar-small">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span>Admin</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Hero Section -->
+                <div class="hero-section">
+                    <div class="hero-content">
+                        <div class="hero-title">
+                            <i class="fas fa-lightbulb"></i>
+                            Suggestions Management Center
+                        </div>
+                        <div class="hero-subtitle">
+                            Monitor and manage hospital suggestions from users across the platform
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistics Cards -->
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalSuggestions"><%= totalSuggestions %></div>
+                        <div class="stat-label">Total Suggestions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="pendingSuggestions"><%= pendingSuggestions %></div>
+                        <div class="stat-label">Pending Review</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="reviewedSuggestions"><%= reviewedSuggestions %></div>
+                        <div class="stat-label">Reviewed</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="implementedSuggestions"><%= implementedSuggestions %></div>
+                        <div class="stat-label">Implemented</div>
+                    </div>
+                </div>
+
+                <!-- Suggestions Table Section -->
+                <div class="suggestions-section">
+                    <div class="section-header">
+                        <div class="section-title">
+                            <i class="fas fa-list"></i>
+                            Suggestions List
+                        </div>
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="searchInput" placeholder="Search suggestions..." onkeyup="filterSuggestions()">
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Suggestion</th>
+                                    <th>Type</th>
+                                    <th>Priority</th>
+                                    <th>User</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suggestionsTable">
+                                <!-- Suggestions will be loaded here dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Modal for Viewing Suggestions -->
+    <div class="custom-modal" id="suggestionModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeSuggestionModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+                <div class="modal-header-content">
+                    <h2 class="modal-title">
+                        <i class="fas fa-lightbulb"></i>
+                        Suggestion Details
+                    </h2>
+                    <p class="modal-subtitle" id="modalSubtitle">Comprehensive view of the suggestion</p>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="detail-grid" id="suggestionDetails">
+                    <!-- Details will be populated here -->
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn secondary" onclick="closeSuggestionModal()">
+                    <i class="fas fa-times"></i>
+                    Close
+                </button>
+                <button class="modal-btn primary" onclick="addAdminNotesFromModal()">
+                    <i class="fas fa-edit"></i>
+                    Add Notes
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let suggestionsData = [];
+        let currentSuggestionId = null;
+
+        // Load suggestions from API
+        async function loadSuggestions() {
+            try {
+                console.log('🔄 Loading suggestions from API...');
+                
+                const response = await fetch('/api/suggestions');
+                console.log('📡 API Response status:', response.status);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📄 API Response data:', data);
+                
+                if (data.success && data.suggestions) {
+                    suggestionsData = data.suggestions;
+                    console.log('✅ Suggestions loaded successfully:', suggestionsData.length, 'suggestions');
+                    console.log('📋 First few suggestions:', suggestionsData.slice(0, 3));
+                    
+                    displaySuggestions(suggestionsData);
+                    updateStats(suggestionsData);
+                } else {
+                    console.error('❌ Invalid response format:', data);
+                    throw new Error('Invalid response format');
+                }
+            } catch (error) {
+                console.error('💥 Error loading suggestions:', error);
+                
+                // Show error message to user
+                document.getElementById('suggestionsTable').innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-danger">
+                            <div class="empty-state">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <p>Error loading suggestions: ${error.message}</p>
+                                <button class="btn btn-primary btn-sm mt-2" onclick="loadSuggestions()">
+                                    <i class="fas fa-retry"></i> Retry
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        // Display suggestions in table
+        function displaySuggestions(suggestions) {
+            const tableBody = document.getElementById('suggestionsTable');
+            
+            if (suggestions.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <div class="empty-state">
+                                <i class="fas fa-lightbulb"></i>
+                                <p>No suggestions found</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tableBody.innerHTML = suggestions.map(suggestion => `
+                <tr>
+                    <td>
+                        <div class="suggestion-info">
+                            <div class="suggestion-avatar">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <div class="suggestion-details">
+                                <h6>${suggestion.hospitalName || 'General Suggestion'}</h6>
+                                <p class="text-truncate" title="${suggestion.description || 'No description'}">${suggestion.description || 'No description'}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="suggestion-type ${suggestion.suggestionType || 'general'}">
+                            ${(suggestion.suggestionType || 'general').toUpperCase()}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="priority-badge priority-${suggestion.priority || 'medium'}">
+                            ${(suggestion.priority || 'medium').toUpperCase()}
+                        </span>
+                    </td>
+                    <td>
+                        <div>
+                            <strong>${suggestion.userName || 'Anonymous'}</strong>
+                            <br>
+                            <small class="text-muted">${suggestion.userEmail || 'No email'}</small>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge status-${suggestion.status || 'pending'}">
+                            ${(suggestion.status || 'pending').toUpperCase()}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="action-btn primary" onclick="viewSuggestion('${suggestion.id}')">
+                                <i class="fas fa-eye"></i>
+                                View
+                            </button>
+                            ${suggestion.status === 'pending' ? `
+                                <button class="action-btn success" onclick="markAsReviewed('${suggestion.id}')">
+                                    <i class="fas fa-check"></i>
+                                    Review
+                                </button>
+                            ` : ''}
+                            ${suggestion.status === 'reviewed' ? `
+                                <button class="action-btn warning" onclick="markAsImplemented('${suggestion.id}')">
+                                    <i class="fas fa-wrench"></i>
+                                    Implement
+                                </button>
+                            ` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Update statistics
+        function updateStats(suggestions) {
+            const totalSuggestions = suggestions.length;
+            const pendingSuggestions = suggestions.filter(s => s.status === 'pending').length;
+            const reviewedSuggestions = suggestions.filter(s => s.status === 'reviewed').length;
+            const implementedSuggestions = suggestions.filter(s => s.status === 'implemented').length;
+
+            document.getElementById('totalSuggestions').textContent = totalSuggestions;
+            document.getElementById('pendingSuggestions').textContent = pendingSuggestions;
+            document.getElementById('reviewedSuggestions').textContent = reviewedSuggestions;
+            document.getElementById('implementedSuggestions').textContent = implementedSuggestions;
+        }
+
+        // Filter suggestions
+        function filterSuggestions() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filteredSuggestions = suggestionsData.filter(suggestion => {
+                const searchableText = [
+                    suggestion.hospitalName || '',
+                    suggestion.description || '',
+                    suggestion.suggestionType || '',
+                    suggestion.userName || '',
+                    suggestion.userEmail || '',
+                    suggestion.status || ''
+                ].join(' ').toLowerCase();
+                
+                return searchableText.includes(searchTerm);
+            });
+            
+            displaySuggestions(filteredSuggestions);
+        }
+
+        // View suggestion details in custom modal
+        function viewSuggestion(suggestionId) {
+            const suggestion = suggestionsData.find(s => s.id === suggestionId);
+            if (!suggestion) return;
+            
+            currentSuggestionId = suggestionId;
+            
+            // Update modal subtitle
+            document.getElementById('modalSubtitle').textContent = `Submitted by ${suggestion.userName || 'Anonymous'}`;
+            
+            // Get priority badge class
+            const priorityClass = suggestion.priority === 'high' ? 'badge-danger' : 
+                                 suggestion.priority === 'medium' ? 'badge-warning' : 'badge-success';
+            
+            // Get status badge class
+            const statusClass = suggestion.status === 'pending' ? 'badge-warning' :
+                               suggestion.status === 'reviewed' ? 'badge-primary' : 'badge-success';
+            
+            // Create details HTML
+            const detailsHTML = `
+                <div class="detail-item">
+                    <div class="detail-label">Hospital Name</div>
+                    <div class="detail-value">${suggestion.hospitalName || 'General Suggestion'}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Description</div>
+                    <div class="detail-value">${suggestion.description || 'No description provided'}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Hospital Address</div>
+                    <div class="detail-value">${suggestion.hospitalAddress || 'No address provided'}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Suggestion Type</div>
+                    <div class="detail-value">
+                        <span class="detail-badge badge-primary">${(suggestion.suggestionType || 'general').toUpperCase()}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Priority Level</div>
+                    <div class="detail-value">
+                        <span class="detail-badge ${priorityClass}">${(suggestion.priority || 'medium').toUpperCase()}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Current Status</div>
+                    <div class="detail-value">
+                        <span class="detail-badge ${statusClass}">${(suggestion.status || 'pending').toUpperCase()}</span>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Submitted By</div>
+                    <div class="detail-value">
+                        <strong>${suggestion.userName || 'Anonymous'}</strong><br>
+                        <small style="color: #6c757d;">${suggestion.userEmail || 'No email provided'}</small>
+                    </div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Submission Date</div>
+                    <div class="detail-value">${new Date(suggestion.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })}</div>
+                </div>
+                
+                ${suggestion.adminNotes ? `
+                    <div class="detail-item">
+                        <div class="detail-label">Admin Notes</div>
+                        <div class="detail-value" style="background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid var(--primary-color);">
+                            ${suggestion.adminNotes}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${suggestion.reviewedBy ? `
+                    <div class="detail-item">
+                        <div class="detail-label">Reviewed By</div>
+                        <div class="detail-value">${suggestion.reviewedBy}</div>
+                    </div>
+                ` : ''}
+                
+                ${suggestion.reviewedAt ? `
+                    <div class="detail-item">
+                        <div class="detail-label">Review Date</div>
+                        <div class="detail-value">${new Date(suggestion.reviewedAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })}</div>
+                    </div>
+                ` : ''}
+                
+                ${suggestion.tags && suggestion.tags.length > 0 ? `
+                    <div class="detail-item">
+                        <div class="detail-label">Tags</div>
+                        <div class="detail-value">
+                            ${suggestion.tags.map(tag => `<span class="detail-badge badge-primary" style="margin-right: 0.5rem;">${tag}</span>`).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            
+            // Update modal content
+            document.getElementById('suggestionDetails').innerHTML = detailsHTML;
+            
+            // Show modal
+            document.getElementById('suggestionModal').classList.add('show');
+        }
+
+        // Close suggestion modal
+        function closeSuggestionModal() {
+            document.getElementById('suggestionModal').classList.remove('show');
+            currentSuggestionId = null;
+        }
+
+        // Add admin notes from modal
+        function addAdminNotesFromModal() {
+            if (currentSuggestionId) {
+                addAdminNotes(currentSuggestionId);
+            }
+        }
+
+        // Mark suggestion as reviewed
+        function markAsReviewed(suggestionId) {
+            Swal.fire({
+                title: 'Mark as Reviewed',
+                text: 'Are you sure you want to mark this suggestion as reviewed?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, mark as reviewed'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Here you would typically make an API call to update the suggestion status
+                    Swal.fire('Marked as Reviewed!', 'The suggestion has been marked as reviewed.', 'success');
+                    // Reload suggestions to reflect changes
+                    loadSuggestions();
+                }
+            });
+        }
+
+        // Mark suggestion as implemented
+        function markAsImplemented(suggestionId) {
+            Swal.fire({
+                title: 'Mark as Implemented',
+                text: 'Are you sure you want to mark this suggestion as implemented?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#fd7e14',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, mark as implemented'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Here you would typically make an API call to update the suggestion status
+                    Swal.fire('Marked as Implemented!', 'The suggestion has been marked as implemented.', 'success');
+                    // Reload suggestions to reflect changes
+                    loadSuggestions();
+                }
+            });
+        }
+
+        // Add admin notes
+        function addAdminNotes(suggestionId) {
+            Swal.fire({
+                title: 'Add Admin Notes',
+                input: 'textarea',
+                inputLabel: 'Admin Notes',
+                inputPlaceholder: 'Enter your notes about this suggestion...',
+                showCancelButton: true,
+                confirmButtonText: 'Save Notes',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'You need to write something!';
+                    }
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Here you would typically make an API call to save the admin notes
+                    Swal.fire('Notes Saved!', 'Admin notes have been saved for this suggestion.', 'success');
+                    // Close the custom modal if open
+                    closeSuggestionModal();
+                    // Reload suggestions to reflect changes
+                    loadSuggestions();
+                }
+            });
+        }
+
+        // Logout function
+        function handleLogout() {
+            Swal.fire({
+                title: 'Logout Confirmation',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Logout',
+                cancelButtonText: 'Cancel',
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#159BBD'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Call logout API first
+                    fetch('/api/admin/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                                window.location.href = '/login';
+                            });
+                        } else {
+                            Swal.fire('Error', 'Failed to logout. Please try again.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        // Even if API call fails, redirect to login
+                        window.location.href = '/login';
+                    });
+                }
+            });
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('suggestionModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeSuggestionModal();
+            }
+        });
+
+        // Load suggestions on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSuggestions();
+        });
+    </script>
+</body>
+</html> 

@@ -3,797 +3,597 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete Profile - <%= clinic.clinicName || clinic.name || 'Healthcare Center' %></title>
+    <title><%= clinic.name || clinic.clinicName %> - Detailed Profile</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="/css/dashboard.css" rel="stylesheet">
     <style>
         :root {
             --primary-color: #159BBD;
-            --secondary-color: #1abc9c;
-            --accent-color: #2ecc71;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
-            --dark-color: #2c3e50;
-            --light-bg: #f8f9fa;
-            --border-color: #dee2e6;
+            --secondary-color: #20c997;
+            --accent-color: #fd7e14;
+            --dark-color: #212529;
         }
 
-        body {
-            background-color: var(--light-bg);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        .page-header {
+        .clinic-header {
             background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
             padding: 2rem 0;
             margin-bottom: 2rem;
-            border-radius: 0 0 15px 15px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
 
-        .btn-back {
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            color: white;
-            border-radius: 50px;
-            padding: 0.5rem 1.5rem;
-            transition: all 0.3s ease;
+        .clinic-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 20px;
+            border: 4px solid white;
+            object-fit: cover;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
         }
 
-        .btn-back:hover {
-            background: rgba(255,255,255,0.3);
-            color: white;
-            transform: translateY(-2px);
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
         }
 
-        .profile-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 15px;
+        .status-verified {
+            background: rgba(32, 201, 151, 0.1);
+            color: var(--secondary-color);
+            border: 2px solid var(--secondary-color);
+        }
+
+        .status-pending {
+            background: rgba(253, 126, 20, 0.1);
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+        }
+
+        .status-rejected {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 2px solid #dc3545;
         }
 
         .info-card {
             background: white;
             border-radius: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-            overflow: hidden;
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
-            color: white;
             padding: 1.5rem;
-            border: none;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border: 1px solid #f0f0f0;
+        }
+
+        .info-card h5 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
             font-weight: 600;
-            font-size: 1.1rem;
         }
 
-        .card-header i {
-            margin-right: 0.5rem;
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.8rem;
+            padding: 0.5rem 0;
         }
 
-        .info-table {
-            width: 100%;
-            margin: 0;
+        .info-item i {
+            color: var(--primary-color);
+            width: 20px;
+            margin-right: 10px;
         }
 
-        .info-table tbody tr {
-            border-bottom: 1px solid var(--border-color);
+        .facility-badge {
+            background: rgba(21, 155, 189, 0.1);
+            color: var(--primary-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 0.25rem;
+            display: inline-block;
         }
 
-        .info-table tbody tr:last-child {
-            border-bottom: none;
+        .rating-stars {
+            color: #ffc107;
+            margin-left: 10px;
         }
 
-        .info-table td {
-            padding: 1rem 1.5rem;
-            vertical-align: top;
-        }
-
-        .info-table td:first-child {
-            font-weight: 600;
-            color: var(--dark-color);
-            background-color: #f8f9fa;
-            width: 200px;
-            border-right: 1px solid var(--border-color);
-        }
-
-        .info-table td:last-child {
-            color: #555;
-        }
-
-        .status-badge {
-            padding: 0.5rem 1rem;
-            border-radius: 50px;
-            font-weight: 600;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .status-verified {
-            background: var(--accent-color);
+        .google-badge {
+            background: #4285f4;
             color: white;
-        }
-
-        .status-pending {
-            background: var(--warning-color);
-            color: white;
-        }
-
-        .status-rejected {
-            background: var(--danger-color);
-            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            margin-left: 10px;
         }
 
         .photo-gallery {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            padding: 1.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 1rem;
         }
 
         .photo-item {
-            position: relative;
             border-radius: 10px;
             overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             transition: transform 0.3s ease;
             cursor: pointer;
         }
 
         .photo-item:hover {
-            transform: translateY(-5px);
+            transform: scale(1.05);
         }
 
         .photo-item img {
             width: 100%;
-            height: 200px;
+            height: 150px;
             object-fit: cover;
-        }
-
-        .photo-label {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            color: white;
-            padding: 1rem 0.5rem 0.5rem;
-            font-size: 0.9rem;
-            text-align: center;
-            font-weight: 500;
-        }
-
-        .services-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-            padding: 1.5rem;
-        }
-
-        .service-item {
-            background: var(--light-bg);
-            padding: 1.5rem;
-            border-radius: 10px;
-            border-left: 4px solid var(--primary-color);
-            transition: all 0.3s ease;
-        }
-
-        .service-item:hover {
-            background: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-
-        .service-name {
-            font-weight: 600;
-            color: var(--dark-color);
-            margin-bottom: 0.5rem;
-            font-size: 1.1rem;
-        }
-
-        .service-price {
-            color: var(--primary-color);
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-
-        .service-description {
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #888;
-        }
-
-        .empty-state i {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #ddd;
         }
 
         .action-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 2rem;
-            flex-wrap: wrap;
-        }
-
-        .btn-action {
-            padding: 0.75rem 2rem;
-            border-radius: 50px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-approve {
-            background: var(--accent-color);
-            color: white;
-        }
-
-        .btn-approve:hover {
-            background: #27ae60;
-            transform: translateY(-2px);
-        }
-
-        .btn-reject {
-            background: var(--danger-color);
-            color: white;
-        }
-
-        .btn-reject:hover {
-            background: #c0392b;
-            transform: translateY(-2px);
-        }
-
-        .clinic-avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .clinic-header-info {
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .clinic-title {
-            flex: 1;
-        }
-
-        .clinic-title h1 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 700;
-        }
-
-        .clinic-title p {
-            margin: 0.5rem 0 0;
-            opacity: 0.9;
-        }
-
-        .rating-display {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .rating-stars {
-            color: #ffc107;
-        }
-
-        .data-source-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.25rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .source-google {
-            background: rgba(66, 133, 244, 0.1);
-            color: #4285f4;
-        }
-
-        .source-manual {
-            background: rgba(156, 163, 175, 0.2);
-            color: #6b7280;
-        }
-
-        .hours-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            padding: 1.5rem;
-        }
-
-        .day-schedule {
-            background: var(--light-bg);
+            position: sticky;
+            bottom: 20px;
+            background: white;
             padding: 1rem;
-            border-radius: 8px;
-            text-align: center;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            margin-top: 2rem;
         }
 
-        .day-name {
+        .btn-custom {
+            border-radius: 10px;
+            padding: 12px 20px;
             font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
+            border: none;
+            transition: all 0.3s ease;
         }
 
-        .day-hours {
-            color: #6c757d;
+        .btn-approve { background: var(--secondary-color); color: white; }
+        .btn-reject { background: #dc3545; color: white; }
+        .btn-unapprove { background: var(--accent-color); color: white; }
+
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .opening-hours {
             font-size: 0.9rem;
+        }
+
+        .opening-hours .day {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .reviews-section {
+            max-height: 400px;
+            overflow-y: auto;
         }
 
         .review-item {
-            background: var(--light-bg);
-            padding: 1.5rem;
-            border-radius: 10px;
+            border-left: 3px solid var(--primary-color);
+            padding: 1rem;
             margin-bottom: 1rem;
-        }
-
-        .review-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-        }
-
-        .reviewer-name {
-            font-weight: 600;
-            color: var(--dark-color);
+            background: #f8f9fa;
+            border-radius: 0 10px 10px 0;
         }
 
         .review-rating {
             color: #ffc107;
+            margin-bottom: 0.5rem;
         }
-
-        @media (max-width: 768px) {
-            .clinic-header-info {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .info-table td:first-child {
-                width: auto;
-                display: block;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                padding-bottom: 0.5rem;
-            }
-            
-            .info-table td:last-child {
-                padding-top: 0.5rem;
-            }
-
-            .action-buttons {
-                flex-direction: column;
-                align-items: center;
-            }
-
-            .btn-action {
-                width: 100%;
-                max-width: 300px;
-                justify-content: center;
-            }
+        
+        .opening-hours .hour-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .opening-hours .hour-item:last-child {
+            border-bottom: none;
+        }
+        
+        .review-text {
+            font-style: italic;
+            color: #555;
+            line-height: 1.5;
+            margin: 0.5rem 0;
+        }
+        
+        .overall-rating {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .review-avatar {
+            object-fit: cover;
+        }
+        
+        .photo-item {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            aspect-ratio: 4/3;
+        }
+        
+        .photo-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+        
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.3s ease;
         }
     </style>
 </head>
 <body>
-    <div class="page-header">
+    <div class="clinic-header">
         <div class="container">
-            <div class="d-flex justify-content-center align-items-center mb-3">
-                <div class="d-flex align-items-center gap-3">
-                    <i class="fas fa-hospital-alt fa-2x"></i>
-                    <span class="fs-5">Complete Healthcare Profile</span>
-                </div>
-            </div>
-            
-            <div class="clinic-header-info">
-                <% if (clinic.profileImage || clinic.profileImageUrl) { %>
-                    <img src="<%= clinic.profileImage || clinic.profileImageUrl %>" alt="Logo" class="clinic-avatar">
-                <% } else { %>
-                    <div class="clinic-avatar d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.2);">
-                        <i class="fas fa-hospital-alt fa-2x"></i>
-                    </div>
-                <% } %>
-                
-                <div class="clinic-title">
-                    <h1><%= clinic.clinicName || clinic.name || 'Healthcare Center' %></h1>
-                    <p><i class="fas fa-map-marker-alt"></i> <%= clinic.address || clinic.location || clinic.googleAddress || 'Address not specified' %></p>
-                    <% if (clinic.rating && clinic.rating > 0) { %>
-                        <div class="rating-display">
-                            <div class="rating-stars">
-                                <% for (let i = 1; i <= 5; i++) { %>
-                                    <i class="fas fa-star <%= i <= clinic.rating ? '' : 'text-muted' %>"></i>
-                                <% } %>
-                            </div>
-                            <span class="text-white"><%= clinic.rating %>/5 • <%= clinic.user_ratings_total || 0 %> reviews</span>
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <% if (clinic.profileImageUrl || clinic.googlePhotos) { %>
+                        <img src="<%= clinic.profileImageUrl || (clinic.googlePhotos && clinic.googlePhotos.length > 0 ? 
+                            `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${clinic.googlePhotos[0].photo_reference}&key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g` : 
+                            '/assets/default-hospital.png') %>" 
+                             alt="<%= clinic.name || clinic.clinicName %>" 
+                             class="clinic-avatar">
+                    <% } else { %>
+                        <div class="clinic-avatar d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.2);">
+                            <i class="fas fa-hospital-alt fa-3x"></i>
                         </div>
                     <% } %>
                 </div>
-                
-                <div class="text-end">
-                    <% if (clinic.verified === true || clinic.isVerified === true) { %>
-                        <span class="status-badge status-verified">
-                            <i class="fas fa-check-circle"></i> Verified
+                <div class="col-md-8">
+                    <h1><%= clinic.name || clinic.clinicName %></h1>
+                    <p class="lead mb-3"><%= clinic.about || clinic.description || 'Healthcare facility' %></p>
+                    <div class="d-flex align-items-center">
+                        <span class="status-badge status-<%= clinic.verified || clinic.isVerified ? 'verified' : (clinic.status === 'rejected' ? 'rejected' : 'pending') %>">
+                            <%= clinic.verified || clinic.isVerified ? 'Verified' : (clinic.status === 'rejected' ? 'Rejected' : 'Pending') %>
                         </span>
-                    <% } else if (clinic.profileSetupComplete) { %>
-                        <span class="status-badge status-pending">
-                            <i class="fas fa-clock"></i> Pending
-                        </span>
-                    <% } else { %>
-                        <span class="status-badge status-rejected">
-                            <i class="fas fa-times-circle"></i> Incomplete
-                        </span>
+                        <% if (clinic.isFromGooglePlaces) { %>
+                            <span class="google-badge">
+                                <i class="fab fa-google"></i> Google Places
+                            </span>
+                        <% } %>
+                        <% if (clinic.googleRating) { %>
+                            <span class="rating-stars">
+                                <% for (let i = 1; i <= 5; i++) { %>
+                                    <i class="fas fa-star<%= i <= Math.floor(clinic.googleRating) ? '' : (i === Math.ceil(clinic.googleRating) ? '-half-alt' : ' text-muted') %>"></i>
+                                <% } %>
+                                (<%= clinic.googleRating %>/5)
+                                <% if (clinic.googleUserRatingsTotal) { %>
+                                    - <%= clinic.googleUserRatingsTotal %> reviews
+                                <% } %>
+                            </span>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <a href="/clinics" class="btn btn-light btn-custom">
+                        <i class="fas fa-arrow-left"></i> Back
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Informations principales -->
+            <div class="col-md-4">
+                <div class="info-card">
+                    <h5><i class="fas fa-info-circle"></i> General Information</h5>
+                    
+                    <% if (clinic.address || clinic.googleAddress) { %>
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span><%= clinic.address || clinic.googleAddress %></span>
+                    </div>
                     <% } %>
                     
-                    <div class="mt-2">
-                        <span class="data-source-badge <%= clinic.isFromGooglePlaces ? 'source-google' : 'source-manual' %>">
-                            <i class="fab fa-<%= clinic.isFromGooglePlaces ? 'google' : 'user-edit' %>"></i>
-                            <%= clinic.isFromGooglePlaces ? 'Google Places' : 'Manual Entry' %>
+                    <% if (clinic.phone || clinic.googlePhoneNumber) { %>
+                    <div class="info-item">
+                        <i class="fas fa-phone"></i>
+                        <span><%= clinic.phone || clinic.googlePhoneNumber %></span>
+                    </div>
+                    <% } %>
+                    
+                    <% if (clinic.email) { %>
+                    <div class="info-item">
+                        <i class="fas fa-envelope"></i>
+                        <span><%= clinic.email %></span>
+                    </div>
+                    <% } %>
+                    
+                    <% if (clinic.googleWebsite || clinic.website) { %>
+                    <div class="info-item">
+                        <i class="fas fa-globe"></i>
+                        <a href="<%= clinic.googleWebsite || clinic.website %>" target="_blank">Website</a>
+                    </div>
+                    <% } %>
+                    
+                    <% if (clinic.createdAt) { %>
+                    <div class="info-item">
+                        <i class="fas fa-calendar-plus"></i>
+                        <span>Added on <%= new Date(clinic.createdAt).toLocaleDateString('en-US') %></span>
+                    </div>
+                    <% } %>
+                    
+                    <% if (clinic.verifiedAt) { %>
+                    <div class="info-item">
+                        <i class="fas fa-check-circle"></i>
+                        <span>Verified on <%= new Date(clinic.verifiedAt).toLocaleDateString('en-US') %></span>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Heures d'ouverture Google -->
+                <% if (clinic.googleOpeningHours && clinic.googleOpeningHours.weekday_text) { %>
+                <div class="info-card">
+                    <h5><i class="fas fa-clock"></i> Opening Hours</h5>
+                    <div class="opening-hours">
+                        <% clinic.googleOpeningHours.weekday_text.forEach(day => { %>
+                        <div class="day">
+                            <span><%= day %></span>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <% } %>
+            </div>
+
+            <!-- Services et installations -->
+            <div class="col-md-8">
+                <div class="info-card">
+                    <h5><i class="fas fa-stethoscope"></i> Services and Facilities</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Medical Services</h6>
+                            <% if (clinic.services && clinic.services.length > 0) { %>
+                                <% clinic.services.forEach(service => { %>
+                                    <span class="facility-badge"><%= service %></span>
+                                <% }) %>
+                            <% } else if (clinic.facilities && clinic.facilities.length > 0) { %>
+                                <% clinic.facilities.forEach(facility => { %>
+                                    <span class="facility-badge"><%= facility %></span>
+                                <% }) %>
+                            <% } else { %>
+                                <span class="text-muted">No services specified</span>
+                            <% } %>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Types of Care</h6>
+                            <% if (clinic.googleTypes && clinic.googleTypes.length > 0) { %>
+                                <% clinic.googleTypes.forEach(type => { %>
+                                    <span class="facility-badge"><%= type.replace(/_/g, ' ').toUpperCase() %></span>
+                                <% }) %>
+                            <% } else { %>
+                                <span class="text-muted">Types not specified</span>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Photos de la clinique -->
+                <% 
+                // Déterminer les photos à afficher (priorité aux photos enrichies)
+                let photosToShow = [];
+                if (clinic.googlePhotos && clinic.googlePhotos.length > 0) {
+                    photosToShow = clinic.googlePhotos;
+                } else if (clinic.googlePlaceDetails && clinic.googlePlaceDetails.photos && clinic.googlePlaceDetails.photos.length > 0) {
+                    photosToShow = clinic.googlePlaceDetails.photos.map(photo => ({
+                        photo_reference: photo.photo_reference,
+                        url: `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photo.photo_reference}&key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g`,
+                        width: photo.width,
+                        height: photo.height
+                    }));
+                }
+                %>
+                
+                <% if (photosToShow.length > 0) { %>
+                <div class="info-card">
+                    <h5><i class="fas fa-images"></i> Facility Photos</h5>
+                    <div class="photo-gallery">
+                        <% photosToShow.slice(0, 8).forEach((photo, index) => { %>
+                        <div class="photo-item" onclick="openPhotoModal('<%= photo.photo_reference || photo.url %>')">
+                            <img src="<%= photo.url || `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}&key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g` %>" 
+                                 alt="Photo of <%= clinic.name || clinic.clinicName %>" 
+                                 loading="lazy"
+                                 onerror="this.parentElement.style.display='none'">
+                        </div>
+                        <% }) %>
+                    </div>
+                    <% if (photosToShow.length > 8) { %>
+                    <p class="text-center mt-3">
+                        <small class="text-muted">+ <%= photosToShow.length - 8 %> other photos</small>
+                    </p>
+                    <% } %>
+                </div>
+                <% } %>
+                
+                <!-- Informations supplémentaires Google Places -->
+                <% if (clinic.isFromGooglePlaces && clinic.placeId) { %>
+                <div class="info-card">
+                    <h5><i class="fab fa-google"></i> Google Places Information</h5>
+                    
+                    <% if (clinic.googleRating) { %>
+                    <div class="info-item">
+                        <i class="fas fa-star text-warning"></i>
+                        <span><strong>Google Rating:</strong> <%= clinic.googleRating %>/5 
+                            <% if (clinic.googleUserRatingsTotal) { %>
+                                (<%= clinic.googleUserRatingsTotal %> reviews)
+                            <% } %>
                         </span>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="profile-container">
-        <!-- General Information -->
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fas fa-info-circle"></i> General Information
-            </div>
-            <table class="info-table">
-                <tbody>
-                    <tr>
-                        <td>Healthcare Center Name</td>
-                        <td><%= clinic.clinicName || clinic.name || 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>Facility Type</td>
-                        <td><%= clinic.clinicType || clinic.types ? clinic.types.join(', ') : 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>Address</td>
-                        <td><%= clinic.address || clinic.location || clinic.googleAddress || clinic.formatted_address || 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>City</td>
-                        <td><%= clinic.city || 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>Country</td>
-                        <td><%= clinic.country || 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>Phone Number</td>
-                        <td><%= clinic.phone || clinic.googlePhoneNumber || clinic.international_phone_number || 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>Email</td>
-                        <td><%= clinic.email || 'Not specified' %></td>
-                    </tr>
-                    <tr>
-                        <td>Website</td>
-                        <td>
-                            <% if (clinic.website || clinic.googleWebsite) { %>
-                                <a href="<%= clinic.website || clinic.googleWebsite %>" target="_blank" class="text-primary">
-                                    <%= clinic.website || clinic.googleWebsite %>
-                                </a>
-                            <% } else { %>
-                                Not specified
-                            <% } %>
-                        </td>
-                    </tr>
-                    <% if (clinic.rating) { %>
-                    <tr>
-                        <td>Google Rating</td>
-                        <td>
-                            <div class="rating-display">
-                                <div class="rating-stars">
-                                    <% for (let i = 1; i <= 5; i++) { %>
-                                        <i class="fas fa-star <%= i <= clinic.rating ? '' : 'text-muted' %>"></i>
-                                    <% } %>
-                                </div>
-                                <span><%= clinic.rating %>/5 • <%= clinic.user_ratings_total || 0 %> reviews</span>
-                            </div>
-                        </td>
-                    </tr>
                     <% } %>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Technical Information -->
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fas fa-cogs"></i> Technical Information
-            </div>
-            <table class="info-table">
-                <tbody>
-                    <tr>
-                        <td>Clinic ID</td>
-                        <td><code><%= clinic.id || clinic.docId || 'Not specified' %></code></td>
-                    </tr>
-                    <tr>
-                        <td>Google Place ID</td>
-                        <td><code><%= clinic.place_id || 'Not specified' %></code></td>
-                    </tr>
-                    <tr>
-                        <td>GPS Coordinates</td>
-                        <td>
-                            <% if (clinic.location && clinic.location.latitude && clinic.location.longitude) { %>
-                                Lat: <%= clinic.location.latitude %>, Lng: <%= clinic.location.longitude %>
-                            <% } else if (clinic.geometry && clinic.geometry.location) { %>
-                                Lat: <%= clinic.geometry.location.lat %>, Lng: <%= clinic.geometry.location.lng %>
-                            <% } else { %>
-                                Not specified
-                            <% } %>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Profile Setup</td>
-                        <td>
-                            <% if (clinic.profileSetupComplete) { %>
-                                <span class="text-success"><i class="fas fa-check"></i> Complete</span>
-                            <% } else { %>
-                                <span class="text-danger"><i class="fas fa-times"></i> Incomplete</span>
-                            <% } %>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Data Source</td>
-                        <td>
-                            <span class="data-source-badge <%= clinic.isFromGooglePlaces ? 'source-google' : 'source-manual' %>">
-                                <i class="fab fa-<%= clinic.isFromGooglePlaces ? 'google' : 'user-edit' %>"></i>
-                                <%= clinic.isFromGooglePlaces ? 'Google Places API' : 'Manual Registration' %>
-                            </span>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Created Date</td>
-                        <td>
-                            <% if (clinic.createdAt) { %>
-                                <%= new Date(clinic.createdAt.toDate ? clinic.createdAt.toDate() : clinic.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
-                            <% } else { %>
-                                Not specified
-                            <% } %>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Last Updated</td>
-                        <td>
-                            <% if (clinic.updatedAt || clinic.lastUpdated) { %>
-                                <%= new Date((clinic.updatedAt || clinic.lastUpdated).toDate ? (clinic.updatedAt || clinic.lastUpdated).toDate() : (clinic.updatedAt || clinic.lastUpdated)).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
-                            <% } else { %>
-                                Not specified
-                            <% } %>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Description -->
-        <% if (clinic.description || clinic.about) { %>
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fas fa-file-alt"></i> About This Healthcare Center
-            </div>
-            <div class="p-4">
-                <p class="mb-0"><%= clinic.description || clinic.about %></p>
-            </div>
-        </div>
-        <% } %>
-
-        <!-- Operating Hours -->
-        <% if (clinic.openingHours || clinic.opening_hours || clinic.availableSchedule) { %>
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fas fa-clock"></i> Operating Hours
-            </div>
-            <% if (clinic.openingHours) { %>
-                <div class="hours-grid">
-                    <% Object.keys(clinic.openingHours).forEach(day => { %>
-                    <div class="day-schedule">
-                        <div class="day-name"><%= day.charAt(0).toUpperCase() + day.slice(1) %></div>
-                        <div class="day-hours">
-                            <% if (clinic.openingHours[day].isOpen) { %>
-                                <%= clinic.openingHours[day].start || '09:00' %> - <%= clinic.openingHours[day].end || '17:00' %>
-                            <% } else { %>
-                                <span class="text-muted">Closed</span>
-                            <% } %>
+                    
+                    <% if (clinic.googleWebsite) { %>
+                    <div class="info-item">
+                        <i class="fas fa-globe"></i>
+                        <span><strong>Website:</strong> <a href="<%= clinic.googleWebsite %>" target="_blank" rel="noopener"><%= clinic.googleWebsite %></a></span>
+                    </div>
+                    <% } %>
+                    
+                    <% if (clinic.googleTypes && clinic.googleTypes.length > 0) { %>
+                    <div class="info-item">
+                        <i class="fas fa-tags"></i>
+                        <span><strong>Categories:</strong></span>
+                        <div class="mt-2">
+                            <% clinic.googleTypes.slice(0, 5).forEach(type => { %>
+                                <span class="facility-badge"><%= type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) %></span>
+                            <% }) %>
                         </div>
                     </div>
-                    <% }); %>
-                </div>
-            <% } else if (clinic.opening_hours && clinic.opening_hours.weekday_text) { %>
-                <div class="p-4">
-                    <% clinic.opening_hours.weekday_text.forEach(hours => { %>
-                        <p class="mb-2"><%= hours %></p>
-                    <% }); %>
-                </div>
-            <% } else if (clinic.availableSchedule) { %>
-                <div class="hours-grid">
-                    <% Object.entries(clinic.availableSchedule).forEach(([day, schedule]) => { %>
-                    <div class="day-schedule">
-                        <div class="day-name"><%= day.charAt(0).toUpperCase() + day.slice(1) %></div>
-                        <div class="day-hours">
-                            <% if (schedule.active && schedule.slots && schedule.slots.length > 0) { %>
-                                <% schedule.slots.forEach(slot => { %>
-                                    <div><%= slot.start %> - <%= slot.end %></div>
-                                <% }); %>
-                            <% } else { %>
-                                <span class="text-muted">Closed</span>
+                    <% } %>
+                    
+                    <% if (clinic.googlePriceLevel !== null && clinic.googlePriceLevel !== undefined) { %>
+                    <div class="info-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span><strong>Price Level:</strong> 
+                            <% for (let i = 0; i < clinic.googlePriceLevel; i++) { %>
+                                $
                             <% } %>
-                        </div>
+                            <% for (let i = clinic.googlePriceLevel; i < 4; i++) { %>
+                                <span class="text-muted">$</span>
+                            <% } %>
+                        </span>
                     </div>
-                    <% }); %>
+                    <% } %>
                 </div>
-            <% } %>
-        </div>
-        <% } %>
-
-        <!-- Services -->
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fas fa-stethoscope"></i> Medical Services & Facilities
-            </div>
-            <% if (clinic.services && clinic.services.length > 0) { %>
-                <div class="services-grid">
-                    <% clinic.services.forEach(service => { %>
-                    <div class="service-item">
-                        <div class="service-name"><%= service.name || service %></div>
-                        <% if (service.price) { %>
-                            <div class="service-price"><%= service.price %> RWF</div>
-                        <% } %>
-                        <% if (service.description) { %>
-                            <div class="service-description"><%= service.description %></div>
-                        <% } %>
-                    </div>
-                    <% }); %>
-                </div>
-            <% } else { %>
-                <div class="empty-state">
-                    <i class="fas fa-stethoscope"></i>
-                    <p>No medical services configured</p>
-                </div>
-            <% } %>
-        </div>
-
-        <!-- Photos -->
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fas fa-images"></i> Healthcare Center Photos
-            </div>
-            <% 
-                let allPhotos = [];
+                <% } %>
                 
-                // Add clinic photos
-                if (clinic.photos && clinic.photos.length > 0) {
-                    allPhotos = allPhotos.concat(clinic.photos.map(photo => ({
-                        url: photo.url || photo,
-                        type: photo.type || 'Clinic Photo',
-                        source: 'clinic'
-                    })));
+                <!-- Heures d'ouverture Google -->
+                <% if (clinic.googleOpeningHours && clinic.googleOpeningHours.weekday_text && clinic.googleOpeningHours.weekday_text.length > 0) { %>
+                <div class="info-card">
+                    <h5><i class="fas fa-clock"></i> Opening Hours</h5>
+                    <div class="opening-hours">
+                        <% clinic.googleOpeningHours.weekday_text.forEach(dayText => { %>
+                            <div class="hour-item">
+                                <span><%= dayText %></span>
+                            </div>
+                        <% }) %>
+                    </div>
+                    <% if (clinic.googleOpeningHours.open_now !== undefined) { %>
+                    <div class="mt-3">
+                        <span class="badge bg-<%= clinic.googleOpeningHours.open_now ? 'success' : 'danger' %>">
+                            <%= clinic.googleOpeningHours.open_now ? 'Currently Open' : 'Currently Closed' %>
+                        </span>
+                    </div>
+                    <% } %>
+                </div>
+                <% } %>
+
+                <!-- Avis Google -->
+                <% 
+                // Déterminer les avis à afficher (priorité aux avis enrichis)
+                let reviewsToShow = [];
+                if (clinic.googleReviews && clinic.googleReviews.length > 0) {
+                    reviewsToShow = clinic.googleReviews;
+                } else if (clinic.googlePlaceDetails && clinic.googlePlaceDetails.reviews && clinic.googlePlaceDetails.reviews.length > 0) {
+                    reviewsToShow = clinic.googlePlaceDetails.reviews;
                 }
+                %>
                 
-                // Add clinic profile photos
-                if (clinic.clinicPhotos && clinic.clinicPhotos.length > 0) {
-                    allPhotos = allPhotos.concat(clinic.clinicPhotos.map(photo => ({
-                        url: photo,
-                        type: 'Clinic Image',
-                        source: 'clinic'
-                    })));
-                }
-                
-                // Add Google Places photos
-                if (clinic.googlePhotos && clinic.googlePhotos.length > 0) {
-                    allPhotos = allPhotos.concat(clinic.googlePhotos.map(photo => ({
-                        url: photo,
-                        type: 'Google Places',
-                        source: 'google'
-                    })));
-                }
-            %>
-            
-            <% if (allPhotos.length > 0) { %>
-                <div class="photo-gallery">
-                    <% allPhotos.forEach((photo, index) => { %>
-                    <div class="photo-item" onclick="showImageModal('<%= photo.url %>', '<%= photo.type %>')">
-                        <img src="<%= photo.url %>" alt="<%= photo.type %>" loading="lazy">
-                        <div class="photo-label">
-                            <%= photo.type %> 
-                            <% if (photo.source === 'google') { %>
-                                <i class="fab fa-google text-primary"></i>
+                <% if (reviewsToShow.length > 0) { %>
+                <div class="info-card">
+                    <h5><i class="fas fa-star"></i> Patient Reviews</h5>
+                    <div class="reviews-section">
+                        <% reviewsToShow.slice(0, 5).forEach(review => { %>
+                        <div class="review-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <% if (review.profile_photo_url) { %>
+                                <img src="<%= review.profile_photo_url %>" alt="<%= review.author_name %>" class="review-avatar me-2" style="width: 32px; height: 32px; border-radius: 50%;">
+                                <% } %>
+                                <div>
+                                    <strong><%= review.author_name %></strong>
+                                    <div class="review-rating">
+                                        <% for (let i = 1; i <= 5; i++) { %>
+                                            <i class="fas fa-star<%= i <= review.rating ? ' text-warning' : ' text-muted' %>"></i>
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                            <% if (review.text && review.text.trim()) { %>
+                            <p class="review-text"><%= review.text %></p>
+                            <% } %>
+                            <small class="text-muted">
+                                <% if (review.relative_time_description) { %>
+                                    <%= review.relative_time_description %>
+                                <% } else if (review.time) { %>
+                                    <%= new Date(review.time * 1000).toLocaleDateString('en-US') %>
+                                <% } %>
+                            </small>
+                        </div>
+                        <% }) %>
+                    </div>
+                    
+                    <% if (clinic.googleRating) { %>
+                    <div class="mt-3 text-center">
+                        <div class="overall-rating">
+                            <h4 class="mb-1">
+                                <%= clinic.googleRating %>/5 
+                                <% for (let i = 1; i <= 5; i++) { %>
+                                    <i class="fas fa-star<%= i <= Math.round(clinic.googleRating) ? ' text-warning' : ' text-muted' %>" style="font-size: 0.9em;"></i>
+                                <% } %>
+                            </h4>
+                            <% if (clinic.googleUserRatingsTotal) { %>
+                            <small class="text-muted">Based on <%= clinic.googleUserRatingsTotal %> Google reviews</small>
                             <% } %>
                         </div>
                     </div>
-                    <% }); %>
+                    <% } %>
                 </div>
-            <% } else { %>
-                <div class="empty-state">
-                    <i class="fas fa-image"></i>
-                    <p>No photos available</p>
-                </div>
-            <% } %>
-        </div>
-
-        <!-- Google Reviews -->
-        <% if (clinic.reviews && clinic.reviews.length > 0) { %>
-        <div class="info-card">
-            <div class="card-header">
-                <i class="fab fa-google"></i> Recent Google Reviews
-            </div>
-            <div class="p-4">
-                <% clinic.reviews.slice(0, 5).forEach(review => { %>
-                <div class="review-item">
-                    <div class="review-header">
-                        <div class="reviewer-name"><%= review.author_name %></div>
-                        <div class="review-rating">
-                            <% for (let i = 1; i <= 5; i++) { %>
-                                <i class="fas fa-star <%= i <= review.rating ? '' : 'text-muted' %>"></i>
-                            <% } %>
-                        </div>
-                    </div>
-                    <p class="mb-0"><%= review.text %></p>
-                    <small class="text-muted"><%= review.relative_time_description %></small>
-                </div>
-                <% }); %>
+                <% } %>
             </div>
         </div>
-        <% } %>
 
-        <!-- Actions -->
+        <!-- Boutons d'action -->
         <div class="action-buttons">
-            <% if (clinic.verified !== true && clinic.isVerified !== true) { %>
-                <button class="btn-action btn-approve" onclick="approveClinic('<%= clinic.id || clinic.docId %>')">
-                    <i class="fas fa-check"></i> Approve Healthcare Center
-                </button>
-            <% } %>
-            
-            <% if (clinic.verified === true || clinic.isVerified === true) { %>
-                <button class="btn-action btn-reject" onclick="unapproveClinic('<%= clinic.id || clinic.docId %>')">
-                    <i class="fas fa-times"></i> Revoke Approval
-                </button>
-            <% } %>
+            <div class="row">
+                <div class="col-md-12 text-center">
+                    <% if (!clinic.verified && !clinic.isVerified && clinic.status !== 'rejected') { %>
+                        <button onclick="approveClinic('<%= clinic.id %>')" class="btn btn-approve btn-custom me-3">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button onclick="rejectClinic('<%= clinic.id %>')" class="btn btn-reject btn-custom">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    <% } else if (clinic.verified || clinic.isVerified) { %>
+                        <button onclick="unapproveClinic('<%= clinic.id %>')" class="btn btn-unapprove btn-custom">
+                            <i class="fas fa-undo"></i> Remove Approval
+                        </button>
+                    <% } else if (clinic.status === 'rejected') { %>
+                        <button onclick="approveClinic('<%= clinic.id %>')" class="btn btn-approve btn-custom">
+                            <i class="fas fa-check"></i> Approve Anyway
+                        </button>
+                    <% } %>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Image Modal -->
-    <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <!-- Modal pour les photos -->
+    <div class="modal fade" id="photoModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="imageModalLabel">Image</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <h5 class="modal-title">Facility Photo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body text-center">
-                    <img id="modalImage" src="" alt="Full Size Image" class="img-fluid">
+                    <img id="modalPhoto" src="" class="img-fluid" alt="Photo">
                 </div>
             </div>
         </div>
@@ -802,100 +602,116 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        function showImageModal(imageSrc, title) {
-            document.getElementById('modalImage').src = imageSrc;
-            document.getElementById('imageModalLabel').textContent = title;
-            const modal = new bootstrap.Modal(document.getElementById('imageModal'));
+        function openPhotoModal(photoReferenceOrUrl) {
+            const modalPhoto = document.getElementById('modalPhoto');
+            
+            // Si c'est déjà une URL complète, l'utiliser directement
+            if (photoReferenceOrUrl.startsWith('http')) {
+                modalPhoto.src = photoReferenceOrUrl;
+            } else {
+                // Sinon, construire l'URL avec la référence de photo
+                modalPhoto.src = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoReferenceOrUrl}&key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g`;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('photoModal'));
             modal.show();
         }
 
         async function approveClinic(clinicId) {
-            try {
-                const result = await Swal.fire({
-                    title: 'Confirm Approval',
-                    text: 'Are you sure you want to approve this healthcare center?',
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#2ecc71',
-                    cancelButtonColor: '#e74c3c',
-                    confirmButtonText: 'Yes, approve',
-                    cancelButtonText: 'Cancel'
-                });
+            const result = await Swal.fire({
+                title: 'Approve this clinic?',
+                text: 'This action will approve the clinic and make it visible to patients.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#20c997',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, approve',
+                cancelButtonText: 'Cancel'
+            });
 
-                if (result.isConfirmed) {
+            if (result.isConfirmed) {
+                try {
                     const response = await fetch(`/api/clinics/${clinicId}/approve`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
+                        headers: { 'Content-Type': 'application/json' }
                     });
 
                     if (response.ok) {
-                        await Swal.fire({
-                            title: 'Success!',
-                            text: 'Healthcare center approved successfully.',
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                        
-                        window.location.reload();
+                        Swal.fire('Approved!', 'The clinic has been approved successfully.', 'success')
+                            .then(() => window.location.reload());
                     } else {
                         throw new Error('Error during approval');
                     }
+                } catch (error) {
+                    Swal.fire('Error', 'Unable to approve the clinic.', 'error');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'An error occurred during approval.',
-                    icon: 'error'
-                });
             }
         }
 
         async function unapproveClinic(clinicId) {
-            try {
-                const result = await Swal.fire({
-                    title: 'Confirm Revocation',
-                    text: 'Are you sure you want to revoke approval for this healthcare center?',
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e74c3c',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, revoke',
-                    cancelButtonText: 'Cancel'
-                });
+            const result = await Swal.fire({
+                title: 'Remove approval?',
+                text: 'This clinic will return to "Pending" status.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#fd7e14',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, remove',
+                cancelButtonText: 'Cancel'
+            });
 
-                if (result.isConfirmed) {
+            if (result.isConfirmed) {
+                try {
                     const response = await fetch(`/api/clinics/${clinicId}/unapprove`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        }
+                        headers: { 'Content-Type': 'application/json' }
                     });
 
                     if (response.ok) {
-                        await Swal.fire({
-                            title: 'Success!',
-                            text: 'Approval revoked successfully.',
-                            icon: 'success',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                        
-                        window.location.reload();
+                        Swal.fire('Modified!', 'The approval has been removed.', 'info')
+                            .then(() => window.location.reload());
                     } else {
-                        throw new Error('Error during revocation');
+                        throw new Error('Error during removal');
                     }
+                } catch (error) {
+                    Swal.fire('Error', 'Unable to remove the approval.', 'error');
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'An error occurred during revocation.',
-                    icon: 'error'
-                });
+            }
+        }
+
+        async function rejectClinic(clinicId) {
+            const { value: reason } = await Swal.fire({
+                title: 'Reject this clinic',
+                input: 'textarea',
+                inputLabel: 'Reason for rejection',
+                inputPlaceholder: 'Explain why this clinic is being rejected...',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Reject',
+                cancelButtonText: 'Cancel',
+                inputValidator: (value) => {
+                    if (!value) return 'You must specify a reason';
+                }
+            });
+
+            if (reason) {
+                try {
+                    const response = await fetch(`/api/clinics/${clinicId}/reject`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reason })
+                    });
+
+                    if (response.ok) {
+                        Swal.fire('Rejected!', 'The clinic has been rejected.', 'error')
+                            .then(() => window.location.reload());
+                    } else {
+                        throw new Error('Error during rejection');
+                    }
+                } catch (error) {
+                    Swal.fire('Error', 'Unable to reject the clinic.', 'error');
+                }
             }
         }
     </script>

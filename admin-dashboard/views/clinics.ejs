@@ -266,9 +266,14 @@
             color: var(--accent-color);
         }
 
-        .status-incomplete {
+        .status-rejected {
             background: rgba(220, 53, 69, 0.1);
             color: #dc3545;
+        }
+
+        .status-incomplete {
+            background: rgba(108, 117, 125, 0.1);
+            color: #6c757d;
         }
 
         .data-source-badge {
@@ -588,15 +593,9 @@
                     </a>
                 </div>
                 <div class="nav-item">
-                    <a href="/user-management" class="nav-link">
-                        <i class="fas fa-users-cog"></i>
-                        <span>User Management</span>
-                    </a>
-                </div>
-                <div class="nav-item">
-                    <a href="/settings" class="nav-link">
-                        <i class="fas fa-cogs"></i>
-                        <span>Settings</span>
+                    <a href="/suggestions" class="nav-link">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>Suggestions</span>
                     </a>
                 </div>
             </nav>
@@ -797,7 +796,30 @@
                 return;
             }
 
-            tableBody.innerHTML = clinics.map((clinic, index) => {
+            // ✨ NOUVEAU: Tri des cliniques - cliniques Google en premier, puis nouvelles cliniques
+            const sortedClinics = [...clinics].sort((a, b) => {
+                // Priorité 1: Cliniques de Google Places (isFromGooglePlaces = true)
+                const aIsGoogle = a.isFromGooglePlaces === true;
+                const bIsGoogle = b.isFromGooglePlaces === true;
+                
+                if (aIsGoogle && !bIsGoogle) return -1;
+                if (!aIsGoogle && bIsGoogle) return 1;
+                
+                // Priorité 2: Cliniques récemment créées (nouvelles en haut)
+                const aCreatedAt = new Date(a.createdAt || a.updatedAt || 0);
+                const bCreatedAt = new Date(b.createdAt || b.updatedAt || 0);
+                
+                if (aCreatedAt > bCreatedAt) return -1;
+                if (aCreatedAt < bCreatedAt) return 1;
+                
+                // Priorité 3: Statut (verified > pending > autres)
+                const aStatus = a.verified || a.isVerified ? 2 : (a.status === 'pending' ? 1 : 0);
+                const bStatus = b.verified || b.isVerified ? 2 : (b.status === 'pending' ? 1 : 0);
+                
+                return bStatus - aStatus;
+            });
+
+            tableBody.innerHTML = sortedClinics.map((clinic, index) => {
                 // Enhanced ID resolution with multiple fallbacks
                 const clinicId = clinic.id || clinic.docId || clinic.email || `clinic_${index}`;
                 console.log('🏥 Processing clinic:', {
@@ -885,25 +907,53 @@
         function updateStats(clinics) {
             const total = clinics.length;
             const verified = clinics.filter(c => c.verified || c.isVerified).length;
-            const pending = clinics.filter(c => !c.verified && !c.isVerified && c.profileSetupComplete).length;
-            const incomplete = clinics.filter(c => !c.profileSetupComplete).length;
+            const rejected = clinics.filter(c => c.status === 'rejected').length;
+            // ✨ CORRECTION: Pending = toutes les cliniques qui ne sont ni verified ni rejected  
+            const pending = clinics.filter(c => !(c.verified || c.isVerified) && c.status !== 'rejected').length;
+            const incomplete = 0; // Plus utilisé, toutes les cliniques dans Firebase sont considérées comme ayant un profil
+            
+            // Variables supprimées car plus utilisées pour l'affichage des statistiques détaillées
 
             document.getElementById('totalClinics').textContent = total;
             document.getElementById('verifiedClinics').textContent = verified;
             document.getElementById('pendingClinics').textContent = pending;
-            document.getElementById('incompleteClinics').textContent = incomplete;
+            document.getElementById('incompleteClinics').textContent = rejected; // Utiliser "incomplete" pour afficher les rejetées
+            
+            // ✨ NOUVEAU: Mise à jour du libellé pour les rejetées
+            const incompleteClinicsLabel = document.querySelector('.stat-label');
+            if (incompleteClinicsLabel && incompleteClinicsLabel.textContent === 'Incomplete Profiles') {
+                incompleteClinicsLabel.textContent = 'Rejected Clinics';
+            }
+            
+            // ✨ NOUVEAU: Mise à jour du titre simplifié (sans statistiques détaillées)
+            const clinicsSectionTitle = document.querySelector('.section-title');
+            if (clinicsSectionTitle) {
+                clinicsSectionTitle.innerHTML = `
+                    <i class="fas fa-list"></i>
+                    All Clinics (${total})
+                `;
+            }
+            
+            console.log('📊 Statistiques mises à jour:', {
+                total,
+                verified,
+                pending,
+                rejected
+            });
         }
 
         function getStatusClass(clinic) {
             if (clinic.verified || clinic.isVerified) return 'status-verified';
-            if (clinic.profileSetupComplete) return 'status-pending';
-            return 'status-incomplete';
+            if (clinic.status === 'rejected') return 'status-rejected';
+            // ✨ NOUVEAU: Toute clinique qui existe dans Firebase mais n'est pas verified devrait être "pending"
+            return 'status-pending';
         }
 
         function getStatusText(clinic) {
             if (clinic.verified || clinic.isVerified) return 'Verified';
-            if (clinic.profileSetupComplete) return 'Pending';
-            return 'Incomplete';
+            if (clinic.status === 'rejected') return 'Rejected';
+            // ✨ NOUVEAU: Toute clinique qui existe dans Firebase mais n'est pas verified devrait être "pending"
+            return 'Pending';
         }
 
         function generateStars(rating) {
@@ -1115,428 +1165,99 @@
             modal.show();
         }
 
+        // Approve clinic function
         async function approveClinic(clinicId) {
-            console.log('🔄 APPROVE CLINIC CALLED with ID:', clinicId);
-            console.log('🔍 Current clinics data:', clinicsData);
-            console.log('🧪 SweetAlert2 available:', typeof Swal);
-            
-            // Enhanced ID resolution
-            let targetClinic = null;
-            if (clinicsData && clinicsData.length > 0) {
-                targetClinic = clinicsData.find(c => c.id === clinicId) || 
-                              clinicsData.find(c => c.docId === clinicId) ||
-                              clinicsData.find(c => c.email === clinicId);
-                              
-                console.log('🎯 Found target clinic:', targetClinic);
-            }
-            
-            if (!targetClinic) {
-                console.error('❌ Clinic not found with ID:', clinicId);
-                console.error('📋 Available clinics:', clinicsData.map(c => ({id: c.id, email: c.email, name: c.name})));
-                
-                // Fallback alert if SweetAlert2 not available
-                if (typeof Swal === 'undefined') {
-                    alert('Clinic not found!');
-                    return;
-                }
-                
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Clinic not found. Please refresh the page and try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#159BBD'
-                });
-                return;
-            }
-            
-            // Check if SweetAlert2 is loaded
-            if (typeof Swal === 'undefined') {
-                console.error('❌ SweetAlert2 not loaded');
-                const confirmed = confirm('Are you sure you want to approve this clinic?');
-                if (!confirmed) return;
-            } else {
-                console.log('✅ SweetAlert2 is available, showing confirmation dialog');
+            console.log('🔧 Approve clinic function called for:', clinicId);
                 
                 const result = await Swal.fire({
                     title: 'Approve Clinic',
-                    text: `Are you sure you want to approve "${targetClinic.name || targetClinic.clinicName}"?`,
+                text: 'Are you sure you want to approve this clinic?',
                     icon: 'question',
                     showCancelButton: true,
-                    confirmButtonColor: '#159BBD',
+                confirmButtonColor: '#28a745',
                     cancelButtonColor: '#6c757d',
                     confirmButtonText: 'Yes, approve it!',
-                    cancelButtonText: 'Cancel',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
+                cancelButtonText: 'Cancel'
                 });
 
-                if (!result.isConfirmed) {
-                    console.log('❌ User cancelled approval');
-                    return;
-                }
+            if (result.isConfirmed) {
+                await performAction('approve', clinicId, 'Approved');
             }
-            
-            try {
-                console.log('🚀 Sending approve request to:', `/api/clinics/${clinicId}/approve`);
-                
-                const response = await fetch(`/api/clinics/${clinicId}/approve`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                console.log('📡 Response status:', response.status);
-                const responseData = await response.json();
-                console.log('📄 Response data:', responseData);
-                
-                if (response.ok) {
-                    console.log('✅ Clinic approved successfully');
-                    
-                    if (typeof Swal !== 'undefined') {
-                        await Swal.fire({
-                            title: 'Approved!',
-                            text: 'Clinic has been approved successfully.',
-                            icon: 'success',
-                            confirmButtonColor: '#159BBD',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        alert('Clinic approved successfully!');
                     }
                     
-                    // Update the UI dynamically
-                    updateClinicButtons(clinicId, true);
-                    loadClinics();
-                    
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('clinicDetailsModal'));
-                    if (modal) modal.hide();
-                } else {
-                    console.error('❌ Failed to approve clinic:', responseData);
-                    
-                    if (typeof Swal !== 'undefined') {
-                        await Swal.fire({
-                            title: 'Error!',
-                            text: responseData.error || 'Failed to approve clinic. Please try again.',
-                            icon: 'error',
-                            confirmButtonColor: '#159BBD'
-                        });
-                    } else {
-                        alert('Failed to approve clinic. Please try again.');
-                    }
-                }
-            } catch (error) {
-                console.error('💥 Error approving clinic:', error);
-                
-                if (typeof Swal !== 'undefined') {
-                    await Swal.fire({
-                        title: 'Error!',
-                        text: 'An error occurred while approving the clinic.',
-                        icon: 'error',
-                        confirmButtonColor: '#159BBD'
-                    });
-                } else {
-                    alert('An error occurred while approving the clinic.');
-                }
-            }
-        }
-
-        async function rejectClinic(clinicId) {
-            console.log('🔄 REJECT CLINIC CALLED with ID:', clinicId);
-            console.log('🔍 Current clinics data:', clinicsData);
-            console.log('🧪 SweetAlert2 available:', typeof Swal);
-            
-            // Enhanced ID resolution
-            let targetClinic = null;
-            if (clinicsData && clinicsData.length > 0) {
-                targetClinic = clinicsData.find(c => c.id === clinicId) || 
-                              clinicsData.find(c => c.docId === clinicId) ||
-                              clinicsData.find(c => c.email === clinicId);
-                              
-                console.log('🎯 Found target clinic:', targetClinic);
-            }
-            
-            if (!targetClinic) {
-                console.error('❌ Clinic not found with ID:', clinicId);
-                console.error('📋 Available clinics:', clinicsData.map(c => ({id: c.id, email: c.email, name: c.name})));
-                
-                // Fallback alert if SweetAlert2 not available
-                if (typeof Swal === 'undefined') {
-                    alert('Clinic not found!');
-                    return;
-                }
-                
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Clinic not found. Please refresh the page and try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#159BBD'
-                });
-                return;
-            }
-            
-            // Check if SweetAlert2 is loaded
-            if (typeof Swal === 'undefined') {
-                console.error('❌ SweetAlert2 not loaded');
-                const confirmed = confirm('Are you sure you want to reject this clinic?');
-                if (!confirmed) return;
-            } else {
-                console.log('✅ SweetAlert2 is available, showing confirmation dialog');
-                
-                const result = await Swal.fire({
-                    title: 'Reject Clinic',
-                    text: `Are you sure you want to reject "${targetClinic.name || targetClinic.clinicName}"?`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#dc3545',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, reject it!',
-                    cancelButtonText: 'Cancel',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
-                });
-
-                if (!result.isConfirmed) {
-                    console.log('❌ User cancelled rejection');
-                    return;
-                }
-            }
-            
-            try {
-                console.log('🚀 Sending reject request to:', `/api/clinics/${clinicId}/reject`);
-                
-                const response = await fetch(`/api/clinics/${clinicId}/reject`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                console.log('📡 Response status:', response.status);
-                const responseData = await response.json();
-                console.log('📄 Response data:', responseData);
-                
-                if (response.ok) {
-                    console.log('✅ Clinic rejected successfully');
-                    
-                    if (typeof Swal !== 'undefined') {
-                        await Swal.fire({
-                            title: 'Rejected!',
-                            text: 'Clinic has been rejected successfully.',
-                            icon: 'success',
-                            confirmButtonColor: '#159BBD',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        alert('Clinic rejected successfully!');
-                    }
-                    
-                    // Reload clinics to refresh the table
-                    loadClinics();
-                    
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('clinicDetailsModal'));
-                    if (modal) modal.hide();
-                } else {
-                    console.error('❌ Failed to reject clinic:', responseData);
-                    
-                    if (typeof Swal !== 'undefined') {
-                        await Swal.fire({
-                            title: 'Error!',
-                            text: responseData.error || 'Failed to reject clinic. Please try again.',
-                            icon: 'error',
-                            confirmButtonColor: '#159BBD'
-                        });
-                    } else {
-                        alert('Failed to reject clinic. Please try again.');
-                    }
-                }
-            } catch (error) {
-                console.error('💥 Error rejecting clinic:', error);
-                
-                if (typeof Swal !== 'undefined') {
-                    await Swal.fire({
-                        title: 'Error!',
-                        text: 'An error occurred while rejecting the clinic.',
-                        icon: 'error',
-                        confirmButtonColor: '#159BBD'
-                    });
-                } else {
-                    alert('An error occurred while rejecting the clinic.');
-                }
-            }
-        }
-
+        // Unapprove clinic function
         async function unapproveClinic(clinicId) {
-            console.log('🔄 UNAPPROVE CLINIC CALLED with ID:', clinicId);
-            console.log('🔍 Current clinics data:', clinicsData);
-            console.log('🧪 SweetAlert2 available:', typeof Swal);
-            
-            // Enhanced ID resolution
-            let targetClinic = null;
-            if (clinicsData && clinicsData.length > 0) {
-                targetClinic = clinicsData.find(c => c.id === clinicId) || 
-                              clinicsData.find(c => c.docId === clinicId) ||
-                              clinicsData.find(c => c.email === clinicId);
-                              
-                console.log('🎯 Found target clinic:', targetClinic);
-            }
-            
-            if (!targetClinic) {
-                console.error('❌ Clinic not found with ID:', clinicId);
-                console.error('📋 Available clinics:', clinicsData.map(c => ({id: c.id, email: c.email, name: c.name})));
-                
-                // Fallback alert if SweetAlert2 not available
-                if (typeof Swal === 'undefined') {
-                    alert('Clinic not found!');
-                    return;
-                }
-                
-                Swal.fire({
-                    title: 'Error!',
-                    text: 'Clinic not found. Please refresh the page and try again.',
-                    icon: 'error',
-                    confirmButtonColor: '#159BBD'
-                });
-                return;
-            }
-            
-            // Check if SweetAlert2 is loaded
-            if (typeof Swal === 'undefined') {
-                console.error('❌ SweetAlert2 not loaded');
-                const confirmed = confirm('Are you sure you want to unapprove this clinic?');
-                if (!confirmed) return;
-            } else {
-                console.log('✅ SweetAlert2 is available, showing confirmation dialog');
+            console.log('🔧 Unapprove clinic function called for:', clinicId);
                 
                 const result = await Swal.fire({
-                    title: 'Unapprove Clinic',
-                    text: `Are you sure you want to unapprove "${targetClinic.name || targetClinic.clinicName}"?`,
+                title: 'Remove Approval',
+                text: 'Are you sure you want to remove approval from this clinic?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Yes, remove approval!',
+                cancelButtonText: 'Cancel'
+                });
+
+            if (result.isConfirmed) {
+                await performAction('unapprove', clinicId, 'Unapproved');
+            }
+                    }
+                    
+        // Reject clinic function
+        async function rejectClinic(clinicId) {
+            console.log('🔧 Reject clinic function called for:', clinicId);
+                
+                const result = await Swal.fire({
+                title: 'Reject Clinic',
+                text: 'Are you sure you want to reject this clinic?',
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonColor: '#dc3545',
                     cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Yes, unapprove it!',
-                    cancelButtonText: 'Cancel',
-                    allowOutsideClick: false,
-                    allowEscapeKey: false
+                confirmButtonText: 'Yes, reject it!',
+                cancelButtonText: 'Cancel'
                 });
 
-                if (!result.isConfirmed) {
-                    console.log('❌ User cancelled unapproval');
-                    return;
-                }
-            }
-            
-            try {
-                console.log('🚀 Sending unapprove request to:', `/api/clinics/${clinicId}/unapprove`);
-                
-                const response = await fetch(`/api/clinics/${clinicId}/unapprove`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                console.log('📡 Response status:', response.status);
-                const responseData = await response.json();
-                console.log('📄 Response data:', responseData);
-                
-                if (response.ok) {
-                    console.log('✅ Clinic unapproved successfully');
-                    
-                    if (typeof Swal !== 'undefined') {
-                        await Swal.fire({
-                            title: 'Unapproved!',
-                            text: 'Clinic has been unapproved successfully.',
-                            icon: 'success',
-                            confirmButtonColor: '#159BBD',
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    } else {
-                        alert('Clinic unapproved successfully!');
-                    }
-                    
-                    // Update the UI dynamically
-                    updateClinicButtons(clinicId, false);
-                    loadClinics();
-                    
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('clinicDetailsModal'));
-                    if (modal) modal.hide();
-                } else {
-                    console.error('❌ Failed to unapprove clinic:', responseData);
-                    
-                    if (typeof Swal !== 'undefined') {
-                        await Swal.fire({
-                            title: 'Error!',
-                            text: responseData.error || 'Failed to unapprove clinic. Please try again.',
-                            icon: 'error',
-                            confirmButtonColor: '#159BBD'
-                        });
-                    } else {
-                        alert('Failed to unapprove clinic. Please try again.');
-                    }
-                }
-            } catch (error) {
-                console.error('💥 Error unapproving clinic:', error);
-                
-                if (typeof Swal !== 'undefined') {
-                    await Swal.fire({
-                        title: 'Error!',
-                        text: 'An error occurred while unapproving the clinic.',
-                        icon: 'error',
-                        confirmButtonColor: '#159BBD'
-                    });
-                } else {
-                    alert('An error occurred while unapproving the clinic.');
-                }
+            if (result.isConfirmed) {
+                await performAction('reject', clinicId, 'Rejected');
             }
         }
 
-        function updateClinicButtons(clinicId, isApproved) {
-            // Update buttons in the table view
-            const tableRow = document.querySelector(`tr[data-clinic-id="${clinicId}"]`);
-            if (tableRow) {
-                const actionCell = tableRow.querySelector('.actions-cell');
-                if (actionCell) {
-                    const buttonContainer = actionCell.querySelector('.action-buttons');
-                    if (buttonContainer) {
-                        // Find and update the approve/unapprove buttons
-                        const approveBtn = buttonContainer.querySelector('.btn-approve');
-                        const unapproveBtn = buttonContainer.querySelector('.btn-unapprove');
-                        
-                        if (isApproved) {
-                            // Clinic is now approved, show unapprove button
-                            if (approveBtn) {
-                                approveBtn.outerHTML = `
-                                    <button class="btn-action btn-unapprove" onclick="unapproveClinic('${clinicId}')">
-                                        <i class="fas fa-times"></i>
-                                        Unapprove
-                                    </button>
-                                `;
-                            }
-                        } else {
-                            // Clinic is now unapproved, show approve button
-                            if (unapproveBtn) {
-                                unapproveBtn.outerHTML = `
-                                    <button class="btn-action btn-approve" onclick="approveClinic('${clinicId}')">
-                                        <i class="fas fa-check"></i>
-                                        Approve
-                                    </button>
-                                `;
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Update the clinic data in memory
+        // ✨ NOUVEAU: Fonction pour mettre à jour les données en mémoire
+        function updateClinicInMemory(clinicId, action) {
             const clinicIndex = clinicsData.findIndex(clinic => clinic.id === clinicId);
             if (clinicIndex !== -1) {
-                clinicsData[clinicIndex].verified = isApproved;
-                clinicsData[clinicIndex].isVerified = isApproved;
+                console.log(`🔄 Updating clinic ${clinicId} in memory for action: ${action}`);
+                
+                switch (action) {
+                    case 'approve':
+                        clinicsData[clinicIndex].verified = true;
+                        clinicsData[clinicIndex].isVerified = true;
+                        clinicsData[clinicIndex].approved = true;
+                        clinicsData[clinicIndex].status = 'verified';
+                        break;
+                    case 'unapprove':
+                        clinicsData[clinicIndex].verified = false;
+                        clinicsData[clinicIndex].isVerified = false;
+                        clinicsData[clinicIndex].approved = false;
+                        clinicsData[clinicIndex].status = 'pending';
+                        break;
+                    case 'reject':
+                        clinicsData[clinicIndex].verified = false;
+                        clinicsData[clinicIndex].isVerified = false;
+                        clinicsData[clinicIndex].approved = false;
+                        clinicsData[clinicIndex].status = 'rejected';
+                        break;
+                }
+                
+                console.log(`✅ Clinic ${clinicId} updated in memory:`, {
+                    verified: clinicsData[clinicIndex].verified,
+                    isVerified: clinicsData[clinicIndex].isVerified,
+                    approved: clinicsData[clinicIndex].approved,
+                    status: clinicsData[clinicIndex].status
+                });
             }
         }
 
@@ -1670,6 +1391,59 @@
             }
         }
 
+        async function performAction(action, clinicId, actionText) {
+            console.log(`🔧 Performing ${action} action for clinic:`, clinicId);
+            
+            try {
+                const response = await fetch(`/api/clinics/${clinicId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({}) // Empty body for now
+                });
+
+                console.log(`📡 ${actionText} Response status:`, response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `Failed to ${action} clinic`);
+                }
+
+                const result = await response.json();
+                console.log(`✅ ${actionText} Result:`, result);
+
+                if (result.success) {
+                    // ✨ NOUVEAU: Mise à jour automatique des données et statistiques
+                    console.log(`🔄 Updating clinic data after ${action}...`);
+                    
+                    // Mettre à jour les données en mémoire
+                    updateClinicInMemory(clinicId, action);
+                    
+                    // Recharger et afficher les cliniques mises à jour
+                    await loadClinics();
+                    
+                    Swal.fire({
+                        title: 'Success!',
+                        text: `Clinic ${actionText.toLowerCase()} successfully`,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    throw new Error(result.error || `Failed to ${action} clinic`);
+                }
+            } catch (error) {
+                console.error(`❌ Error during ${action}:`, error);
+                Swal.fire({
+                    title: 'Error!',
+                    text: `Failed to ${action} clinic: ${error.message}`,
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+            }
+        }
+
         // Add comprehensive debug logging
         console.log('🔧 DEBUG: Script loaded, setting up event listeners...');
         
@@ -1735,16 +1509,38 @@
         // Logout function with confirmation popup
         function handleLogout() {
             Swal.fire({
-                title: 'Are you sure you want to log out?',
-                icon: 'warning',
+                title: 'Logout Confirmation',
+                text: 'Are you sure you want to logout?',
+                icon: 'question',
                 showCancelButton: true,
+                confirmButtonText: 'Yes, Logout',
+                cancelButtonText: 'Cancel',
                 confirmButtonColor: '#dc3545',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, log out',
-                cancelButtonText: 'Cancel'
+                cancelButtonColor: '#159BBD'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    window.location.href = '/logout'; // Redirect to logout endpoint
+                    // Call logout API first
+                    fetch('/api/admin/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                                window.location.href = '/login';
+                            });
+                        } else {
+                            Swal.fire('Error', 'Failed to logout. Please try again.', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Logout error:', error);
+                        // Even if API call fails, redirect to login
+                        window.location.href = '/login';
+                    });
                 }
             });
         }

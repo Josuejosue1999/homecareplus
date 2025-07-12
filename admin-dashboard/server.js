@@ -134,8 +134,27 @@ app.post('/api/clinics/:id/approve', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔄 Admin approving clinic:', id);
+    console.log('📋 Request body:', req.body);
+    console.log('👤 Admin session:', req.session.adminEmail);
+    
+    if (!adminUtils) {
+      console.error('❌ adminUtils is not available');
+      return res.status(500).json({
+        success: false,
+        error: 'Admin utilities not available'
+      });
+    }
+    
+    if (!adminUtils.approveClinic) {
+      console.error('❌ approveClinic function is not available');
+      return res.status(500).json({
+        success: false,
+        error: 'Approve function not available'
+      });
+    }
     
     const result = await adminUtils.approveClinic(id);
+    console.log('✅ Approve result:', result);
     
     if (result.success) {
       res.json({
@@ -144,6 +163,7 @@ app.post('/api/clinics/:id/approve', requireAuth, async (req, res) => {
         clinic: { id, status: 'verified', verified: true }
       });
     } else {
+      console.error('❌ Approve failed:', result.error);
       res.status(500).json({
         success: false,
         error: result.error
@@ -151,9 +171,10 @@ app.post('/api/clinics/:id/approve', requireAuth, async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Error in approve route:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error: ' + error.message
     });
   }
 });
@@ -163,8 +184,19 @@ app.post('/api/clinics/:id/unapprove', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     console.log('🔄 Admin unapproving clinic:', id);
+    console.log('📋 Request body:', req.body);
+    console.log('👤 Admin session:', req.session.adminEmail);
+    
+    if (!adminUtils || !adminUtils.unapproveClinic) {
+      console.error('❌ unapproveClinic function is not available');
+      return res.status(500).json({
+        success: false,
+        error: 'Unapprove function not available'
+      });
+    }
     
     const result = await adminUtils.unapproveClinic(id);
+    console.log('✅ Unapprove result:', result);
     
     if (result.success) {
       res.json({
@@ -173,6 +205,7 @@ app.post('/api/clinics/:id/unapprove', requireAuth, async (req, res) => {
         clinic: { id, status: 'pending', verified: false }
       });
     } else {
+      console.error('❌ Unapprove failed:', result.error);
       res.status(500).json({
         success: false,
         error: result.error
@@ -180,9 +213,10 @@ app.post('/api/clinics/:id/unapprove', requireAuth, async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Error in unapprove route:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error: ' + error.message
     });
   }
 });
@@ -191,9 +225,22 @@ app.post('/api/clinics/:id/unapprove', requireAuth, async (req, res) => {
 app.post('/api/clinics/:id/reject', requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
+    const { reason } = req.body;
     console.log('🔄 Admin rejecting clinic:', id);
+    console.log('📋 Request body:', req.body);
+    console.log('🚫 Rejection reason:', reason);
+    console.log('👤 Admin session:', req.session.adminEmail);
     
-    const result = await adminUtils.rejectClinic(id);
+    if (!adminUtils || !adminUtils.rejectClinic) {
+      console.error('❌ rejectClinic function is not available');
+      return res.status(500).json({
+        success: false,
+        error: 'Reject function not available'
+      });
+    }
+    
+    const result = await adminUtils.rejectClinic(id, reason);
+    console.log('✅ Reject result:', result);
     
     if (result.success) {
       res.json({
@@ -202,6 +249,7 @@ app.post('/api/clinics/:id/reject', requireAuth, async (req, res) => {
         clinic: { id, status: 'rejected', verified: false }
       });
     } else {
+      console.error('❌ Reject failed:', result.error);
       res.status(500).json({
         success: false,
         error: result.error
@@ -209,9 +257,10 @@ app.post('/api/clinics/:id/reject', requireAuth, async (req, res) => {
     }
   } catch (error) {
     console.error('❌ Error in reject route:', error);
+    console.error('❌ Error stack:', error.stack);
     res.status(500).json({
       success: false,
-      error: 'Internal server error'
+      error: 'Internal server error: ' + error.message
     });
   }
 });
@@ -511,38 +560,116 @@ app.get('/api/clinics', requireAuth, async (req, res) => {
   }
 });
 
-// Route for User Management page
-app.get('/user-management', requireAuth, (req, res) => {
-  const userManagementData = {
-    title: 'User Management - HomeCare Plus Admin',
-    totalUsers: 1248,
-    activeUsers: 892,
-    newRegistrations: 156,
-    blockedUsers: 12
-  };
-  
-  res.render('user-management', userManagementData);
+// Route for suggestions page
+app.get('/suggestions', requireAuth, async (req, res) => {
+  try {
+    console.log('💡 Loading suggestions page...');
+    console.log('👤 Admin session:', req.session.adminAuthenticated);
+    console.log('📧 Admin email:', req.session.adminEmail);
+    
+    // Utiliser Firebase Admin pour obtenir les suggestions
+    console.log('🔄 Calling adminUtils.getAllSuggestions()...');
+    const result = await adminUtils.getAllSuggestions();
+    console.log('📊 AdminUtils result:', result);
+    
+    if (!result.success) {
+      console.error('❌ AdminUtils failed with error:', result.error);
+      // Fallback avec des données par défaut
+      const suggestionsData = {
+        title: 'Suggestions Management - HomeCare+',
+        totalSuggestions: 0,
+        pendingSuggestions: 0,
+        reviewedSuggestions: 0,
+        implementedSuggestions: 0,
+        error: 'Unable to fetch suggestions from Firebase'
+      };
+      return res.render('suggestions', suggestionsData);
+    }
+    
+    const suggestions = result.suggestions;
+    const totalSuggestions = suggestions.length;
+    console.log('📋 Total suggestions found:', totalSuggestions);
+    
+    let pendingCount = 0;
+    let reviewedCount = 0;
+    let implementedCount = 0;
+    
+    suggestions.forEach((suggestion) => {
+      console.log('💡 Processing suggestion:', suggestion.id, '- Status:', suggestion.status);
+      if (suggestion.status === 'pending') {
+        pendingCount++;
+      } else if (suggestion.status === 'reviewed') {
+        reviewedCount++;
+      } else if (suggestion.status === 'implemented') {
+        implementedCount++;
+      }
+    });
+    
+    const suggestionsData = {
+      title: 'Suggestions Management - HomeCare+',
+      totalSuggestions,
+      pendingSuggestions: pendingCount,
+      reviewedSuggestions: reviewedCount,
+      implementedSuggestions: implementedCount
+    };
+    
+    console.log('📊 Suggestions stats prepared:', suggestionsData);
+    console.log('🎨 Rendering suggestions page...');
+    res.render('suggestions', suggestionsData);
+  } catch (error) {
+    console.error('❌ Error loading suggestions page:', error);
+    console.error('❌ Error stack:', error.stack);
+    res.status(500).send('Error loading suggestions page: ' + error.message);
+  }
 });
 
-// Route for Settings page
-app.get('/settings', requireAuth, (req, res) => {
-  const settingsData = {
-    title: 'Settings - HomeCare Plus Admin',
-    applicationName: 'HomeCare Plus',
-    systemEmail: 'admin@homecareplus.com',
-    timeZone: 'UTC',
-    language: 'English',
-    currency: 'USD'
-  };
-  
-  res.render('settings', settingsData);
+
+
+app.get('/api/suggestions', requireAuth, async (req, res) => {
+  try {
+    console.log('🔍 API: Fetching suggestions from Firebase...');
+    console.log('👤 API Admin session:', req.session.adminAuthenticated);
+    console.log('📧 API Admin email:', req.session.adminEmail);
+    
+    // Utiliser Firebase Admin pour obtenir les suggestions
+    console.log('🔄 API: Calling adminUtils.getAllSuggestions()...');
+    const result = await adminUtils.getAllSuggestions();
+    console.log('📊 API AdminUtils result:', result);
+    
+    if (!result.success) {
+      console.error('❌ API AdminUtils failed with error:', result.error);
+      return res.status(500).json({
+        success: false,
+        error: 'Unable to fetch suggestions from Firebase: ' + result.error,
+        suggestions: []
+      });
+    }
+    
+    const suggestions = result.suggestions;
+    console.log('📋 API: Total suggestions found:', suggestions.length);
+    console.log('✅ API: Returning Firebase suggestions');
+    
+    res.json({
+      success: true,
+      suggestions: suggestions,
+      total: suggestions.length
+    });
+  } catch (error) {
+    console.error('❌ API Error fetching suggestions:', error);
+    console.error('❌ API Error stack:', error.stack);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error: ' + error.message,
+      suggestions: []
+    });
+  }
 });
 
 // 404 handler
 app.use((req, res) => {
   res.status(404).render('404', { 
     title: '404 - Page Not Found',
-    message: 'The page you are looking for does not exist.'
+    error: 'The page you are looking for does not exist.'
   });
 });
 
@@ -551,7 +678,7 @@ app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).render('404', { 
     title: '500 - Server Error',
-    message: 'Something went wrong on our server.'
+    error: 'Something went wrong on our server.'
   });
 });
 
