@@ -189,7 +189,7 @@
             color: #ffc107;
             margin-bottom: 0.5rem;
         }
-        
+
         .opening-hours .hour-item {
             padding: 0.5rem 0;
             border-bottom: 1px solid #eee;
@@ -198,20 +198,20 @@
         .opening-hours .hour-item:last-child {
             border-bottom: none;
         }
-        
+
         .review-text {
             font-style: italic;
             color: #555;
             line-height: 1.5;
             margin: 0.5rem 0;
         }
-        
+
         .overall-rating {
             padding: 1rem;
             background: #f8f9fa;
             border-radius: 10px;
         }
-        
+
         .review-avatar {
             object-fit: cover;
         }
@@ -224,17 +224,57 @@
             transition: all 0.3s ease;
             aspect-ratio: 4/3;
         }
-        
+
         .photo-item:hover {
             transform: scale(1.05);
             box-shadow: 0 8px 25px rgba(0,0,0,0.2);
         }
-        
+
         .photo-item img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             transition: all 0.3s ease;
+        }
+
+        .document-section {
+            margin-top: 1rem;
+        }
+
+        .document-item {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
+
+        .document-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .document-info h6 {
+            margin-bottom: 0.5rem;
+            color: var(--dark-color);
+        }
+
+        .document-details {
+            margin-bottom: 0.5rem;
+        }
+
+        .document-actions .btn {
+            min-width: 80px;
+        }
+
+        .document-empty {
+            text-align: center;
+            padding: 2rem;
+            color: #6c757d;
+        }
+
+        .document-empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -249,12 +289,12 @@
                             '/assets/default-hospital.png') %>" 
                              alt="<%= clinic.name || clinic.clinicName %>" 
                              class="clinic-avatar">
-                    <% } else { %>
-                        <div class="clinic-avatar d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.2);">
+                <% } else { %>
+                    <div class="clinic-avatar d-flex align-items-center justify-content-center" style="background: rgba(255,255,255,0.2);">
                             <i class="fas fa-hospital-alt fa-3x"></i>
-                        </div>
-                    <% } %>
-                </div>
+                    </div>
+                                <% } %>
+                            </div>
                 <div class="col-md-8">
                     <h1><%= clinic.name || clinic.clinicName %></h1>
                     <p class="lead mb-3"><%= clinic.about || clinic.description || 'Healthcare facility' %></p>
@@ -265,8 +305,8 @@
                         <% if (clinic.isFromGooglePlaces) { %>
                             <span class="google-badge">
                                 <i class="fab fa-google"></i> Google Places
-                            </span>
-                        <% } %>
+                        </span>
+                    <% } %>
                         <% if (clinic.googleRating) { %>
                             <span class="rating-stars">
                                 <% for (let i = 1; i <= 5; i++) { %>
@@ -276,7 +316,7 @@
                                 <% if (clinic.googleUserRatingsTotal) { %>
                                     - <%= clinic.googleUserRatingsTotal %> reviews
                                 <% } %>
-                            </span>
+                        </span>
                         <% } %>
                     </div>
                 </div>
@@ -293,70 +333,70 @@
         <div class="row">
             <!-- Informations principales -->
             <div class="col-md-4">
-                <div class="info-card">
+        <div class="info-card">
                     <h5><i class="fas fa-info-circle"></i> General Information</h5>
                     
                     <% if (clinic.address || clinic.googleAddress) { %>
                     <div class="info-item">
                         <i class="fas fa-map-marker-alt"></i>
                         <span><%= clinic.address || clinic.googleAddress %></span>
-                    </div>
-                    <% } %>
+            </div>
+                            <% } %>
                     
                     <% if (clinic.phone || clinic.googlePhoneNumber) { %>
                     <div class="info-item">
                         <i class="fas fa-phone"></i>
                         <span><%= clinic.phone || clinic.googlePhoneNumber %></span>
-                    </div>
+                                </div>
                     <% } %>
                     
                     <% if (clinic.email) { %>
                     <div class="info-item">
                         <i class="fas fa-envelope"></i>
                         <span><%= clinic.email %></span>
-                    </div>
+        </div>
                     <% } %>
                     
                     <% if (clinic.googleWebsite || clinic.website) { %>
                     <div class="info-item">
                         <i class="fas fa-globe"></i>
                         <a href="<%= clinic.googleWebsite || clinic.website %>" target="_blank">Website</a>
-                    </div>
-                    <% } %>
+            </div>
+                            <% } %>
                     
-                    <% if (clinic.createdAt) { %>
+                            <% if (clinic.createdAt) { %>
                     <div class="info-item">
                         <i class="fas fa-calendar-plus"></i>
                         <span>Added on <%= new Date(clinic.createdAt).toLocaleDateString('en-US') %></span>
                     </div>
-                    <% } %>
+                            <% } %>
                     
                     <% if (clinic.verifiedAt) { %>
                     <div class="info-item">
                         <i class="fas fa-check-circle"></i>
                         <span>Verified on <%= new Date(clinic.verifiedAt).toLocaleDateString('en-US') %></span>
                     </div>
-                    <% } %>
-                </div>
+                            <% } %>
+        </div>
 
                 <!-- Heures d'ouverture Google -->
                 <% if (clinic.googleOpeningHours && clinic.googleOpeningHours.weekday_text) { %>
-                <div class="info-card">
+        <div class="info-card">
                     <h5><i class="fas fa-clock"></i> Opening Hours</h5>
                     <div class="opening-hours">
                         <% clinic.googleOpeningHours.weekday_text.forEach(day => { %>
                         <div class="day">
                             <span><%= day %></span>
-                        </div>
+            </div>
                         <% }) %>
-                    </div>
-                </div>
-                <% } %>
+            </div>
+        </div>
+        <% } %>
             </div>
 
             <!-- Services et installations -->
             <div class="col-md-8">
-                <div class="info-card">
+        <div class="info-card">
                     <h5><i class="fas fa-stethoscope"></i> Services and Facilities</h5>
                     <div class="row">
                         <div class="col-md-6">
@@ -372,7 +412,7 @@
                             <% } else { %>
                                 <span class="text-muted">No services specified</span>
                             <% } %>
-                        </div>
+            </div>
                         <div class="col-md-6">
                             <h6>Types of Care</h6>
                             <% if (clinic.googleTypes && clinic.googleTypes.length > 0) { %>
@@ -385,6 +425,94 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Documents de certificat -->
+                <% if (clinic.documents && clinic.documents.certificate) { %>
+                <div class="info-card">
+                    <h5><i class="fas fa-file-medical"></i> Certificate Documents</h5>
+                    <div class="document-section">
+                        <% if (clinic.documents.certificate.fileName) { %>
+                        <div class="document-item d-flex align-items-center justify-content-between p-3 border rounded mb-3">
+                            <div class="document-info">
+                                <h6 class="mb-1">
+                                    <i class="fas fa-certificate text-primary me-2"></i>
+                                    <%= clinic.documents.certificate.fileName %>
+                                </h6>
+                                <!-- Document details removed for cleaner UI -->
+                        </div>
+                            <div class="document-actions">
+                                <% if (clinic.documents.certificate.fileUrl) { %>
+                                <a href="<%= clinic.documents.certificate.fileUrl %>" target="_blank" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> View
+                                </a>
+                                <% } else if (clinic.documents.certificate.fileData) { %>
+                                <button onclick="viewDocument('<%= clinic.documents.certificate.fileData %>', '<%= clinic.documents.certificate.fileName %>', '<%= clinic.documents.certificate.fileType %>')" 
+                                        class="btn btn-primary btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <% } %>
+                    </div>
+                </div>
+            <% } %>
+                    </div>
+        </div>
+        <% } %>
+
+                <!-- Documents supplémentaires -->
+                <% if (clinic.documents && (clinic.documents.id || clinic.documents.additional)) { %>
+        <div class="info-card">
+                    <h5><i class="fas fa-folder-open"></i> Additional Documents</h5>
+                    <div class="document-section">
+                        <% if (clinic.documents.id && clinic.documents.id.fileName) { %>
+                        <div class="document-item d-flex align-items-center justify-content-between p-3 border rounded mb-3">
+                            <div class="document-info">
+                                <h6 class="mb-1">
+                                    <i class="fas fa-id-card text-success me-2"></i>
+                                    ID/Passport: <%= clinic.documents.id.fileName %>
+                                </h6>
+                                <!-- Document details removed for cleaner UI -->
+                            </div>
+                            <div class="document-actions">
+                                <% if (clinic.documents.id.fileUrl) { %>
+                                <a href="<%= clinic.documents.id.fileUrl %>" target="_blank" class="btn btn-success btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> View
+                                </a>
+                                <% } else if (clinic.documents.id.fileData) { %>
+                                <button onclick="viewDocument('<%= clinic.documents.id.fileData %>', '<%= clinic.documents.id.fileName %>', '<%= clinic.documents.id.fileType %>')" 
+                                        class="btn btn-success btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                        <% } %>
+                    </div>
+                </div>
+                        <% } %>
+                        
+                        <% if (clinic.documents.additional && clinic.documents.additional.fileName) { %>
+                        <div class="document-item d-flex align-items-center justify-content-between p-3 border rounded mb-3">
+                            <div class="document-info">
+                                <h6 class="mb-1">
+                                    <i class="fas fa-file-alt text-warning me-2"></i>
+                                    Additional Document: <%= clinic.documents.additional.fileName %>
+                                </h6>
+                                <!-- Document details removed for cleaner UI -->
+        </div>
+                            <div class="document-actions">
+                                <% if (clinic.documents.additional.fileUrl) { %>
+                                <a href="<%= clinic.documents.additional.fileUrl %>" target="_blank" class="btn btn-warning btn-sm">
+                                    <i class="fas fa-external-link-alt"></i> View
+                                </a>
+                                <% } else if (clinic.documents.additional.fileData) { %>
+                                <button onclick="viewDocument('<%= clinic.documents.additional.fileData %>', '<%= clinic.documents.additional.fileName %>', '<%= clinic.documents.additional.fileType %>')" 
+                                        class="btn btn-warning btn-sm">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <% } %>
+            </div>
+                        </div>
+                        <% } %>
+                    </div>
+                </div>
+                <% } %>
 
                 <!-- Photos de la clinique -->
                 <% 
@@ -400,12 +528,12 @@
                         height: photo.height
                     }));
                 }
-                %>
-                
+            %>
+            
                 <% if (photosToShow.length > 0) { %>
                 <div class="info-card">
                     <h5><i class="fas fa-images"></i> Facility Photos</h5>
-                    <div class="photo-gallery">
+                <div class="photo-gallery">
                         <% photosToShow.slice(0, 8).forEach((photo, index) => { %>
                         <div class="photo-item" onclick="openPhotoModal('<%= photo.photo_reference || photo.url %>')">
                             <img src="<%= photo.url || `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${photo.photo_reference}&key=AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g` %>" 
@@ -419,8 +547,8 @@
                     <p class="text-center mt-3">
                         <small class="text-muted">+ <%= photosToShow.length - 8 %> other photos</small>
                     </p>
-                    <% } %>
-                </div>
+                            <% } %>
+                        </div>
                 <% } %>
                 
                 <!-- Informations supplémentaires Google Places -->
@@ -443,7 +571,7 @@
                     <div class="info-item">
                         <i class="fas fa-globe"></i>
                         <span><strong>Website:</strong> <a href="<%= clinic.googleWebsite %>" target="_blank" rel="noopener"><%= clinic.googleWebsite %></a></span>
-                    </div>
+                </div>
                     <% } %>
                     
                     <% if (clinic.googleTypes && clinic.googleTypes.length > 0) { %>
@@ -455,8 +583,8 @@
                                 <span class="facility-badge"><%= type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) %></span>
                             <% }) %>
                         </div>
-                    </div>
-                    <% } %>
+                </div>
+            <% } %>
                     
                     <% if (clinic.googlePriceLevel !== null && clinic.googlePriceLevel !== undefined) { %>
                     <div class="info-item">
@@ -469,20 +597,20 @@
                                 <span class="text-muted">$</span>
                             <% } %>
                         </span>
-                    </div>
+        </div>
                     <% } %>
                 </div>
                 <% } %>
-                
+
                 <!-- Heures d'ouverture Google -->
                 <% if (clinic.googleOpeningHours && clinic.googleOpeningHours.weekday_text && clinic.googleOpeningHours.weekday_text.length > 0) { %>
-                <div class="info-card">
+        <div class="info-card">
                     <h5><i class="fas fa-clock"></i> Opening Hours</h5>
                     <div class="opening-hours">
                         <% clinic.googleOpeningHours.weekday_text.forEach(dayText => { %>
                             <div class="hour-item">
                                 <span><%= dayText %></span>
-                            </div>
+            </div>
                         <% }) %>
                     </div>
                     <% if (clinic.googleOpeningHours.open_now !== undefined) { %>
@@ -511,20 +639,20 @@
                     <h5><i class="fas fa-star"></i> Patient Reviews</h5>
                     <div class="reviews-section">
                         <% reviewsToShow.slice(0, 5).forEach(review => { %>
-                        <div class="review-item">
+                <div class="review-item">
                             <div class="d-flex align-items-center mb-2">
                                 <% if (review.profile_photo_url) { %>
                                 <img src="<%= review.profile_photo_url %>" alt="<%= review.author_name %>" class="review-avatar me-2" style="width: 32px; height: 32px; border-radius: 50%;">
                                 <% } %>
                                 <div>
                                     <strong><%= review.author_name %></strong>
-                                    <div class="review-rating">
-                                        <% for (let i = 1; i <= 5; i++) { %>
+                        <div class="review-rating">
+                            <% for (let i = 1; i <= 5; i++) { %>
                                             <i class="fas fa-star<%= i <= review.rating ? ' text-warning' : ' text-muted' %>"></i>
-                                        <% } %>
-                                    </div>
-                                </div>
-                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
                             <% if (review.text && review.text.trim()) { %>
                             <p class="review-text"><%= review.text %></p>
                             <% } %>
@@ -535,9 +663,9 @@
                                     <%= new Date(review.time * 1000).toLocaleDateString('en-US') %>
                                 <% } %>
                             </small>
-                        </div>
+            </div>
                         <% }) %>
-                    </div>
+        </div>
                     
                     <% if (clinic.googleRating) { %>
                     <div class="mt-3 text-center">
@@ -546,7 +674,7 @@
                                 <%= clinic.googleRating %>/5 
                                 <% for (let i = 1; i <= 5; i++) { %>
                                     <i class="fas fa-star<%= i <= Math.round(clinic.googleRating) ? ' text-warning' : ' text-muted' %>" style="font-size: 0.9em;"></i>
-                                <% } %>
+        <% } %>
                             </h4>
                             <% if (clinic.googleUserRatingsTotal) { %>
                             <small class="text-muted">Based on <%= clinic.googleUserRatingsTotal %> Google reviews</small>
@@ -566,7 +694,7 @@
                     <% if (!clinic.verified && !clinic.isVerified && clinic.status !== 'rejected') { %>
                         <button onclick="approveClinic('<%= clinic.id %>')" class="btn btn-approve btn-custom me-3">
                             <i class="fas fa-check"></i> Approve
-                        </button>
+                </button>
                         <button onclick="rejectClinic('<%= clinic.id %>')" class="btn btn-reject btn-custom">
                             <i class="fas fa-times"></i> Reject
                         </button>
@@ -577,8 +705,8 @@
                     <% } else if (clinic.status === 'rejected') { %>
                         <button onclick="approveClinic('<%= clinic.id %>')" class="btn btn-approve btn-custom">
                             <i class="fas fa-check"></i> Approve Anyway
-                        </button>
-                    <% } %>
+                </button>
+            <% } %>
                 </div>
             </div>
         </div>
@@ -594,6 +722,29 @@
                 </div>
                 <div class="modal-body text-center">
                     <img id="modalPhoto" src="" class="img-fluid" alt="Photo">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pour les documents -->
+    <div class="modal fade" id="documentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="documentModalTitle">Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div id="documentContent">
+                        <!-- Le contenu sera inséré ici -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="downloadDocument">
+                        <i class="fas fa-download"></i> Download
+                    </button>
                 </div>
             </div>
         </div>
@@ -617,19 +768,106 @@
             modal.show();
         }
 
+        function viewDocument(fileData, fileName, fileType) {
+            const modalTitle = document.getElementById('documentModalTitle');
+            const documentContent = document.getElementById('documentContent');
+            const downloadButton = document.getElementById('downloadDocument');
+            
+            modalTitle.textContent = fileName;
+            
+            // Vérifier si les données contiennent déjà le préfixe data URL
+            let dataUrl;
+            if (fileData.startsWith('data:')) {
+                // Les données contiennent déjà le préfixe data URL
+                dataUrl = fileData;
+            } else {
+                // Construire l'URL data avec le préfixe
+                dataUrl = `data:${fileType};base64,${fileData}`;
+            }
+            
+            // Vérifier si c'est une image ou un PDF
+            if (fileType.startsWith('image/')) {
+                documentContent.innerHTML = `
+                    <img src="${dataUrl}" 
+                         class="img-fluid" 
+                         alt="${fileName}" 
+                         style="max-width: 100%; height: auto;">
+                `;
+            } else if (fileType === 'application/pdf') {
+                documentContent.innerHTML = `
+                    <embed src="${dataUrl}" 
+                           type="application/pdf" 
+                           width="100%" 
+                           height="600px" 
+                           style="border: 1px solid #ddd;">
+                `;
+            } else {
+                documentContent.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-file fa-3x mb-3"></i>
+                        <h5>${fileName}</h5>
+                        <p>This document type cannot be previewed directly. Use the download button to view it.</p>
+                    </div>
+                `;
+            }
+            
+            // Configurer le bouton de téléchargement
+            downloadButton.onclick = function() {
+                downloadDocument(fileData, fileName, fileType);
+            };
+            
+            const modal = new bootstrap.Modal(document.getElementById('documentModal'));
+            modal.show();
+        }
+
+        function downloadDocument(fileData, fileName, fileType) {
+            // Extraire les données base64 si le fileData contient le préfixe data URL
+            let base64Data;
+            if (fileData.startsWith('data:')) {
+                // Extraire la partie base64 après la virgule
+                base64Data = fileData.split(',')[1];
+            } else {
+                // Utiliser directement les données
+                base64Data = fileData;
+            }
+            
+            const blob = base64ToBlob(base64Data, fileType);
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function base64ToBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
+        }
+
         async function approveClinic(clinicId) {
-            const result = await Swal.fire({
+                const result = await Swal.fire({
                 title: 'Approve this clinic?',
                 text: 'This action will approve the clinic and make it visible to patients.',
-                icon: 'question',
-                showCancelButton: true,
+                    icon: 'question',
+                    showCancelButton: true,
                 confirmButtonColor: '#20c997',
                 cancelButtonColor: '#6c757d',
-                confirmButtonText: 'Yes, approve',
-                cancelButtonText: 'Cancel'
-            });
+                    confirmButtonText: 'Yes, approve',
+                    cancelButtonText: 'Cancel'
+                });
 
-            if (result.isConfirmed) {
+                if (result.isConfirmed) {
                 try {
                     const response = await fetch(`/api/clinics/${clinicId}/approve`, {
                         method: 'POST',
@@ -641,26 +879,26 @@
                             .then(() => window.location.reload());
                     } else {
                         throw new Error('Error during approval');
-                    }
-                } catch (error) {
+                }
+            } catch (error) {
                     Swal.fire('Error', 'Unable to approve the clinic.', 'error');
                 }
             }
         }
 
         async function unapproveClinic(clinicId) {
-            const result = await Swal.fire({
+                const result = await Swal.fire({
                 title: 'Remove approval?',
                 text: 'This clinic will return to "Pending" status.',
-                icon: 'warning',
-                showCancelButton: true,
+                    icon: 'warning',
+                    showCancelButton: true,
                 confirmButtonColor: '#fd7e14',
-                cancelButtonColor: '#6c757d',
+                    cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Yes, remove',
-                cancelButtonText: 'Cancel'
-            });
+                    cancelButtonText: 'Cancel'
+                });
 
-            if (result.isConfirmed) {
+                if (result.isConfirmed) {
                 try {
                     const response = await fetch(`/api/clinics/${clinicId}/unapprove`, {
                         method: 'POST',
@@ -708,8 +946,8 @@
                             .then(() => window.location.reload());
                     } else {
                         throw new Error('Error during rejection');
-                    }
-                } catch (error) {
+                }
+            } catch (error) {
                     Swal.fire('Error', 'Unable to reject the clinic.', 'error');
                 }
             }

@@ -17,6 +17,7 @@ const settingsPage = {
         // Charger les données de manière asynchrone
         try {
             await this.loadSettingsData();
+            await this.loadExistingDocuments();
             console.log('✅ Settings data loaded successfully');
         } catch (error) {
             console.error('❌ Error loading settings data:', error);
@@ -65,6 +66,10 @@ const settingsPage = {
 
         document.getElementById('idInput')?.addEventListener('change', (e) => {
             this.handleIdUpload(e);
+        });
+
+        document.getElementById('additionalInput')?.addEventListener('change', (e) => {
+            this.handleAdditionalUpload(e);
         });
 
         // Drag and drop events
@@ -428,39 +433,221 @@ const settingsPage = {
      */
     async saveDocuments() {
         try {
-            const formData = new FormData();
+            const documentsToUpload = [];
             
+            // Check which documents need to be uploaded
             if (this.uploadedFiles.certificate) {
-                formData.append('certificate', this.uploadedFiles.certificate);
+                documentsToUpload.push({ type: 'certificate', file: this.uploadedFiles.certificate });
             }
             if (this.uploadedFiles.id) {
-                formData.append('id', this.uploadedFiles.id);
+                documentsToUpload.push({ type: 'id', file: this.uploadedFiles.id });
+            }
+            if (this.uploadedFiles.additional) {
+                documentsToUpload.push({ type: 'additional', file: this.uploadedFiles.additional });
             }
 
-            const response = await fetch('/api/clinic/documents', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
+            if (documentsToUpload.length === 0) {
                 Swal.fire({
-                    icon: 'success',
-                    title: 'Documents Uploaded!',
-                    text: 'Your documents have been uploaded successfully.',
+                    icon: 'warning',
+                    title: 'No Documents Selected',
+                    text: 'Please select at least one document to upload.',
                     confirmButtonColor: '#159BBD'
                 });
-            } else {
-                throw new Error('Failed to upload documents');
+                return;
             }
+
+            console.log(`📄 Uploading ${documentsToUpload.length} documents`);
+
+            // Show progress dialog
+            Swal.fire({
+                title: 'Uploading Documents',
+                html: 'Please wait while we upload your documents...<br><br><div class="progress-info">Starting upload...</div>',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            const results = [];
+            const errors = [];
+
+            // Upload documents one by one for better error handling
+            for (let i = 0; i < documentsToUpload.length; i++) {
+                const { type, file } = documentsToUpload[i];
+                
+                try {
+                    // Update progress
+                    const progressInfo = document.querySelector('.progress-info');
+                    if (progressInfo) {
+                        progressInfo.innerHTML = `Uploading ${type} document (${i + 1}/${documentsToUpload.length})...<br>File: ${file.name} (${this.formatFileSize(file.size)})`;
+                    }
+                    
+                    const result = await this.uploadSingleDocument(type, file);
+                    results.push({ type, result });
+                    
+                } catch (error) {
+                    console.error(`❌ Failed to upload ${type}:`, error);
+                    errors.push({ type, error: error.message });
+                }
+            }
+
+            // Close progress dialog
+            Swal.close();
+
+            // Show results
+            if (errors.length === 0) {
+                console.log(`✅ All documents uploaded successfully`);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Documents Uploaded Successfully!',
+                    html: `
+                        <div class="success-details">
+                            <p>All ${results.length} documents have been uploaded.</p>
+                            <ul style="text-align: left; margin-top: 10px;">
+                                ${results.map(r => `<li><strong>${r.type}</strong>: ${r.result.method === 'firebase-storage' ? 'Cloud Storage' : 'Database'}</li>`).join('')}
+                            </ul>
+                        </div>
+                    `,
+                    confirmButtonColor: '#159BBD',
+                    timer: 5000,
+                    timerProgressBar: true
+                });
+                
+                // Reset form
+                this.resetForm();
+                
+                // Reload documents
+                this.loadExistingDocuments();
+                
+            } else if (results.length > 0) {
+                console.log(`⚠️  Partial upload success: ${results.length} successful, ${errors.length} failed`);
+                
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Partial Upload Success',
+                    html: `
+                        <div class="partial-success">
+                            <p><strong>Successful uploads:</strong> ${results.length}</p>
+                            <p><strong>Failed uploads:</strong> ${errors.length}</p>
+                            <div style="margin-top: 15px;">
+                                <strong>Errors:</strong>
+                                <ul style="text-align: left; margin-top: 5px;">
+                                    ${errors.map(e => `<li><strong>${e.type}</strong>: ${e.error}</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonColor: '#159BBD'
+                });
+                
+                // Reload documents to show successful uploads
+                this.loadExistingDocuments();
+                
+            } else {
+                console.log(`❌ All uploads failed`);
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Upload Failed',
+                    html: `
+                        <div class="error-details">
+                            <p>All document uploads failed:</p>
+                            <ul style="text-align: left; margin-top: 10px;">
+                                ${errors.map(e => `<li><strong>${e.type}</strong>: ${e.error}</li>`).join('')}
+                            </ul>
+                            <div style="margin-top: 15px; font-size: 14px; color: #666;">
+                                <strong>Tips:</strong>
+                                <ul style="text-align: left; margin-top: 5px;">
+                                    <li>Ensure files are under 800KB</li>
+                                    <li>Use JPG, PNG, or PDF format</li>
+                                    <li>Check your internet connection</li>
+                                </ul>
+                            </div>
+                        </div>
+                    `,
+                    confirmButtonColor: '#159BBD'
+                });
+            }
+
         } catch (error) {
-            console.error('Error uploading documents:', error);
+            console.error('❌ Document upload error:', error);
+            
             Swal.fire({
                 icon: 'error',
-                title: 'Error',
-                text: 'Failed to upload documents. Please try again.',
+                title: 'Upload Error',
+                text: `An unexpected error occurred: ${error.message}`,
                 confirmButtonColor: '#159BBD'
             });
         }
+    },
+
+    /**
+     * Upload a single document with improved error handling
+     */
+    async uploadSingleDocument(documentType, file) {
+        return new Promise((resolve, reject) => {
+            console.log(`📄 Starting upload for ${documentType}`);
+            console.log(`📄 File: ${file.name}, Size: ${this.formatFileSize(file.size)}`);
+            
+            // Validate file first
+            const validation = this.validateFile(file);
+            if (!validation.valid) {
+                console.log(`❌ File validation failed: ${validation.message}`);
+                reject(new Error(validation.message));
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const documentData = {
+                        fileName: file.name,
+                        fileType: file.type,
+                        fileSize: file.size,
+                        fileData: e.target.result,
+                        uploadedAt: new Date().toISOString()
+                    };
+
+                    console.log(`📤 Sending upload request for ${documentType}`);
+                    
+                    const response = await fetch('/api/settings/upload-document', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            documentType: documentType,
+                            documentData: documentData
+                        })
+                    });
+
+                    console.log(`📥 Upload response status: ${response.status}`);
+                    const result = await response.json();
+                    console.log(`📥 Upload response:`, result);
+
+                    if (result.success) {
+                        console.log(`✅ ${documentType} uploaded successfully`);
+                        console.log(`📄 Upload method: ${result.method}`);
+                        resolve(result);
+                    } else {
+                        console.error(`❌ Upload failed: ${result.message}`);
+                        reject(new Error(result.message));
+                    }
+                } catch (error) {
+                    console.error(`❌ Upload error for ${documentType}:`, error);
+                    reject(new Error(`Failed to upload ${documentType}: ${error.message}`));
+                }
+            };
+            
+            reader.onerror = (error) => {
+                console.error(`❌ FileReader error:`, error);
+                reject(new Error('Failed to read file'));
+            };
+            
+            reader.readAsDataURL(file);
+        });
     },
 
     /**
@@ -733,6 +920,51 @@ const settingsPage = {
     },
 
     /**
+     * Validate file before upload
+     */
+    validateFile(file) {
+        const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        const maxSize = 800 * 1024; // 800KB limit
+        
+        console.log(`📄 Validating file: ${file.name}`);
+        console.log(`📄 File type: ${file.type}`);
+        console.log(`📄 File size: ${file.size} bytes`);
+        
+        if (!allowedTypes.includes(file.type)) {
+            console.log(`❌ Invalid file type: ${file.type}`);
+            return {
+                valid: false,
+                message: 'Invalid file type. Only PDF, JPG, JPEG, and PNG files are allowed.'
+            };
+        }
+        
+        if (file.size > maxSize) {
+            console.log(`❌ File too large: ${file.size} bytes > ${maxSize} bytes`);
+            return {
+                valid: false,
+                message: `File size exceeds 800KB limit. Current size: ${this.formatFileSize(file.size)}. Please reduce the file size.`
+            };
+        }
+        
+        console.log(`✅ File validation passed`);
+        return {
+            valid: true,
+            message: 'File is valid'
+        };
+    },
+
+    /**
+     * Format file size for display
+     */
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+
+    /**
      * Upload certificate
      */
     uploadCertificate() {
@@ -744,7 +976,7 @@ const settingsPage = {
      */
     handleCertificateUpload(event) {
         const file = event.target.files[0];
-        if (file) {
+        if (file && this.validateFile(file).valid) {
             this.uploadedFiles.certificate = file;
             document.getElementById('certificateFileName').textContent = file.name;
             document.getElementById('certificateFileInfo').style.display = 'block';
@@ -776,7 +1008,7 @@ const settingsPage = {
      */
     handleIdUpload(event) {
         const file = event.target.files[0];
-        if (file) {
+        if (file && this.validateFile(file).valid) {
             this.uploadedFiles.id = file;
             document.getElementById('idFileName').textContent = file.name;
             document.getElementById('idFileInfo').style.display = 'block';
@@ -797,20 +1029,220 @@ const settingsPage = {
     },
 
     /**
-     * Preview documents
+     * Upload additional document
      */
-    previewDocuments() {
+    uploadAdditional() {
+        document.getElementById('additionalInput').click();
+    },
+
+    /**
+     * Handle additional document upload
+     */
+    handleAdditionalUpload(event) {
+        const file = event.target.files[0];
+        if (file && this.validateFile(file).valid) {
+            this.uploadedFiles.additional = file;
+            document.getElementById('additionalFileName').textContent = file.name;
+            document.getElementById('additionalFileInfo').style.display = 'block';
+            document.getElementById('additionalStatus').textContent = 'Uploaded';
+            document.getElementById('additionalStatus').className = 'badge bg-success';
+        }
+    },
+
+    /**
+     * Remove additional document
+     */
+    removeAdditional() {
+        delete this.uploadedFiles.additional;
+        document.getElementById('additionalFileInfo').style.display = 'none';
+        document.getElementById('additionalStatus').textContent = 'Pending';
+        document.getElementById('additionalStatus').className = 'badge bg-warning';
+        document.getElementById('additionalInput').value = '';
+    },
+
+    /**
+     * Preview a specific document
+     */
+    async previewDocument(documentType) {
+        const documents = await this.getExistingDocuments();
+        const document = documents[documentType];
+        
+        if (!document) {
         Swal.fire({
-            title: 'Document Preview',
-            html: `
-                <div class="text-start">
-                    <p><strong>Medical License:</strong> ${this.uploadedFiles.certificate ? this.uploadedFiles.certificate.name : 'Not uploaded'}</p>
-                    <p><strong>National ID:</strong> ${this.uploadedFiles.id ? this.uploadedFiles.id.name : 'Not uploaded'}</p>
-                </div>
-            `,
+                icon: 'warning',
+                title: 'No Document Found',
+                text: 'This document has not been uploaded yet.',
+                confirmButtonColor: '#159BBD'
+            });
+            return;
+        }
+        
+        this.showDocumentPreviewModal(document, documentType);
+    },
+
+    /**
+     * Preview all documents
+     */
+    async previewAllDocuments() {
+        const documents = await this.getExistingDocuments();
+        const documentTypes = ['certificate', 'id', 'additional'];
+        const availableDocuments = documentTypes.filter(type => documents[type]);
+        
+        if (availableDocuments.length === 0) {
+            Swal.fire({
             icon: 'info',
+                title: 'No Documents',
+                text: 'No documents have been uploaded yet.',
+                confirmButtonColor: '#159BBD'
+            });
+            return;
+        }
+        
+        let htmlContent = '<div class="text-start">';
+        availableDocuments.forEach(type => {
+            const doc = documents[type];
+            const typeName = type === 'certificate' ? 'Hospital Certificate' : 
+                           type === 'id' ? 'ID/Passport' : 'Additional Document';
+            htmlContent += `
+                <div class="mb-3 p-3 border rounded">
+                    <h6><i class="fas fa-file me-2"></i>${typeName}</h6>
+                    <p class="mb-1"><strong>File:</strong> ${doc.fileName}</p>
+                    <p class="mb-1"><strong>Size:</strong> ${this.formatFileSize(doc.fileSize)}</p>
+                    <p class="mb-1"><strong>Type:</strong> ${doc.fileType}</p>
+                    <button class="btn btn-sm btn-outline-primary" onclick="settingsPage.previewDocument('${type}')">
+                        <i class="fas fa-eye me-1"></i>Preview
+                    </button>
+                </div>
+            `;
+        });
+        htmlContent += '</div>';
+        
+        Swal.fire({
+            title: 'Document Overview',
+            html: htmlContent,
+            width: '600px',
             confirmButtonColor: '#159BBD'
         });
+    },
+
+    /**
+     * Show document preview modal
+     */
+    showDocumentPreviewModal(document, documentType) {
+        const modal = document.getElementById('documentPreviewModal');
+        const modalTitle = modal.querySelector('#documentPreviewModalLabel');
+        const fileName = modal.querySelector('#previewFileName');
+        const fileType = modal.querySelector('#previewFileType');
+        const fileSize = modal.querySelector('#previewFileSize');
+        const iframe = modal.querySelector('#documentPreviewIframe');
+        const imageDiv = modal.querySelector('#documentPreviewImage');
+        const image = modal.querySelector('#documentPreviewImg');
+        const downloadBtn = modal.querySelector('#downloadDocumentBtn');
+        const loader = modal.querySelector('#documentPreviewLoader');
+        const content = modal.querySelector('#documentPreviewContent');
+        
+        // Set document info
+        const typeName = documentType === 'certificate' ? 'Hospital Certificate' : 
+                        documentType === 'id' ? 'ID/Passport' : 'Additional Document';
+        modalTitle.textContent = `${typeName} Preview`;
+        fileName.textContent = document.fileName;
+        fileType.textContent = document.fileType;
+        fileSize.textContent = this.formatFileSize(document.fileSize);
+        
+        // Show loader
+        loader.style.display = 'block';
+        content.style.display = 'none';
+        
+        // Set download button
+        downloadBtn.onclick = () => {
+            const link = document.createElement('a');
+            link.href = document.downloadURL;
+            link.download = document.fileName;
+            link.click();
+        };
+        
+        // Load document
+        if (document.fileType === 'application/pdf') {
+            iframe.src = document.downloadURL;
+            iframe.style.display = 'block';
+            imageDiv.style.display = 'none';
+        } else {
+            image.src = document.downloadURL;
+            iframe.style.display = 'none';
+            imageDiv.style.display = 'block';
+        }
+        
+        // Hide loader and show content
+        setTimeout(() => {
+            loader.style.display = 'none';
+            content.style.display = 'block';
+        }, 1000);
+        
+        // Show modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+    },
+
+    /**
+     * Format file size for display
+     */
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
+
+    /**
+     * Get existing documents from server
+     */
+    async getExistingDocuments() {
+        try {
+            const response = await fetch('/api/settings/get-documents');
+            if (response.ok) {
+                const result = await response.json();
+                return result.documents || {};
+            }
+        } catch (error) {
+            console.error('Error getting documents:', error);
+        }
+        return {};
+    },
+
+    /**
+     * Load existing documents and populate UI
+     */
+    async loadExistingDocuments() {
+        try {
+            const documents = await this.getExistingDocuments();
+            
+            // Update UI for each document type
+            Object.keys(documents).forEach(documentType => {
+                const doc = documents[documentType];
+                if (doc && doc.fileName) {
+                    this.populateDocumentUI(documentType, doc);
+                }
+            });
+        } catch (error) {
+            console.error('Error loading existing documents:', error);
+        }
+    },
+
+    /**
+     * Populate document UI with existing document info
+     */
+    populateDocumentUI(documentType, docData) {
+        const fileNameElement = document.getElementById(`${documentType}FileName`);
+        const fileInfoElement = document.getElementById(`${documentType}FileInfo`);
+        const statusElement = document.getElementById(`${documentType}Status`);
+        
+        if (fileNameElement && fileInfoElement && statusElement) {
+            fileNameElement.textContent = docData.fileName;
+            fileInfoElement.style.display = 'block';
+            statusElement.textContent = 'Uploaded';
+            statusElement.className = 'badge bg-success';
+        }
     },
 
     /**
@@ -844,7 +1276,7 @@ const settingsPage = {
      * Setup drag and drop functionality
      */
     setupDragAndDrop() {
-        const uploadAreas = ['certificateUploadArea', 'idUploadArea'];
+        const uploadAreas = ['certificateUploadArea', 'idUploadArea', 'additionalUploadArea'];
         
         uploadAreas.forEach(areaId => {
             const area = document.getElementById(areaId);
@@ -870,6 +1302,8 @@ const settingsPage = {
                             this.handleCertificateUpload({ target: { files: [file] } });
                         } else if (areaId === 'idUploadArea') {
                             this.handleIdUpload({ target: { files: [file] } });
+                        } else if (areaId === 'additionalUploadArea') {
+                            this.handleAdditionalUpload({ target: { files: [file] } });
                         }
                     }
                 });

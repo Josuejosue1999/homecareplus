@@ -316,7 +316,7 @@
                                     <div class="action-item">
                                         <a href="/clinics" class="action-btn primary">
                                             <div class="action-icon">
-                                                <i class="fas fa-hospital"></i>
+                                            <i class="fas fa-hospital"></i>
                                             </div>
                                             <div class="action-content">
                                                 <h6>Manage Clinics</h6>
@@ -338,7 +338,7 @@
                                     <div class="action-item">
                                         <button class="action-btn info" onclick="generateReport()">
                                             <div class="action-icon">
-                                                <i class="fas fa-file-alt"></i>
+                                            <i class="fas fa-file-alt"></i>
                                             </div>
                                             <div class="action-content">
                                                 <h6>Generate Report</h6>
@@ -474,7 +474,7 @@
                     .then(response => response.json())
                     .then(data => {
                         if (data.success) {
-                            Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
+                    Swal.fire('Logged Out!', 'You have been successfully logged out.', 'success').then(() => {
                                 window.location.href = '/login';
                             });
                         } else {
@@ -671,7 +671,7 @@
             
             .action-icon i {
                 font-size: 1.2rem;
-            }
+        }
         }
 
         /* Action buttons are now handled by the enhanced grid styles above */

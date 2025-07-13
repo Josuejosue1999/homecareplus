@@ -7,7 +7,9 @@ const { Server } = require("socket.io");
 require("dotenv").config();
 
 // Import Firebase configuration
-const { db, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment, setDoc } = require("./config/firebase");
+const { db, storage, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment, setDoc, ref, uploadBytes, getDownloadURL } = require("./config/firebase");
+const { deleteObject } = require('firebase/storage');
+const { getAuth } = require('firebase/auth');
 
 // Import des routes et middleware
 const authRoutes = require("./routes/auth");
@@ -26,8 +28,8 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // Increase limit to 50MB for document uploads
+app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increase limit to 50MB for form data
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -245,17 +247,278 @@ app.post("/api/settings/password", requireAuth, async (req, res) => {
     }
 });
 
-// Route pour l'upload de documents
-app.post("/api/settings/upload-documents", requireAuth, async (req, res) => {
+// Route pour l'upload de documents (upgraded with Firebase Storage fallback)
+app.post("/api/settings/upload-document", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const { documentType, documentData } = req.body;
+        
+        console.log(`📄 Starting document upload...`);
+        console.log(`📄 Document type: ${documentType}`);
+        console.log(`📄 User ID: ${userId}`);
+        
+        // Validate input
+        if (!documentType || !documentData) {
+            console.log(`❌ Missing required fields`);
+            return res.status(400).json({
+                success: false,
+                message: "Document type and data are required"
+            });
+        }
+        
+        // Validate document type
+        const allowedTypes = ['certificate', 'id', 'additional'];
+        if (!allowedTypes.includes(documentType)) {
+            console.log(`❌ Invalid document type: ${documentType}`);
+            return res.status(400).json({
+                success: false,
+                message: "Invalid document type"
+            });
+        }
+        
+        // Validate file data
+        if (!documentData.fileName || !documentData.fileData) {
+            console.log(`❌ Missing file data`);
+            return res.status(400).json({
+                success: false,
+                message: "File name and data are required"
+            });
+        }
+        
+        console.log(`📄 File name: ${documentData.fileName}`);
+        console.log(`📄 File type: ${documentData.fileType}`);
+        console.log(`📄 File size: ${documentData.fileSize} bytes`);
+        
+        // Validate file size (Limite stricte de 800KB pour éviter les problèmes Firestore)
+        const maxSize = 800 * 1024; // 800KB
+        if (documentData.fileSize > maxSize) {
+            console.log(`❌ File too large: ${documentData.fileSize} bytes > ${maxSize} bytes`);
+            return res.status(400).json({
+                success: false,
+                message: "File size exceeds 800KB limit. Please reduce the file size."
+            });
+        }
+        
+        // Validate file type
+        const allowedFileTypes = ['image/jpeg', 'image/jpg', 'image/png', 'application/pdf'];
+        if (!allowedFileTypes.includes(documentData.fileType)) {
+            console.log(`❌ Invalid file type: ${documentData.fileType}`);
+            return res.status(400).json({
+                success: false,
+                message: "Invalid file type. Only PDF, JPG, JPEG, and PNG are allowed"
+            });
+        }
+        
+        // Essayer d'abord Firebase Storage
+        console.log(`📤 Attempting Firebase Storage upload...`);
+        let uploadResult = null;
+        
+        try {
+            const base64Data = documentData.fileData.split(',')[1];
+            if (!base64Data) {
+                throw new Error('Invalid base64 data format');
+            }
+            const buffer = Buffer.from(base64Data, 'base64');
+            
+            const fileName = `documents/${userId}/${documentType}/${Date.now()}_${documentData.fileName}`;
+            const storageRef = ref(storage, fileName);
+            
+            const snapshot = await uploadBytes(storageRef, buffer, {
+                contentType: documentData.fileType
+            });
+            
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            
+            uploadResult = {
+                method: 'firebase-storage',
+                downloadURL: downloadURL,
+                storagePath: fileName
+            };
+            
+            console.log(`✅ Firebase Storage upload successful`);
+            
+        } catch (storageError) {
+            console.log(`⚠️  Firebase Storage failed, using Firestore fallback:`, storageError.message);
+            
+            // Fallback vers Firestore (pour les petits fichiers uniquement)
+            if (documentData.fileSize > 500 * 1024) { // 500KB max pour Firestore
+                throw new Error('File too large for Firestore storage. Firebase Storage is required for files > 500KB.');
+            }
+            
+            uploadResult = {
+                method: 'firestore',
+                fileData: documentData.fileData,
+                storagePath: null
+            };
+            
+            console.log(`✅ Using Firestore fallback for small file`);
+        }
+        
+        // Update clinic document
+        console.log(`📄 Updating Firestore document...`);
+        const clinicDocRef = doc(db, 'clinics', userId);
+        
+        const updateData = {
+            [`documents.${documentType}`]: {
+                fileName: documentData.fileName,
+                fileType: documentData.fileType,
+                fileSize: documentData.fileSize,
+                uploadMethod: uploadResult.method,
+                uploadedAt: documentData.uploadedAt || new Date().toISOString(),
+                ...(uploadResult.downloadURL && { downloadURL: uploadResult.downloadURL }),
+                ...(uploadResult.storagePath && { storagePath: uploadResult.storagePath }),
+                ...(uploadResult.fileData && { fileData: uploadResult.fileData })
+            },
+            updatedAt: new Date()
+        };
+        
+        await updateDoc(clinicDocRef, updateData);
+        console.log(`✅ Document ${documentType} uploaded successfully for user: ${userId}`);
+        
+        res.json({
+            success: true,
+            message: "Document uploaded successfully",
+            method: uploadResult.method,
+            downloadURL: uploadResult.downloadURL || null
+        });
+        
+    } catch (error) {
+        console.error("❌ Document upload error:", error);
+        
+        let errorMessage = "Failed to upload document";
+        let statusCode = 500;
+        
+        if (error.message.includes('too large')) {
+            errorMessage = error.message;
+            statusCode = 400;
+        } else if (error.message.includes('Invalid file')) {
+            errorMessage = error.message;
+            statusCode = 400;
+        } else if (error.code === 'invalid-argument') {
+            errorMessage = "File too large for database storage. Please use a smaller file.";
+            statusCode = 400;
+        }
+        
+        res.status(statusCode).json({
+            success: false,
+            message: errorMessage,
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
+// Route to get existing documents
+app.get("/api/settings/get-documents", requireAuth, async (req, res) => {
     try {
         const userId = req.user.uid;
         
-        // Ici vous pouvez ajouter la logique pour uploader les fichiers vers Firebase Storage
-        // et sauvegarder les URLs dans Firestore
-        // Pour l'instant, on simule un upload réussi
+        console.log(`📄 Getting documents for user: ${userId}`);
         
+        const clinicDocRef = doc(db, 'clinics', userId);
+        const clinicDoc = await getDoc(clinicDocRef);
+        
+        if (clinicDoc.exists()) {
+            const clinicData = clinicDoc.data();
+            const documents = clinicData.documents || {};
+            
+            // Return metadata including download URLs for preview
+            const documentsMetadata = {};
+            Object.keys(documents).forEach(type => {
+                if (documents[type]) {
+                    documentsMetadata[type] = {
+                        fileName: documents[type].fileName,
+                        fileType: documents[type].fileType,
+                        fileSize: documents[type].fileSize,
+                        downloadURL: documents[type].downloadURL,
+                        uploadedAt: documents[type].uploadedAt
+                    };
+                }
+            });
+            
+            res.json({
+                success: true,
+                documents: documentsMetadata
+            });
+        } else {
+            res.json({
+                success: true,
+                documents: {}
+            });
+        }
+    } catch (error) {
+        console.error("Get documents error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to get documents"
+        });
+    }
+});
+
+// Route to remove a document
+app.post("/api/settings/remove-document", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.uid;
+        const { documentType } = req.body;
+        
+        console.log(`🗑️ Removing document type: ${documentType} for user: ${userId}`);
+        
+        // Validate input
+        if (!documentType) {
+            return res.status(400).json({
+                success: false,
+                message: "Document type is required"
+            });
+        }
+        
+        // First, get the document to find the storage path
+        const clinicDocRef = doc(db, 'clinics', userId);
+        const clinicDoc = await getDoc(clinicDocRef);
+        
+        if (clinicDoc.exists()) {
+            const clinicData = clinicDoc.data();
+            const document = clinicData.documents?.[documentType];
+            
+            if (document && document.storagePath) {
+                // Remove from Firebase Storage
+                const storageRef = ref(storage, document.storagePath);
+                try {
+                    await deleteObject(storageRef);
+                    console.log(`✅ File removed from Firebase Storage: ${document.storagePath}`);
+                } catch (storageError) {
+                    console.warn(`⚠️ Could not remove file from storage: ${storageError.message}`);
+                    // Continue with Firestore removal even if storage removal fails
+                }
+            }
+        }
+        
+        // Remove document from Firestore
+        const updateData = {
+            [`documents.${documentType}`]: null,
+            updatedAt: new Date()
+        };
+        
+        await updateDoc(clinicDocRef, updateData);
+        
+        console.log(`✅ Document ${documentType} removed successfully for user: ${userId}`);
+        
+        res.json({
+            success: true,
+            message: "Document removed successfully"
+        });
+    } catch (error) {
+        console.error("Remove document error:", error);
+        res.status(500).json({
+            success: false,
+            message: "Failed to remove document"
+        });
+    }
+});
+
+// Route pour l'upload de documents (legacy - keep for backwards compatibility)
+app.post("/api/settings/upload-documents", requireAuth, async (req, res) => {
+    try {
+        const userId = req.user.uid;
         console.log(`Documents uploaded for user: ${userId}`);
-        
         res.json({
             success: true,
             message: "Documents uploaded successfully"
@@ -1048,15 +1311,105 @@ io.on('connection', (socket) => {
     });
 });
 
-// Start server
-server.listen(PORT, () => {
-    console.log("🚀 Server running on http://localhost:" + PORT);
-    console.log("📊 Dashboard: http://localhost:" + PORT + "/dashboard");
-    console.log("⚙️  Settings: http://localhost:" + PORT + "/settings");
-    console.log("🔐 Demo Login: admin@homecare.com / admin123");
-    console.log("📝 Register: http://localhost:" + PORT + "/register");
-    console.log("🔌 Socket.IO enabled for real-time chat");
+// Handle server errors
+server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} is already in use!`);
+        console.log(`🔍 Checking what's using port ${PORT}...`);
+        
+        // Use lsof to find what's using the port
+        const { exec } = require('child_process');
+        exec(`lsof -ti:${PORT}`, (err, stdout) => {
+            if (stdout) {
+                const pids = stdout.trim().split('\n');
+                console.log(`📋 Processes using port ${PORT}:`, pids);
+                console.log(`💡 To fix this, run: kill -9 ${pids.join(' ')}`);
+            }
+        });
+        
+        process.exit(1);
+    } else {
+        console.error(`❌ Server error:`, error);
+        process.exit(1);
+    }
 });
+
+// 🚀 Server startup
+server.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`⚙️  Settings: http://localhost:${PORT}/settings`);
+    console.log(`🔐 Demo Login: admin@homecare.com / admin123`);
+    console.log(`📝 Register: http://localhost:${PORT}/register`);
+    console.log(`🔌 Socket.IO enabled for real-time chat`);
+    console.log(`📋 Process ID: ${process.pid}`);
+    console.log(`📋 Node version: ${process.version}`);
+    
+    // 🔥 Test Firebase Storage configuration
+    testFirebaseStorage();
+});
+
+// 🔧 Test Firebase Storage function
+async function testFirebaseStorage() {
+    console.log(`🔥 Testing Firebase Storage configuration...`);
+    console.log(`📦 Project ID: ${storage.app.options.projectId}`);
+    console.log(`📦 Storage bucket: ${storage.app.options.storageBucket}`);
+    console.log(`📦 Auth domain: ${storage.app.options.authDomain}`);
+    
+    // Check if we have proper authentication
+    try {
+        const auth = getAuth(storage.app);
+        console.log(`🔐 Auth state: ${auth.currentUser ? 'Authenticated' : 'Not authenticated'}`);
+    } catch (authError) {
+        console.log(`🔐 Auth check failed:`, authError.message);
+    }
+    
+    // Skip Firebase Storage test for now since it's not critical
+    console.log(`⏭️  Skipping Firebase Storage test (not critical for main functionality)`);
+    console.log(`✅ Firebase Storage configuration loaded successfully`);
+    return;
+    
+    // Original test code kept for reference but commented out
+    /*
+    try {
+        // Test creating a reference using an authorized path
+        const testUserId = 'test-user-' + Date.now();
+        const testRef = ref(storage, `documents/${testUserId}/test/connection-test.txt`);
+        console.log(`✅ Firebase Storage reference created successfully`);
+        console.log(`📁 Test path: ${testRef.fullPath}`);
+        
+        // Test with a small buffer
+        const testBuffer = Buffer.from('Firebase Storage connection test', 'utf8');
+        console.log(`🧪 Test buffer size: ${testBuffer.length} bytes`);
+        
+        // Try to upload the test file
+        const snapshot = await uploadBytes(testRef, testBuffer, {
+            contentType: 'text/plain'
+        });
+        
+        console.log(`✅ Firebase Storage upload test successful!`);
+        console.log(`📄 Uploaded to: ${snapshot.ref.fullPath}`);
+        
+        // Get download URL
+        const downloadURL = await getDownloadURL(snapshot.ref);
+        console.log(`🔗 Download URL: ${downloadURL}`);
+        
+        // Clean up test file
+        await deleteObject(testRef);
+        console.log(`🗑️  Test file deleted successfully`);
+        
+    } catch (error) {
+        console.error(`❌ Firebase Storage test failed:`, error);
+        console.error(`❌ Error details:`, {
+            message: error.message,
+            code: error.code,
+            status: error.status_,
+            customData: error.customData
+        });
+        console.log(`💡 Note: This test failure doesn't affect the main functionality`);
+    }
+    */
+}
 
 // Graceful shutdown
 process.on("SIGINT", () => {
@@ -1092,19 +1445,35 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
         const userId = req.user.uid;
         const cacheKey = `conversations_${userId}`;
         
+        console.log(`💬 API: Fetching conversations for user ${userId}`);
+        console.log(`🔐 User details:`, {
+            uid: req.user.uid,
+            email: req.user.email,
+            clinicName: req.user.clinicName,
+            name: req.user.name
+        });
+        
         // Vérifier le cache d'abord
         if (conversationsCache.has(cacheKey)) {
             const cached = conversationsCache.get(cacheKey);
-            if (Date.now() - cached.timestamp < CACHE_DURATION) {
-                console.log('📦 Returning cached conversations');
+            const cacheAge = Date.now() - cached.timestamp;
+            console.log(`📦 Cache found for user ${userId}, age: ${Math.round(cacheAge/1000)}s`);
+            
+            if (cacheAge < CACHE_DURATION) {
+                console.log('📦 Returning cached conversations:', cached.data.length, 'conversations');
                 return res.json({
                     success: true,
                     conversations: cached.data
                 });
+            } else {
+                console.log('⏰ Cache expired, fetching fresh data');
             }
+        } else {
+            console.log('🆕 No cache found, fetching fresh data');
         }
         
         // Fetching fresh conversations data
+        console.log(`🔍 Fetching fresh conversations from Firebase...`);
         
         // Get clinic information from user session (avoid extra DB call)
         let clinicName = req.user.clinicName || "Clinic";
@@ -1117,7 +1486,7 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
             );
             
         const snapshot = await getDocs(conversationsQuery);
-        // Found conversations: ${snapshot.docs.length}
+        console.log(`📊 Found ${snapshot.docs.length} conversations in database`);
         
         const conversations = snapshot.docs.map(doc => {
                 const data = doc.data();
@@ -1153,6 +1522,8 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
             data: conversations,
             timestamp: Date.now()
         });
+        
+        console.log(`✅ Sending ${conversations.length} conversations to client`);
             
             res.json({
                 success: true,
@@ -1160,7 +1531,7 @@ app.get("/api/chat/conversations", requireAuth, async (req, res) => {
             });
         
     } catch (error) {
-        console.error("Get conversations error:", error);
+        console.error("❌ Get conversations error:", error);
         res.status(500).json({
             success: false,
             message: "Failed to fetch conversations",

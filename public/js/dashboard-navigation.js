@@ -66,9 +66,13 @@ class DashboardNavigation {
                 this.showSection('messages', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
                 this.updateHeaderTitle('Messages');
                 // Initialize messages page if not already done
-                if (typeof messagesPage !== 'undefined' && messagesPage.init) {
-                    setTimeout(() => messagesPage.init(), 100);
-                }
+                setTimeout(() => {
+                    if (typeof messagesPage !== 'undefined' && messagesPage.init) {
+                        messagesPage.init();
+                    } else {
+                        console.error('❌ MessagesPage not found or init method missing');
+                    }
+                }, 100);
             });
         }
 

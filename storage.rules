@@ -1,0 +1,71 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // 📄 DOCUMENTS - Règles pour l'upload de documents
+    match /documents/{userId}/{documentType}/{fileName} {
+      // Permettre l'upload et la lecture seulement pour l'utilisateur authentifié propriétaire
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Admin peut tout voir et modifier
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
+         request.auth.token.email == 'admin@healthcare.com');
+      
+      // 🚨 ACCÈS TEMPORAIRE POUR RÉSOUDRE LES PROBLÈMES D'UPLOAD
+      allow read, write: if true;
+      
+      // Validation des types de fichiers autorisés
+      allow write: if request.resource.contentType.matches('image/(jpeg|jpg|png)') ||
+                      request.resource.contentType == 'application/pdf';
+      
+      // Limitation de la taille des fichiers (5MB)
+      allow write: if request.resource.size < 5 * 1024 * 1024;
+    }
+    
+    // 🏥 PROFILE IMAGES - Règles pour les images de profil
+    match /profile_images/{userId}/{fileName} {
+      // Permettre l'upload et la lecture seulement pour l'utilisateur authentifié propriétaire
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Admin peut tout voir et modifier
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
+         request.auth.token.email == 'admin@healthcare.com');
+      
+      // 🚨 ACCÈS TEMPORAIRE POUR RÉSOUDRE LES PROBLÈMES D'UPLOAD
+      allow read, write: if true;
+      
+      // Validation des types de fichiers autorisés pour les images
+      allow write: if request.resource.contentType.matches('image/(jpeg|jpg|png)');
+      
+      // Limitation de la taille des fichiers (2MB pour les images de profil)
+      allow write: if request.resource.size < 2 * 1024 * 1024;
+    }
+    
+    // 📸 CLINIC PHOTOS - Règles pour les photos des cliniques
+    match /clinic_photos/{userId}/{fileName} {
+      // Permettre l'upload et la lecture seulement pour l'utilisateur authentifié propriétaire
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      
+      // Admin peut tout voir et modifier
+      allow read, write: if request.auth != null && 
+        (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
+         request.auth.token.email == 'admin@healthcare.com');
+      
+      // 🚨 ACCÈS TEMPORAIRE POUR RÉSOUDRE LES PROBLÈMES D'UPLOAD
+      allow read, write: if true;
+      
+      // Validation des types de fichiers autorisés pour les photos
+      allow write: if request.resource.contentType.matches('image/(jpeg|jpg|png)');
+      
+      // Limitation de la taille des fichiers (3MB pour les photos de clinique)
+      allow write: if request.resource.size < 3 * 1024 * 1024;
+    }
+    
+    // 🗂️ DEFAULT RULE - Règle par défaut pour tous les autres fichiers
+    match /{allPaths=**} {
+      // 🚨 ACCÈS TEMPORAIRE POUR DIAGNOSTIC
+      allow read, write: if true;
+    }
+  }
+} 

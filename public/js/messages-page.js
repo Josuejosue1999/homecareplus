@@ -10,15 +10,22 @@ class MessagesPage {
         this.hospitalAvatar = null; // Cache for hospital avatar
         this.currentUser = null;
         this.socket = null;
-        this.init();
+        this.initialized = false;
     }
 
     init() {
+        if (this.initialized) {
+            console.log('📱 Messages page already initialized');
+            return;
+        }
+        
+        console.log('📱 Initializing messages page...');
         this.initSocket();
         this.bindEvents();
         this.setupVisibilityHandler();
         this.loadHospitalAvatar();
         this.loadConversations();
+        this.initialized = true;
     }
 
     setupVisibilityHandler() {
@@ -173,13 +180,43 @@ class MessagesPage {
     }
 
     async loadConversations() {
+        console.log('📥 Loading conversations...');
         this.showLoadingState();
         
         try {
-            const response = await fetch('/api/chat/conversations');
+            // Check authentication first
+            const authCookie = document.cookie.split(';').find(row => row.trim().startsWith('auth='));
+            console.log('🔐 Auth cookie present:', !!authCookie);
+            
+            console.log('🔗 Fetching conversations from API...');
+            const response = await fetch('/api/chat/conversations', {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+            console.log('📊 API response status:', response.status);
+            
+            if (!response.ok) {
+                if (response.status === 401) {
+                    console.error('❌ Authentication error - redirecting to login');
+                    window.location.href = '/login';
+                    return;
+                } else if (response.status === 403) {
+                    console.error('❌ Permission denied');
+                    this.showErrorState('Permission denied. Please check your access rights.');
+                    return;
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
             const data = await response.json();
+            console.log('📋 API response data:', data);
             
             if (data.success) {
+                console.log('✅ Conversations loaded successfully:', data.conversations.length);
                 this.conversations = data.conversations;
                 
                 await this.loadPatientAvatars();
@@ -187,12 +224,13 @@ class MessagesPage {
                 this.filterAndDisplayConversations();
                 this.updateStatistics();
             } else {
-                console.error('Failed to load conversations:', data.message);
-                this.showErrorState('Failed to load conversations');
+                console.error('❌ Failed to load conversations:', data.message);
+                this.showErrorState('Failed to load conversations: ' + data.message);
             }
         } catch (error) {
-            console.error('Error loading conversations:', error);
-            this.showErrorState('Error loading conversations');
+            console.error('💥 Error loading conversations:', error);
+            console.error('💥 Error details:', error.message, error.stack);
+            this.showErrorState('Error loading conversations: ' + error.message);
         }
     }
 
@@ -836,4 +874,5 @@ class MessagesPage {
 }
 
 // Initialize the messages page
-const messagesPage = new MessagesPage(); 
+const messagesPage = new MessagesPage();
+console.log('✅ MessagesPage instance created successfully:', messagesPage); 

@@ -38,6 +38,66 @@
         <source src="/assets/appointment.mp3" type="audio/mpeg">
         <source src="/assets/appointment.wav" type="audio/wav">
     </audio>
+
+    <!-- Upload Section Styling -->
+    <style>
+        .upload-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .upload-item {
+            border: 2px dashed #e5e7eb;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+
+        .upload-item:hover {
+            border-color: #159BBD;
+            background: #f8fbff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(21, 155, 189, 0.1);
+        }
+
+        .upload-placeholder i {
+            font-size: 2.5rem;
+            color: #159BBD;
+            margin-bottom: 1rem;
+            display: block;
+        }
+
+        .upload-placeholder p {
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .upload-status {
+            margin-top: 1rem;
+        }
+
+        .upload-status .alert {
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            margin-bottom: 0;
+        }
+
+        .upload-status .alert-success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+
+        .upload-section {
+            padding: 1rem;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
@@ -79,7 +139,7 @@
                         <span>Messages</span>
                     </a>
                 </li>
-                <li class="nav-item">
+                <li class="nav-item" style="display: none;">
                     <a href="#settings" class="nav-link" id="settings-link">
                         <i class="fas fa-cog"></i>
                         <span>Settings</span>
@@ -87,8 +147,8 @@
                 </li>
                 <li class="nav-item">
                     <a href="#my-profile" class="nav-link" id="my-profile-link">
-                        <i class="fas fa-user-edit"></i>
-                        <span>My Profile</span>
+                        <i class="fas fa-tools"></i>
+                        <span>Setup</span>
                     </a>
                 </li>
             </ul>
@@ -116,14 +176,14 @@
                 </div>
                 <div class="header-right d-flex align-items-center gap-3">
                     <div class="d-flex flex-column align-items-end me-3">
-                        <span class="fw-bold" style="color:var(--primary-color)">Today: <%= new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'short', day:'numeric'}) %></span>
-                        <span class="text-secondary" style="font-size:0.95rem;">Stay productive!</span>
-                    </div>
-                    <div class="header-actions d-flex align-items-center gap-2">
-                        <div class="user-menu d-flex align-items-center gap-2">
-                            <img src="<%= user.profileImageUrl || '/assets/hospital.PNG' %>" alt="User" class="user-avatar-small" id="headerUserAvatar">
-                            <span class="fw-bold"><%= user.clinicName || 'Admin' %></span>
-                        </div>
+                        <span class="fw-bold" style="color:var(--primary-color); font-size: 1.2rem;">
+                            <i class="fas fa-calendar-day me-2"></i>
+                            <%= new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'}) %>
+                        </span>
+                        <span class="text-secondary" style="font-size:0.95rem;">
+                            <i class="fas fa-clock me-1"></i>
+                            <%= new Date().toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'}) %>
+                        </span>
                     </div>
                 </div>
             </header>
@@ -691,38 +751,77 @@
                                             <div class="row">
                                                 <div class="col-md-6">
                                                     <div class="document-upload-section">
-                                                        <h5><i class="fas fa-certificate text-primary me-2"></i>Medical License Certificate</h5>
-                                                        <div class="upload-area" id="certificateUploadArea">
-                                                            <div class="upload-content">
-                                                                <i class="fas fa-file-pdf fa-3x text-muted mb-3"></i>
-                                                                <p class="text-muted">Drag and drop your medical license certificate here</p>
-                                                                <p class="text-muted">or</p>
-                                                                <button type="button" class="btn btn-outline-primary" onclick="settingsPage.uploadCertificate()">
-                                                                    <i class="fas fa-upload me-2"></i>Choose File
-                                                                </button>
-                                                                <input type="file" id="certificateInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
-                                                            </div>
-                                                        </div>
-                                                        <div class="uploaded-file mt-3" id="certificateFileInfo" style="display: none;">
-                                                            <div class="alert alert-success">
-                                                                <i class="fas fa-check-circle me-2"></i>
-                                                                <strong>Certificate uploaded:</strong>
-                                                                <span id="certificateFileName"></span>
-                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="settingsPage.removeCertificate()">
-                                                                    <i class="fas fa-trash"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        <div class="form-text">
-                                                            <i class="fas fa-info-circle me-2"></i>
-                                                            Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)
-                                                        </div>
+                                                        <h6 class="mb-3">Upload Documents</h6>
+                                                        <p class="text-muted mb-3">Upload required documents for hospital verification. Maximum file size: 800KB per document.</p>
+                                                        
+                                                        <!-- Hospital Certificate -->
+                                                        <div class="document-upload-item">
+                                                                                                        <div class="upload-area" onclick="settingsPage.uploadCertificate()">
+                                                <div class="upload-icon" id="certificateIcon">
+                                                    <i class="fas fa-upload"></i>
+                                                </div>
+                                                <div class="upload-text">
+                                                    <strong>Hospital Certificate</strong>
+                                                    <p class="text-muted mb-0">PDF, JPG, PNG (Max: 800KB)</p>
+                                                    <small class="text-muted" id="certificateFileName">No file selected</small>
+                                                </div>
+                                            </div>
+                                            <div class="upload-status" id="certificateStatus">
+                                                <span class="text-muted">Hospital Certificate</span>
+                                            </div>
+                                            <input type="file" id="certificateInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="settingsPage.handleCertificateUpload(event)">
+                                        </div>
+
+                                        <!-- ID or Passport -->
+                                        <div class="document-upload-item">
+                                            <div class="upload-area" onclick="settingsPage.uploadId()">
+                                                <div class="upload-icon" id="idIcon">
+                                                    <i class="fas fa-upload"></i>
+                                                </div>
+                                                <div class="upload-text">
+                                                    <strong>ID or Passport</strong>
+                                                    <p class="text-muted mb-0">PDF, JPG, PNG (Max: 800KB)</p>
+                                                    <small class="text-muted" id="idFileName">No file selected</small>
+                                                </div>
+                                            </div>
+                                            <div class="upload-status" id="idStatus">
+                                                <span class="text-muted">ID or Passport</span>
+                                            </div>
+                                            <input type="file" id="idInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="settingsPage.handleIdUpload(event)">
+                                        </div>
+
+                                        <!-- Additional Document -->
+                                        <div class="document-upload-item">
+                                            <div class="upload-area" onclick="settingsPage.uploadAdditional()">
+                                                <div class="upload-icon" id="additionalIcon">
+                                                    <i class="fas fa-upload"></i>
+                                                </div>
+                                                <div class="upload-text">
+                                                    <strong>Additional Document</strong>
+                                                    <p class="text-muted mb-0">PDF, JPG, PNG (Max: 800KB)</p>
+                                                    <small class="text-muted" id="additionalFileName">No file selected</small>
+                                                </div>
+                                            </div>
+                                            <div class="upload-status" id="additionalStatus">
+                                                <span class="text-muted">Additional Document</span>
+                                            </div>
+                                            <input type="file" id="additionalInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" onchange="settingsPage.handleAdditionalUpload(event)">
+                                        </div>
+
+                                        <div class="document-upload-actions">
+                                            <button type="button" class="btn btn-primary" onclick="settingsPage.saveDocuments()">
+                                                <i class="fas fa-cloud-upload-alt"></i> Upload Documents
+                                            </button>
+                                            <button type="button" class="btn btn-outline-secondary" onclick="settingsPage.previewAllDocuments()">
+                                                <i class="fas fa-eye"></i> Preview All
+                                            </button>
+                                        </div>
                                                     </div>
                                                 </div>
                                                 
                                                 <div class="col-md-6">
                                                     <div class="document-upload-section">
-                                                        <h5><i class="fas fa-id-card text-primary me-2"></i>National ID / Passport</h5>
+                                                        <h5><i class="fas fa-id-card text-primary me-2"></i>ID or Passport</h5>
                                                         <div class="upload-area" id="idUploadArea">
                                                             <div class="upload-content">
                                                                 <i class="fas fa-id-card fa-3x text-muted mb-3"></i>
@@ -739,14 +838,57 @@
                                                                 <i class="fas fa-check-circle me-2"></i>
                                                                 <strong>ID uploaded:</strong>
                                                                 <span id="idFileName"></span>
-                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="settingsPage.removeId()">
+                                                                <div class="ms-2 d-inline-block">
+                                                                    <button type="button" class="btn btn-sm btn-outline-info me-1" onclick="settingsPage.previewDocument('id')">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="settingsPage.removeId()">
                                                                     <i class="fas fa-trash"></i>
                                                                 </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         <div class="form-text">
                                                             <i class="fas fa-info-circle me-2"></i>
-                                                            Accepted formats: PDF, JPG, JPEG, PNG (Max 5MB)
+                                                            <strong>Max size: 5MB</strong> • Accepted formats: PDF, JPG, JPEG, PNG
+                                                        </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                
+                                            <div class="row mt-4">
+                                                <div class="col-12">
+                                                    <div class="document-upload-section">
+                                                        <h5><i class="fas fa-file-medical text-primary me-2"></i>Additional Document</h5>
+                                                        <div class="upload-area" id="additionalUploadArea">
+                                                            <div class="upload-content">
+                                                                <i class="fas fa-file-medical fa-3x text-muted mb-3"></i>
+                                                                <p class="text-muted">Drag and drop additional documents here</p>
+                                                                <p class="text-muted">or</p>
+                                                                <button type="button" class="btn btn-outline-primary" onclick="settingsPage.uploadAdditional()">
+                                                                    <i class="fas fa-upload me-2"></i>Choose File
+                                                                </button>
+                                                                <input type="file" id="additionalInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                                            </div>
+                                                        </div>
+                                                        <div class="uploaded-file mt-3" id="additionalFileInfo" style="display: none;">
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle me-2"></i>
+                                                                <strong>Additional document uploaded:</strong>
+                                                                <span id="additionalFileName"></span>
+                                                                <div class="ms-2 d-inline-block">
+                                                                    <button type="button" class="btn btn-sm btn-outline-info me-1" onclick="settingsPage.previewDocument('additional')">
+                                                                        <i class="fas fa-eye"></i>
+                                                                    </button>
+                                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="settingsPage.removeAdditional()">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="form-text">
+                                                            <i class="fas fa-info-circle me-2"></i>
+                                                            <strong>Max size: 5MB</strong> • Accepted formats: PDF, JPG, JPEG, PNG
                                                         </div>
                                                     </div>
                                                 </div>
@@ -757,25 +899,36 @@
                                                     <div class="document-status">
                                                         <h5><i class="fas fa-clipboard-check text-primary me-2"></i>Document Status</h5>
                                                         <div class="row">
-                                                            <div class="col-md-6">
+                                                            <div class="col-md-4">
                                                                 <div class="status-item">
                                                                     <div class="status-icon">
                                                                         <i class="fas fa-certificate"></i>
                                                                     </div>
                                                                     <div class="status-info">
-                                                                        <h6>Medical License</h6>
+                                                                        <h6>Hospital Certificate</h6>
                                                                         <span class="badge bg-warning" id="certificateStatus">Pending</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                            <div class="col-md-6">
+                                                            <div class="col-md-4">
                                                                 <div class="status-item">
                                                                     <div class="status-icon">
                                                                         <i class="fas fa-id-card"></i>
                                                                     </div>
                                                                     <div class="status-info">
-                                                                        <h6>National ID</h6>
+                                                                        <h6>ID / Passport</h6>
                                                                         <span class="badge bg-warning" id="idStatus">Pending</span>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div class="col-md-4">
+                                                                <div class="status-item">
+                                                                    <div class="status-icon">
+                                                                        <i class="fas fa-file-medical"></i>
+                                                                    </div>
+                                                                    <div class="status-info">
+                                                                        <h6>Additional Document</h6>
+                                                                        <span class="badge bg-warning" id="additionalStatus">Pending</span>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -788,9 +941,61 @@
                                                 <button type="button" class="btn btn-primary" onclick="settingsPage.saveDocuments()">
                                                     <i class="fas fa-save me-2"></i>Save Documents
                                                     </button>
-                                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.previewDocuments()">
-                                                    <i class="fas fa-eye me-2"></i>Preview Documents
+                                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="settingsPage.previewAllDocuments()">
+                                                    <i class="fas fa-eye me-2"></i>Preview All Documents
                                                     </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    <!-- Document Preview Modal -->
+                                    <div class="modal fade" id="documentPreviewModal" tabindex="-1" aria-labelledby="documentPreviewModalLabel" aria-hidden="true">
+                                        <div class="modal-dialog modal-xl">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="documentPreviewModalLabel">
+                                                        <i class="fas fa-file-alt me-2"></i>Document Preview
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <div class="document-preview-container">
+                                                        <div class="text-center" id="documentPreviewLoader">
+                                                            <div class="spinner-border text-primary" role="status">
+                                                                <span class="visually-hidden">Loading...</span>
+                                                            </div>
+                                                            <p class="mt-2">Loading document...</p>
+                                                        </div>
+                                                        <div id="documentPreviewContent" style="display: none;">
+                                                            <div class="row mb-3">
+                                                                <div class="col-md-6">
+                                                                    <h6><i class="fas fa-file me-2"></i>File Name:</h6>
+                                                                    <p id="previewFileName">-</p>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <h6><i class="fas fa-tag me-2"></i>Type:</h6>
+                                                                    <p id="previewFileType">-</p>
+                                                                </div>
+                                                                <div class="col-md-3">
+                                                                    <h6><i class="fas fa-weight me-2"></i>Size:</h6>
+                                                                    <p id="previewFileSize">-</p>
+                                                                </div>
+                                                            </div>
+                                                            <div class="document-viewer">
+                                                                <iframe id="documentPreviewIframe" src="" style="width: 100%; height: 500px; border: 1px solid #ddd; border-radius: 8px;"></iframe>
+                                                                <div id="documentPreviewImage" style="display: none; text-align: center;">
+                                                                    <img id="documentPreviewImg" src="" alt="Document Preview" style="max-width: 100%; max-height: 500px; border: 1px solid #ddd; border-radius: 8px;">
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                                    <button type="button" class="btn btn-primary" id="downloadDocumentBtn">
+                                                        <i class="fas fa-download me-2"></i>Download
+                                                    </button>
+                                                </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1623,63 +1828,68 @@
                                     <div class="content-card">
                                         <div class="card-header">
                                             <h4 class="mb-0">
-                                                <i class="fas fa-images text-warning me-2"></i>
-                                                Upload Photos
+                                                <i class="fas fa-file-upload text-warning me-2"></i>
+                                                Upload Documents
                                             </h4>
-                                            <p class="text-muted mb-0">Add photos to showcase your clinic</p>
+                                            <p class="text-muted mb-0">Upload required documents for verification</p>
                                         </div>
                                         <div class="card-body">
                                             <div class="upload-section">
                                                 <div class="upload-grid">
-                                                    <!-- Profile Photo Section -->
-                                                    <div class="upload-item profile-photo">
-                                                        <div class="upload-placeholder profile-display">
-                                                            <div class="profile-image-container">
-                                                                <img id="profileImagePreview" src="" alt="Profile Photo" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
-                                                                <div class="profile-placeholder" id="profilePlaceholder">
-                                                                    <i class="fas fa-user-circle"></i>
-                                                                    <p>Profile Photo</p>
-                                                                </div>
-                                                            </div>
-                                                            <button class="btn btn-primary btn-sm" id="uploadProfilePhoto">Upload Photo</button>
-                                                        </div>
-                                                    </div>
-                                                    
-                                                    <!-- Certificate/ID Card Section -->
+                                                    <!-- Hospital Certificate Section -->
                                                     <div class="upload-item certificate-upload">
                                                         <div class="upload-placeholder">
-                                                            <i class="fas fa-id-card"></i>
-                                                            <p>Medical Certificate / ID Card</p>
-                                                            <button class="btn btn-outline-primary btn-sm">Upload Document</button>
+                                                            <i class="fas fa-certificate"></i>
+                                                            <p>Upload Hospital Certificate</p>
+                                                            <button class="btn btn-outline-primary btn-sm" onclick="uploadDocument('certificate')">Upload Document</button>
+                                                            <input type="file" id="certificateInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                                                </div>
+                                                        <div class="upload-status" id="certificateStatus" style="display: none;">
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle me-2"></i>
+                                                                <span id="certificateFileName"></span>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeDocument('certificate')">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     
-                                                    <div class="upload-item">
+                                                    <!-- ID or Passport Section -->
+                                                    <div class="upload-item id-upload">
                                                         <div class="upload-placeholder">
-                                                            <i class="fas fa-building"></i>
-                                                            <p>Clinic Main Photo</p>
-                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
+                                                            <i class="fas fa-id-card"></i>
+                                                            <p>Upload ID or Passport</p>
+                                                            <button class="btn btn-outline-primary btn-sm" onclick="uploadDocument('id')">Upload Document</button>
+                                                            <input type="file" id="idInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
+                                                        </div>
+                                                        <div class="upload-status" id="idStatus" style="display: none;">
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle me-2"></i>
+                                                                <span id="idFileName"></span>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeDocument('id')">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
+                                                    </div>
                                                         </div>
                                                     </div>
-                                                    <div class="upload-item">
+                                                    
+                                                    <!-- Additional Document Section -->
+                                                    <div class="upload-item additional-upload">
                                                         <div class="upload-placeholder">
-                                                            <i class="fas fa-door-open"></i>
-                                                            <p>Reception Area</p>
-                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
+                                                            <i class="fas fa-file-medical"></i>
+                                                            <p>Upload Additional Document</p>
+                                                            <button class="btn btn-outline-primary btn-sm" onclick="uploadDocument('additional')">Upload Document</button>
+                                                            <input type="file" id="additionalInput" accept=".pdf,.jpg,.jpeg,.png" style="display: none;">
                                                         </div>
+                                                        <div class="upload-status" id="additionalStatus" style="display: none;">
+                                                            <div class="alert alert-success">
+                                                                <i class="fas fa-check-circle me-2"></i>
+                                                                <span id="additionalFileName"></span>
+                                                                <button type="button" class="btn btn-sm btn-outline-danger ms-2" onclick="removeDocument('additional')">
+                                                                    <i class="fas fa-trash"></i>
+                                                                </button>
                                                     </div>
-                                                    <div class="upload-item">
-                                                        <div class="upload-placeholder">
-                                                            <i class="fas fa-procedures"></i>
-                                                            <p>Treatment Room</p>
-                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
-                                                        </div>
-                                                    </div>
-                                                    <div class="upload-item">
-                                                        <div class="upload-placeholder">
-                                                            <i class="fas fa-users"></i>
-                                                            <p>Team Photo</p>
-                                                            <button class="btn btn-outline-primary btn-sm">Upload</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1756,7 +1966,7 @@
     <script src="/js/dashboard-navigation.js"></script>
     <script src="/js/appointment-details.js"></script>
     <script src="/js/appointments-page.js"></script>
-    <script src="/js/messages-page.js"></script>
+    <script src="/js/messages-page.js" onerror="console.error('❌ Failed to load messages-page.js')" onload="console.log('✅ messages-page.js loaded successfully')"></script>
     <script src="/js/settings-page.js"></script>
     <script src="/js/my-profile-steps.js"></script>
     <script src="/js/notification-service.js"></script>
@@ -1765,6 +1975,238 @@
     
     <script>
         // Clean UI - notification functions removed
+    </script>
+
+    <!-- Document Upload Functions -->
+    <script>
+        // Document upload functionality for Setup page
+        function uploadDocument(type) {
+            console.log('Uploading document type:', type);
+            
+            const input = document.getElementById(type + 'Input');
+            if (!input) {
+                console.error('Input element not found:', type + 'Input');
+                return;
+            }
+            
+            input.click();
+        }
+
+        // Handle file selection and upload
+        function handleFileUpload(type, file) {
+            if (!file) return;
+            
+            // Validate file type
+            const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Invalid File Type',
+                    text: 'Please upload PDF, JPG, JPEG, or PNG files only.'
+                });
+                return;
+            }
+            
+            // Validate file size (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Too Large',
+                    text: 'Please upload files smaller than 5MB.'
+                });
+                return;
+            }
+            
+            // Show loading
+            Swal.fire({
+                title: 'Uploading Document...',
+                text: 'Please wait while we upload your document.',
+                allowOutsideClick: false,
+                allowEscapeKey: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Convert file to base64
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Data = e.target.result;
+                
+                // Save to Firebase
+                saveDocumentToFirebase(type, {
+                    fileName: file.name,
+                    fileType: file.type,
+                    fileSize: file.size,
+                    fileData: base64Data,
+                    uploadedAt: new Date().toISOString()
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Save document to Firebase
+        async function saveDocumentToFirebase(type, documentData) {
+            try {
+                const response = await fetch('/api/settings/upload-document', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        documentType: type,
+                        documentData: documentData
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Show success message
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Document Uploaded',
+                        text: 'Your document has been uploaded successfully!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                    
+                    // Update UI to show uploaded document
+                    showUploadedDocument(type, documentData.fileName);
+                } else {
+                    throw new Error(result.message || 'Upload failed');
+                }
+            } catch (error) {
+                console.error('Error uploading document:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Upload Failed',
+                    text: 'Failed to upload document. Please try again.'
+                });
+            }
+        }
+
+        // Show uploaded document in UI
+        function showUploadedDocument(type, fileName) {
+            const statusElement = document.getElementById(type + 'Status');
+            const fileNameElement = document.getElementById(type + 'FileName');
+            
+            if (statusElement && fileNameElement) {
+                fileNameElement.textContent = fileName;
+                statusElement.style.display = 'block';
+            }
+        }
+
+        // Remove document
+        async function removeDocument(type) {
+            const result = await Swal.fire({
+                title: 'Remove Document?',
+                text: 'Are you sure you want to remove this document?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Yes, remove it!'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch('/api/settings/remove-document', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            documentType: type
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Hide status element
+                        const statusElement = document.getElementById(type + 'Status');
+                        if (statusElement) {
+                            statusElement.style.display = 'none';
+                        }
+                        
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Document Removed',
+                            text: 'Document has been removed successfully.',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+                    } else {
+                        throw new Error(result.message || 'Remove failed');
+                    }
+                } catch (error) {
+                    console.error('Error removing document:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Remove Failed',
+                        text: 'Failed to remove document. Please try again.'
+                    });
+                }
+            }
+        }
+
+        // Initialize file input event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Certificate input
+            const certificateInput = document.getElementById('certificateInput');
+            if (certificateInput) {
+                certificateInput.addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        handleFileUpload('certificate', e.target.files[0]);
+                    }
+                });
+            }
+            
+            // ID input
+            const idInput = document.getElementById('idInput');
+            if (idInput) {
+                idInput.addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        handleFileUpload('id', e.target.files[0]);
+                    }
+                });
+            }
+            
+            // Additional input
+            const additionalInput = document.getElementById('additionalInput');
+            if (additionalInput) {
+                additionalInput.addEventListener('change', function(e) {
+                    if (e.target.files.length > 0) {
+                        handleFileUpload('additional', e.target.files[0]);
+                    }
+                });
+            }
+
+            // Load existing documents on page load
+            loadExistingDocuments();
+        });
+
+        // Load existing documents from Firebase
+        async function loadExistingDocuments() {
+            try {
+                const response = await fetch('/api/settings/get-documents');
+                const result = await response.json();
+                
+                if (result.success && result.documents) {
+                    // Show existing documents
+                    Object.keys(result.documents).forEach(type => {
+                        const doc = result.documents[type];
+                        if (doc && doc.fileName) {
+                            showUploadedDocument(type, doc.fileName);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading existing documents:', error);
+            }
+        }
     </script>
 
     <script>
@@ -1806,7 +2248,10 @@
             }
             
             if (typeof messagesPage !== 'undefined') {
+                console.log('✅ MessagesPage found, initializing...');
                 messagesPage.init();
+            } else {
+                console.error('❌ MessagesPage not found during initialization');
             }
             
             if (typeof settingsPage !== 'undefined') {

@@ -417,7 +417,8 @@ app.get('/clinic-profile/:id', requireAuth, async (req, res) => {
         doctors: clinic.doctors || [],
         certifications: clinic.certifications || [],
         awards: clinic.awards || [],
-        socialMedia: clinic.socialMedia || {}
+        socialMedia: clinic.socialMedia || {},
+        documents: clinic.documents || null
       }
     };
     
