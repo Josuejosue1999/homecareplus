@@ -15,91 +15,15 @@ class _NotificationPageState extends State<NotificationPage>
     with TickerProviderStateMixin {
   bool _isRefreshing = false;
   List<AppointmentNotification> _notifications = [];
-  
-  // Animation controllers for bubbles
-  late AnimationController _bubbleController1;
-  late AnimationController _bubbleController2;
-  late AnimationController _bubbleController3;
-  late AnimationController _bubbleController4;
-  
-  // Bubble animations
-  late Animation<Offset> _bubbleAnimation1;
-  late Animation<Offset> _bubbleAnimation2;
-  late Animation<Offset> _bubbleAnimation3;
-  late Animation<Offset> _bubbleAnimation4;
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
     _loadNotifications();
-  }
-
-  void _initializeAnimations() {
-    // Initialize bubble animation controllers
-    _bubbleController1 = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    _bubbleController2 = AnimationController(
-      duration: const Duration(seconds: 12),
-      vsync: this,
-    );
-    _bubbleController3 = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    );
-    _bubbleController4 = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
-
-    // Initialize bubble position animations
-    _bubbleAnimation1 = Tween<Offset>(
-      begin: const Offset(-0.5, 1.5),
-      end: const Offset(1.5, -0.5),
-    ).animate(CurvedAnimation(
-      parent: _bubbleController1,
-      curve: Curves.linear,
-    ));
-
-    _bubbleAnimation2 = Tween<Offset>(
-      begin: const Offset(1.5, 1.2),
-      end: const Offset(-0.5, -0.8),
-    ).animate(CurvedAnimation(
-      parent: _bubbleController2,
-      curve: Curves.linear,
-    ));
-
-    _bubbleAnimation3 = Tween<Offset>(
-      begin: const Offset(0.5, 1.8),
-      end: const Offset(-1.2, -0.3),
-    ).animate(CurvedAnimation(
-      parent: _bubbleController3,
-      curve: Curves.linear,
-    ));
-
-    _bubbleAnimation4 = Tween<Offset>(
-      begin: const Offset(-1.0, 1.0),
-      end: const Offset(1.8, -1.0),
-    ).animate(CurvedAnimation(
-      parent: _bubbleController4,
-      curve: Curves.linear,
-    ));
-
-    // Start animations
-    _bubbleController1.repeat();
-    _bubbleController2.repeat();
-    _bubbleController3.repeat();
-    _bubbleController4.repeat();
   }
 
   @override
   void dispose() {
-    _bubbleController1.dispose();
-    _bubbleController2.dispose();
-    _bubbleController3.dispose();
-    _bubbleController4.dispose();
     super.dispose();
   }
 
@@ -119,11 +43,18 @@ class _NotificationPageState extends State<NotificationPage>
       _isRefreshing = true;
     });
     
-    await _loadNotifications();
-    
-    setState(() {
-      _isRefreshing = false;
-    });
+    try {
+      final notifications = await NotificationService.getPatientNotifications().first;
+      setState(() {
+        _notifications = notifications;
+      });
+    } catch (e) {
+      print('Error refreshing notifications: $e');
+    } finally {
+      setState(() {
+        _isRefreshing = false;
+      });
+    }
   }
 
   Future<void> _markNotificationAsRead(AppointmentNotification notification) async {
@@ -276,7 +207,7 @@ class _NotificationPageState extends State<NotificationPage>
       body: Stack(
         children: [
           // Animated bubbles background
-          _buildAnimatedBubbles(),
+          // _buildAnimatedBubbles(), // Removed bubble animations
           
           // Main content
           Column(
@@ -314,107 +245,7 @@ class _NotificationPageState extends State<NotificationPage>
     );
   }
 
-  Widget _buildAnimatedBubbles() {
-    return Stack(
-      children: [
-        // Bubble 1
-        AnimatedBuilder(
-          animation: _bubbleAnimation1,
-          builder: (context, child) {
-            return Positioned(
-              left: MediaQuery.of(context).size.width * _bubbleAnimation1.value.dx,
-              top: MediaQuery.of(context).size.height * _bubbleAnimation1.value.dy,
-              child: Container(
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF159BBD).withOpacity(0.1),
-                      const Color(0xFF159BBD).withOpacity(0.05),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        
-        // Bubble 2
-        AnimatedBuilder(
-          animation: _bubbleAnimation2,
-          builder: (context, child) {
-            return Positioned(
-              left: MediaQuery.of(context).size.width * _bubbleAnimation2.value.dx,
-              top: MediaQuery.of(context).size.height * _bubbleAnimation2.value.dy,
-              child: Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFFFF6B6B).withOpacity(0.1),
-                      const Color(0xFFFF6B6B).withOpacity(0.05),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        
-        // Bubble 3
-        AnimatedBuilder(
-          animation: _bubbleAnimation3,
-          builder: (context, child) {
-            return Positioned(
-              left: MediaQuery.of(context).size.width * _bubbleAnimation3.value.dx,
-              top: MediaQuery.of(context).size.height * _bubbleAnimation3.value.dy,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFF4ECDC4).withOpacity(0.1),
-                      const Color(0xFF4ECDC4).withOpacity(0.05),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-        
-        // Bubble 4
-        AnimatedBuilder(
-          animation: _bubbleAnimation4,
-          builder: (context, child) {
-            return Positioned(
-              left: MediaQuery.of(context).size.width * _bubbleAnimation4.value.dx,
-              top: MediaQuery.of(context).size.height * _bubbleAnimation4.value.dy,
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      const Color(0xFFFFE66D).withOpacity(0.1),
-                      const Color(0xFFFFE66D).withOpacity(0.05),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
+  // Removed _buildAnimatedBubbles()
 
   Widget _buildEnhancedHeader() {
     return Container(
@@ -448,72 +279,7 @@ class _NotificationPageState extends State<NotificationPage>
       child: Stack(
         children: [
           // Header bubbles
-          AnimatedBuilder(
-            animation: _bubbleAnimation1,
-            builder: (context, child) {
-              return Positioned(
-                left: _bubbleAnimation1.value.dx * 300,
-                top: _bubbleAnimation1.value.dy * 100,
-                child: Container(
-                  width: 35,
-                  height: 35,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.15),
-                        Colors.white.withOpacity(0.05),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _bubbleAnimation2,
-            builder: (context, child) {
-              return Positioned(
-                right: _bubbleAnimation2.value.dx * 200,
-                top: _bubbleAnimation2.value.dy * 80,
-                child: Container(
-                  width: 25,
-                  height: 25,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.12),
-                        Colors.white.withOpacity(0.03),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-          AnimatedBuilder(
-            animation: _bubbleAnimation3,
-            builder: (context, child) {
-              return Positioned(
-                left: _bubbleAnimation3.value.dx * 250,
-                bottom: _bubbleAnimation3.value.dy * 60,
-                child: Container(
-                  width: 45,
-                  height: 45,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.white.withOpacity(0.1),
-                        Colors.white.withOpacity(0.02),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
+          // Removed animated bubble elements from header
           
           // Header content
           Column(

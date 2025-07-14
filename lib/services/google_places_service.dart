@@ -328,4 +328,78 @@ class GooglePlacesService {
   static double _toRadians(double degrees) {
     return degrees * (math.pi / 180);
   }
+
+  // Get autocomplete suggestions for search
+  static Future<List<PlaceAutocomplete>> getAutocompleteResults(String query) async {
+    try {
+      print('🔍 Getting autocomplete results for: "$query"');
+      
+      if (query.isEmpty) {
+        return [];
+      }
+      
+      final url = '$_baseUrl/autocomplete/json?'
+          'input=$query&'
+          'types=establishment&'
+          'components=country:RW&'
+          'key=$_apiKey';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('✅ Autocomplete response status: ${data['status']}');
+        
+        if (data['status'] == 'OK') {
+          final predictions = data['predictions'] as List;
+          print('🔍 Found ${predictions.length} autocomplete suggestions');
+          
+          List<PlaceAutocomplete> suggestions = [];
+          
+          for (var prediction in predictions) {
+            try {
+              final suggestion = PlaceAutocomplete(
+                placeId: prediction['place_id'] ?? '',
+                description: prediction['description'] ?? '',
+                mainText: prediction['structured_formatting']['main_text'] ?? '',
+                secondaryText: prediction['structured_formatting']['secondary_text'] ?? '',
+                types: List<String>.from(prediction['types'] ?? []),
+              );
+              suggestions.add(suggestion);
+            } catch (e) {
+              print('❌ Error converting prediction to suggestion: $e');
+            }
+          }
+          
+          return suggestions;
+        } else {
+          print('❌ Autocomplete API error: ${data['status']}');
+          return [];
+        }
+      } else {
+        print('❌ HTTP error: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('❌ Error getting autocomplete results: $e');
+      return [];
+    }
+  }
+}
+
+// Autocomplete suggestion model
+class PlaceAutocomplete {
+  final String placeId;
+  final String description;
+  final String mainText;
+  final String secondaryText;
+  final List<String> types;
+
+  PlaceAutocomplete({
+    required this.placeId,
+    required this.description,
+    required this.mainText,
+    required this.secondaryText,
+    required this.types,
+  });
 } 

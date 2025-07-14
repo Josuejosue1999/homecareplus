@@ -6,6 +6,8 @@ import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/appointments_page.dart';
 import 'package:homecare_app/screens/pro_hospitals_page.dart';
+import 'package:homecare_app/screens/patient_dashboard.dart';
+import 'package:homecare_app/screens/verified_hospitals_page.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
 import '../models/chat_message.dart';
 import '../services/chat_service.dart';
@@ -160,9 +162,10 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
         );
         break;
       case 2:
+        // Navigate to Verified Hospitals page (Book functionality)
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+          MaterialPageRoute(builder: (context) => const VerifiedHospitalsPage()),
         );
         break;
       case 3:
@@ -733,30 +736,33 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
       bottomNavigationBar: ProfessionalBottomNav(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        items: [
+        backgroundColor: const Color(0xFF159BBD),
+        selectedColor: Colors.white,
+        unselectedColor: Colors.white.withOpacity(0.7),
+        items: const [
           BottomNavItem(
-            icon: ProfessionalIcons.home,
-            activeIcon: ProfessionalIcons.homeActive,
-            label: 'Dashboard',
+            icon: Icon(Icons.dashboard_rounded),
+            activeIcon: Icon(Icons.dashboard_rounded, color: Colors.white),
+            label: 'Home',
           ),
           BottomNavItem(
-            icon: ProfessionalIcons.appointments,
-            activeIcon: ProfessionalIcons.appointmentsActive,
+            icon: Icon(Icons.event_note_rounded),
+            activeIcon: Icon(Icons.event_note_rounded, color: Colors.white),
             label: 'Appointments',
           ),
           BottomNavItem(
-            icon: ProfessionalIcons.calendar,
-            activeIcon: ProfessionalIcons.calendarActive,
-            label: 'Calendar',
+            icon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            activeIcon: Icon(Icons.add_circle, size: 38, color: Colors.white),
+            label: 'Book',
           ),
           BottomNavItem(
-            icon: ProfessionalIcons.messages,
-            activeIcon: ProfessionalIcons.messagesActive,
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            activeIcon: Icon(Icons.chat_bubble_rounded, color: Colors.white),
             label: 'Messages',
           ),
           BottomNavItem(
-            icon: ProfessionalIcons.profile,
-            activeIcon: ProfessionalIcons.profileActive,
+            icon: Icon(Icons.account_circle_outlined),
+            activeIcon: Icon(Icons.account_circle_rounded, color: Colors.white),
             label: 'Profile',
           ),
         ],

@@ -3,9 +3,8 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class AiChatService {
-  // TODO: Replace with your actual OpenAI API key in production
-  // For production, use environment variables or secure configuration
-  static const String _apiKey = 'your-openai-api-key-here';
+  // OpenAI API key - configured for production use
+  static const String _apiKey = const String.fromEnvironment('OPENAI_API_KEY', defaultValue: 'your-openai-api-key-here');
   static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
 
   static Future<String> sendMessage(String message, List<Map<String, String>> chatHistory) async {

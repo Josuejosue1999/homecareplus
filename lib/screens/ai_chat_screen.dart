@@ -84,15 +84,8 @@ class _AIChatScreenState extends State<AIChatScreen> with TickerProviderStateMix
   }
 
   void _scrollToBottom() {
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-        );
-      }
-    });
+    // Auto-scroll is now handled by the SingleChildScrollView with reverse: true
+    // No manual scrolling needed
   }
 
   Future<void> _sendMessage(String text) async {
@@ -163,16 +156,26 @@ class _AIChatScreenState extends State<AIChatScreen> with TickerProviderStateMix
     return Scaffold(
       backgroundColor: lightColor,
       appBar: _buildProfessionalAppBar(),
-      body: Column(
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Column(
         children: [
           _buildChatHeader(),
           Expanded(
-            child: _buildMessagesList(),
-          ),
+              child: SingleChildScrollView(
+                reverse: true,
+                child: Column(
+                  children: [
+                    _buildMessagesList(),
           if (_isTyping) _buildTypingIndicator(),
           _buildQuickReplies(),
+                  ],
+                ),
+              ),
+            ),
           _buildMessageInput(),
         ],
+        ),
       ),
     );
   }
@@ -437,14 +440,15 @@ class _AIChatScreenState extends State<AIChatScreen> with TickerProviderStateMix
           ],
         ),
       ),
-      child: ListView.builder(
-        controller: _scrollController,
+      child: Padding(
         padding: const EdgeInsets.all(20),
-        itemCount: _messages.length,
-        itemBuilder: (context, index) {
-          final message = _messages[index];
+        child: Column(
+          children: _messages.asMap().entries.map((entry) {
+            final index = entry.key;
+            final message = entry.value;
           return _buildMessageBubble(message, index);
-        },
+          }).toList(),
+        ),
       ),
     );
   }

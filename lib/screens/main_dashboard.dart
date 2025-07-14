@@ -23,6 +23,7 @@ import '../services/notification_service.dart';
 import 'package:homecare_app/screens/find_healthcare_page.dart';
 import 'package:homecare_app/screens/booking_hub_page.dart';
 import 'package:homecare_app/screens/patient_dashboard.dart';
+import 'package:homecare_app/screens/verified_hospitals_page.dart';
 
 class MainDashboard extends StatefulWidget {
   final String? selectedHospitalName;
@@ -162,10 +163,10 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
         );
         break;
       case 2:
-        // Navigate to Patient Dashboard page
-        Navigator.push(
+        // Navigate to Verified Hospitals page
+        Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const PatientDashboardPage()),
+          MaterialPageRoute(builder: (context) => const VerifiedHospitalsPage()),
         );
         break;
       case 3:
@@ -658,7 +659,7 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                                       children: [
                                         Expanded(
                                           child: _buildActionCard(
-                                            lottieAsset: 'assets/cal.json',
+                                            icon: Icons.calendar_today_rounded,
                                           title: 'Appointments',
                                           onTap: () {
                                             Navigator.push(
@@ -671,7 +672,7 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                                         const SizedBox(width: 12),
                                         Expanded(
                                           child: _buildActionCard(
-                                            lottieAsset: 'assets/book.json',
+                                            icon: Icons.local_hospital_rounded,
                                           title: 'Book',
                                           onTap: () {
                                             print('🎯 === BOOK BUTTON CLICKED ===');
@@ -692,7 +693,7 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                                         Expanded(
                                           child: ChatNotificationBadge(
                                           child: _buildActionCard(
-                                              lottieAsset: 'assets/sms.json',
+                                              icon: Icons.message_rounded,
                                             title: 'Messages',
                                             onTap: () {
                                               Navigator.push(
@@ -1355,170 +1356,9 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                                 ),
                               ),
 
-                              const SizedBox(height: 30),
 
-                              // All Hospitals Section
-                              Container(
-                                padding: const EdgeInsets.all(20),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      const Color(0xFF159BBD).withOpacity(0.1),
-                                      const Color(0xFF0D5C73).withOpacity(0.05),
                                     ],
                                   ),
-                                  borderRadius: BorderRadius.circular(20),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
-                                      blurRadius: 10,
-                                      offset: const Offset(0, 5),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        const Text(
-                                          'All Hospitals',
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: Color(0xFF159BBD),
-                                          ),
-                                        ),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (context) => const FindHealthcarePage(),
-                                              ),
-                                            );
-                                          },
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 16,
-                                              vertical: 8,
-                                            ),
-                                              decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                                colors: [
-                                                  const Color(0xFF159BBD).withOpacity(0.1),
-                                                  const Color(0xFF0D5C73).withOpacity(0.05),
-                                                ],
-                                              ),
-                                              borderRadius: BorderRadius.circular(20),
-                                              border: Border.all(
-                                                color: const Color(0xFF159BBD).withOpacity(0.3),
-                                                width: 1,
-                                              ),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                  color: const Color(0xFF159BBD).withOpacity(0.1),
-                                                  blurRadius: 4,
-                                                  offset: const Offset(0, 2),
-                                                  ),
-                                                ],
-                                              ),
-                                            child: const Text(
-                                              'View All',
-                                              style: TextStyle(
-                                                color: Color(0xFF159BBD),
-                                                fontSize: 14,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                    const SizedBox(height: 15),
-                                    SizedBox(
-                                      height: 220, // Fixed height to prevent overflow
-                                      child: StreamBuilder<QuerySnapshot>(
-                                        stream: FirebaseFirestore.instance
-                                            .collection('clinics')
-                                            .limit(4)
-                                            .snapshots(),
-                                        builder: (context, snapshot) {
-                                          if (snapshot.connectionState == ConnectionState.waiting) {
-                                            return const Center(
-                                              child: CircularProgressIndicator(
-                                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF159BBD)),
-                                              ),
-                                            );
-                                          }
-
-                                          if (snapshot.hasError) {
-                                            return Center(
-                                              child: Text(
-                                                'Error loading hospitals: ${snapshot.error}',
-                                                style: const TextStyle(color: Colors.red),
-                                              ),
-                                            );
-                                          }
-
-                                          final hospitals = snapshot.data?.docs ?? [];
-
-                                          if (hospitals.isEmpty) {
-                                            return const Center(
-                                              child: Text(
-                                                'No hospitals available',
-                                                style: TextStyle(
-                                                  color: Colors.grey,
-                                                  fontSize: 16,
-                                                ),
-                                              ),
-                                            );
-                                          }
-
-                                          return Container(
-                                            height: 220, // Fixed height to prevent overflow
-                                            child: PageView.builder(
-                                            itemCount: (hospitals.length / 2).ceil(),
-                                            itemBuilder: (context, pageIndex) {
-                                              final startIndex = pageIndex * 2;
-                                              final endIndex = (startIndex + 2).clamp(0, hospitals.length);
-                                              final pageHospitals = hospitals.sublist(startIndex, endIndex);
-
-                                              return Row(
-                                                children: [
-                                                  for (int i = 0; i < 2; i++)
-                                                    Expanded(
-                                                      child: i < pageHospitals.length
-                                                          ? Padding(
-                                                              padding: EdgeInsets.only(
-                                                                left: i == 0 ? 0 : 8,
-                                                                right: i == 1 ? 0 : 8,
-                                                              ),
-                                                              child: _buildHospitalCard(
-                                                                hospital: pageHospitals[i],
-                                                                isFirst: i == 0,
-                                                              ),
-                                                            )
-                                                          : const SizedBox(),
-                                                    ),
-                                                ],
-                                              );
-                                            },
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
                         ),
                 ),
               ),

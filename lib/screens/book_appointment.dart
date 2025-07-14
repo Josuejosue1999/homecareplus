@@ -48,18 +48,6 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> with TickerPr
   String notes = '';
   int meetingDuration = 30; // Default duration, will be updated from clinic settings
 
-  // Animation controllers for moving bubbles
-  late AnimationController _bubble1Controller;
-  late AnimationController _bubble2Controller;
-  late AnimationController _bubble3Controller;
-  late AnimationController _bubble4Controller;
-  
-  // Animations for bubble positions
-  late Animation<Offset> _bubble1Animation;
-  late Animation<Offset> _bubble2Animation;
-  late Animation<Offset> _bubble3Animation;
-  late Animation<Offset> _bubble4Animation;
-
   // Controllers pour les champs de texte
   late TextEditingController _reasonOfBookingController;
 
@@ -99,66 +87,65 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> with TickerPr
     _loadClinicMeetingDuration();
     // NOUVEAU: Initialiser l'écoute en temps réel
     _initializeRealtimeListener();
-    _initializeBubbleAnimations();
   }
 
   void _initializeBubbleAnimations() {
     // Initialize animation controllers with different durations
-    _bubble1Controller = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    _bubble2Controller = AnimationController(
-      duration: const Duration(seconds: 12),
-      vsync: this,
-    );
-    _bubble3Controller = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    );
-    _bubble4Controller = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
+    // _bubble1Controller = AnimationController(
+    //   duration: const Duration(seconds: 8),
+    //   vsync: this,
+    // );
+    // _bubble2Controller = AnimationController(
+    //   duration: const Duration(seconds: 12),
+    //   vsync: this,
+    // );
+    // _bubble3Controller = AnimationController(
+    //   duration: const Duration(seconds: 10),
+    //   vsync: this,
+    // );
+    // _bubble4Controller = AnimationController(
+    //   duration: const Duration(seconds: 15),
+    //   vsync: this,
+    // );
 
     // Set up floating animations
-    _bubble1Animation = Tween<Offset>(
-      begin: const Offset(0.1, 0.8),
-      end: const Offset(0.9, 0.2),
-    ).animate(CurvedAnimation(
-      parent: _bubble1Controller,
-      curve: Curves.easeInOut,
-    ));
+    // _bubble1Animation = Tween<Offset>(
+    //   begin: const Offset(0.1, 0.8),
+    //   end: const Offset(0.9, 0.2),
+    // ).animate(CurvedAnimation(
+    //   parent: _bubble1Controller,
+    //   curve: Curves.easeInOut,
+    // ));
 
-    _bubble2Animation = Tween<Offset>(
-      begin: const Offset(0.8, 0.9),
-      end: const Offset(0.2, 0.1),
-    ).animate(CurvedAnimation(
-      parent: _bubble2Controller,
-      curve: Curves.easeInOut,
-    ));
+    // _bubble2Animation = Tween<Offset>(
+    //   begin: const Offset(0.8, 0.9),
+    //   end: const Offset(0.2, 0.1),
+    // ).animate(CurvedAnimation(
+    //   parent: _bubble2Controller,
+    //   curve: Curves.easeInOut,
+    // ));
 
-    _bubble3Animation = Tween<Offset>(
-      begin: const Offset(0.3, 0.1),
-      end: const Offset(0.7, 0.9),
-    ).animate(CurvedAnimation(
-      parent: _bubble3Controller,
-      curve: Curves.easeInOut,
-    ));
+    // _bubble3Animation = Tween<Offset>(
+    //   begin: const Offset(0.3, 0.1),
+    //   end: const Offset(0.7, 0.9),
+    // ).animate(CurvedAnimation(
+    //   parent: _bubble3Controller,
+    //   curve: Curves.easeInOut,
+    // ));
 
-    _bubble4Animation = Tween<Offset>(
-      begin: const Offset(0.9, 0.3),
-      end: const Offset(0.1, 0.7),
-    ).animate(CurvedAnimation(
-      parent: _bubble4Controller,
-      curve: Curves.easeInOut,
-    ));
+    // _bubble4Animation = Tween<Offset>(
+    //   begin: const Offset(0.9, 0.3),
+    //   end: const Offset(0.1, 0.7),
+    // ).animate(CurvedAnimation(
+    //   parent: _bubble4Controller,
+    //   curve: Curves.easeInOut,
+    // ));
 
     // Start animations with repeat
-    _bubble1Controller.repeat(reverse: true);
-    _bubble2Controller.repeat(reverse: true);
-    _bubble3Controller.repeat(reverse: true);
-    _bubble4Controller.repeat(reverse: true);
+    // _bubble1Controller.repeat(reverse: true);
+    // _bubble2Controller.repeat(reverse: true);
+    // _bubble3Controller.repeat(reverse: true);
+    // _bubble4Controller.repeat(reverse: true);
   }
 
   @override
@@ -166,10 +153,10 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> with TickerPr
     _reasonOfBookingController.dispose();
     // NOUVEAU: Annuler l'écoute en temps réel
     _appointmentsListener?.cancel();
-    _bubble1Controller.dispose();
-    _bubble2Controller.dispose();
-    _bubble3Controller.dispose();
-    _bubble4Controller.dispose();
+    // _bubble1Controller.dispose();
+    // _bubble2Controller.dispose();
+    // _bubble3Controller.dispose();
+    // _bubble4Controller.dispose();
     super.dispose();
   }
 
@@ -848,81 +835,81 @@ class _BookAppointmentPageState extends State<BookAppointmentPage> with TickerPr
                   children: [
                     // Animated Bubbles Background
                     // Bubble 1
-                    AnimatedBuilder(
-                      animation: _bubble1Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble1Animation.value.dy * 80,
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.15),
-                                  Colors.white.withOpacity(0.05),
-                                ]),)),);
-                      },
-                    ),
+                    // AnimatedBuilder(
+                    //   animation: _bubble1Animation,
+                    //   builder: (context, child) {
+                    //     return Positioned(
+                    //       left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
+                    //       top: _bubble1Animation.value.dy * 80,
+                    //       child: Container(
+                    //         width: 60,
+                    //         height: 60,
+                    //         decoration: BoxDecoration(
+                    //           shape: BoxShape.circle,
+                    //           gradient: LinearGradient(
+                    //             colors: [
+                    //               Colors.white.withOpacity(0.15),
+                    //               Colors.white.withOpacity(0.05),
+                    //             ]),)),);
+                    //   },
+                    // ),
                     // Bubble 2
-                    AnimatedBuilder(
-                      animation: _bubble2Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble2Animation.value.dy * 80,
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.2),
-                                  Colors.white.withOpacity(0.08),
-                                ]),)),);
-                      },
-                    ),
+                    // AnimatedBuilder(
+                    //   animation: _bubble2Animation,
+                    //   builder: (context, child) {
+                    //     return Positioned(
+                    //       left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
+                    //       top: _bubble2Animation.value.dy * 80,
+                    //       child: Container(
+                    //         width: 40,
+                    //         height: 40,
+                    //         decoration: BoxDecoration(
+                    //           shape: BoxShape.circle,
+                    //           gradient: LinearGradient(
+                    //             colors: [
+                    //               Colors.white.withOpacity(0.2),
+                    //               Colors.white.withOpacity(0.08),
+                    //             ]),)),);
+                    //   },
+                    // ),
                     // Bubble 3
-                    AnimatedBuilder(
-                      animation: _bubble3Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble3Animation.value.dy * 80,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.1),
-                                  Colors.white.withOpacity(0.03),
-                                ]),)),);
-                      },
-                    ),
+                    // AnimatedBuilder(
+                    //   animation: _bubble3Animation,
+                    //   builder: (context, child) {
+                    //     return Positioned(
+                    //       left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
+                    //       top: _bubble3Animation.value.dy * 80,
+                    //       child: Container(
+                    //         width: 80,
+                    //         height: 80,
+                    //         decoration: BoxDecoration(
+                    //           shape: BoxShape.circle,
+                    //           gradient: LinearGradient(
+                    //             colors: [
+                    //               Colors.white.withOpacity(0.1),
+                    //               Colors.white.withOpacity(0.03),
+                    //             ]),)),);
+                    //   },
+                    // ),
                     // Bubble 4
-                    AnimatedBuilder(
-                      animation: _bubble4Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble4Animation.value.dy * 80,
-                          child: Container(
-                            width: 35,
-                            height: 35,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.25),
-                                  Colors.white.withOpacity(0.1),
-                                ]),)),);
-                      },
-                    ),
+                    // AnimatedBuilder(
+                    //   animation: _bubble4Animation,
+                    //   builder: (context, child) {
+                    //     return Positioned(
+                    //       left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
+                    //       top: _bubble4Animation.value.dy * 80,
+                    //       child: Container(
+                    //         width: 35,
+                    //         height: 35,
+                    //         decoration: BoxDecoration(
+                    //           shape: BoxShape.circle,
+                    //           gradient: LinearGradient(
+                    //             colors: [
+                    //               Colors.white.withOpacity(0.25),
+                    //               Colors.white.withOpacity(0.1),
+                    //             ]),)),);
+                    //   },
+                    // ),
                     // Header Content
                     Row(
                       children: [

@@ -45,6 +45,16 @@ app.get("/", (req, res) => {
     res.render("index");
 });
 
+// New selection page route
+app.get("/selection", (req, res) => {
+    res.render("selection");
+});
+
+// New app features page route
+app.get("/app-features", (req, res) => {
+    res.render("app-features");
+});
+
 app.get("/login", redirectIfAuthenticated, (req, res) => {
     res.render("login");
 });
@@ -1351,9 +1361,9 @@ server.listen(PORT, () => {
 
 // 🔧 Test Firebase Storage function
 async function testFirebaseStorage() {
-    console.log(`🔥 Testing Firebase Storage configuration...`);
+        console.log(`🔥 Testing Firebase Storage configuration...`);
     console.log(`📦 Project ID: ${storage.app.options.projectId}`);
-    console.log(`📦 Storage bucket: ${storage.app.options.storageBucket}`);
+        console.log(`📦 Storage bucket: ${storage.app.options.storageBucket}`);
     console.log(`📦 Auth domain: ${storage.app.options.authDomain}`);
     
     // Check if we have proper authentication

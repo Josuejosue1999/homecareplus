@@ -4,6 +4,8 @@ import 'package:homecare_app/screens/main_dashboard.dart';
 import 'package:homecare_app/screens/profile_page.dart';
 import 'package:homecare_app/screens/chat_page.dart';
 import 'package:homecare_app/screens/pro_hospitals_page.dart';
+import 'package:homecare_app/screens/patient_dashboard.dart';
+import 'package:homecare_app/screens/verified_hospitals_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:homecare_app/widgets/professional_bottom_nav.dart';
@@ -23,94 +25,16 @@ class _AppointmentsPageState extends State<AppointmentsPage> with TickerProvider
   String greeting = '';
   int _refreshKey = 0;
 
-  // Animation controllers for moving bubbles
-  late AnimationController _bubble1Controller;
-  late AnimationController _bubble2Controller;
-  late AnimationController _bubble3Controller;
-  late AnimationController _bubble4Controller;
-  
-  // Animations for bubble positions
-  late Animation<Offset> _bubble1Animation;
-  late Animation<Offset> _bubble2Animation;
-  late Animation<Offset> _bubble3Animation;
-  late Animation<Offset> _bubble4Animation;
-
   @override
   void initState() {
     super.initState();
     _updateGreeting();
-    _initializeAnimations();
+    _loadUserName();
   }
 
   @override
   void dispose() {
-    _bubble1Controller.dispose();
-    _bubble2Controller.dispose();
-    _bubble3Controller.dispose();
-    _bubble4Controller.dispose();
     super.dispose();
-  }
-
-  void _initializeAnimations() {
-    // Initialize bubble animation controllers with different durations for variety
-    _bubble1Controller = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    
-    _bubble2Controller = AnimationController(
-      duration: const Duration(seconds: 12),
-      vsync: this,
-    );
-    
-    _bubble3Controller = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    );
-    
-    _bubble4Controller = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
-
-    // Create different movement patterns for each bubble
-    _bubble1Animation = Tween<Offset>(
-      begin: const Offset(-0.2, 0.3),
-      end: const Offset(1.2, 0.1),
-    ).animate(CurvedAnimation(
-      parent: _bubble1Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble2Animation = Tween<Offset>(
-      begin: const Offset(1.1, 0.8),
-      end: const Offset(-0.1, 0.2),
-    ).animate(CurvedAnimation(
-      parent: _bubble2Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble3Animation = Tween<Offset>(
-      begin: const Offset(0.2, -0.1),
-      end: const Offset(0.8, 0.9),
-    ).animate(CurvedAnimation(
-      parent: _bubble3Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble4Animation = Tween<Offset>(
-      begin: const Offset(0.9, 0.1),
-      end: const Offset(0.1, 0.7),
-    ).animate(CurvedAnimation(
-      parent: _bubble4Controller,
-      curve: Curves.easeInOut,
-    ));
-
-    // Start animations and repeat them
-    _bubble1Controller.repeat(reverse: true);
-    _bubble2Controller.repeat(reverse: true);
-    _bubble3Controller.repeat(reverse: true);
-    _bubble4Controller.repeat(reverse: true);
   }
 
   void _updateGreeting() {
@@ -121,6 +45,15 @@ class _AppointmentsPageState extends State<AppointmentsPage> with TickerProvider
       greeting = 'Good Afternoon';
     } else {
       greeting = 'Good Evening';
+    }
+  }
+
+  void _loadUserName() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        userName = user.displayName ?? 'User';
+      });
     }
   }
 
@@ -142,7 +75,7 @@ class _AppointmentsPageState extends State<AppointmentsPage> with TickerProvider
       case 2:
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const ProHospitalsPage()),
+          MaterialPageRoute(builder: (context) => const VerifiedHospitalsPage()),
         );
         break;
       case 3:
@@ -180,99 +113,6 @@ class _AppointmentsPageState extends State<AppointmentsPage> with TickerProvider
         child: SafeArea(
           child: Stack(
             children: [
-              // Animated Bubbles Background for the blue header
-              // Bubble 1
-              AnimatedBuilder(
-                animation: _bubble1Animation,
-                builder: (context, child) {
-                  return Positioned(
-                    left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
-                    top: _bubble1Animation.value.dy * 120,
-                    child: Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.15),
-                            Colors.white.withOpacity(0.05),
-                          ],
-                        ),
-                      ),
-                    ),
-                          );
-                        },
-                      ),
-              // Bubble 2
-              AnimatedBuilder(
-                animation: _bubble2Animation,
-                builder: (context, child) {
-                  return Positioned(
-                    left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
-                    top: _bubble2Animation.value.dy * 120,
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.2),
-                            Colors.white.withOpacity(0.08),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              // Bubble 3
-              AnimatedBuilder(
-                animation: _bubble3Animation,
-                builder: (context, child) {
-                  return Positioned(
-                    left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
-                    top: _bubble3Animation.value.dy * 120,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.1),
-                            Colors.white.withOpacity(0.03),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-              // Bubble 4
-              AnimatedBuilder(
-                animation: _bubble4Animation,
-                builder: (context, child) {
-                  return Positioned(
-                    left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
-                    top: _bubble4Animation.value.dy * 120,
-                    child: Container(
-                      width: 35,
-                      height: 35,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            Colors.white.withOpacity(0.25),
-                            Colors.white.withOpacity(0.1),
-                        ],
-                      ),
-                    ),
-                    ),
-                  );
-                },
-              ),
               // Main Content
               Column(
                 children: [

@@ -874,5 +874,5 @@ class MessagesPage {
 }
 
 // Initialize the messages page
-const messagesPage = new MessagesPage();
+const messagesPage = new MessagesPage(); 
 console.log('✅ MessagesPage instance created successfully:', messagesPage); 

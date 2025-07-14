@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:homecare_app/screens/choose.dart';
 import 'package:homecare_app/screens/login.dart';
+import 'package:homecare_app/screens/patient_dashboard.dart';
 import 'package:homecare_app/screens/help_support_page.dart';
 import 'package:homecare_app/screens/security_page.dart';
 import 'package:image_picker/image_picker.dart';
@@ -287,7 +288,7 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          MaterialPageRoute(builder: (context) => const PatientDashboardPage()),
           (route) => false,
         );
       }
