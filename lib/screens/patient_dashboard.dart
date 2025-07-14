@@ -5,14 +5,17 @@ import '../models/hospital.dart';
 import '../services/hospital_service.dart';
 import '../services/enhanced_hospital_service.dart';
 import '../services/location_service.dart';
+
 import '../widgets/distance_badge.dart';
 import 'facilities.dart';
 import 'choose.dart';
 import 'hospital_details.dart';
 import 'find_healthcare_page.dart';
+import 'map_view_page.dart';
 import '../main.dart';
 import 'dart:io';
 import 'dart:convert';
+
 
 class PatientDashboardPage extends StatefulWidget {
   const PatientDashboardPage({super.key});
@@ -22,8 +25,6 @@ class PatientDashboardPage extends StatefulWidget {
 }
 
 class _PatientDashboardPageState extends State<PatientDashboardPage> {
-  String searchQuery = '';
-  final TextEditingController _searchController = TextEditingController();
   UserLocation? _userLocation;
   bool _isLocationLoading = false;
   bool _showLocationPermissionDialog = false;
@@ -59,7 +60,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     // Ne pas disposer le service car cela cause des problèmes lors de la navigation
     // EnhancedHospitalService.dispose();
     super.dispose();
@@ -97,6 +97,18 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
     if (permissionGranted) {
       await _initializeLocation();
     }
+  }
+
+
+
+  Future<void> _showMyPosition() async {
+    // Navigate to the in-app map page
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => MapViewPage(userLocation: _userLocation),
+      ),
+    );
   }
 
   @override
@@ -469,16 +481,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
             // Hospitals List
           SliverToBoxAdapter(
               child: StreamBuilder<List<Hospital>>(
-                stream: searchQuery.isEmpty 
-                    ? EnhancedHospitalService.getNearbyHospitals()
-                    : EnhancedHospitalService.getNearbyHospitals().map((hospitals) {
-                        return hospitals.where((hospital) {
-                          return hospital.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                                 hospital.location!.toLowerCase().contains(searchQuery.toLowerCase()) ||
-                                 hospital.facilities.any((facility) => 
-                                     facility.toLowerCase().contains(searchQuery.toLowerCase()));
-                        }).toList();
-                      }),
+                stream: EnhancedHospitalService.getNearbyHospitals(),
                 builder: (context, snapshot) {
                   print('🔄 === STREAMBUILDER DEBUG INFO ===');
                   print('🔄 StreamBuilder state: ${snapshot.connectionState}');
@@ -486,7 +489,6 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                   print('📝 StreamBuilder error: ${snapshot.error}');
                   print('✅ StreamBuilder hasData: ${snapshot.hasData}');
                   print('📊 StreamBuilder data length: ${snapshot.data?.length}');
-                  print('🔍 Search query: "$searchQuery"');
                   print('⏰ Timestamp: ${DateTime.now()}');
                   print('🔄 === STREAMBUILDER DEBUG END ===');
                   
@@ -525,9 +527,12 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                   print('🎉 Final hospitals list length: ${hospitals.length}');
                   print('🌍 Google Places hospitals: ${hospitals.where((h) => h.isFromGooglePlaces).length}');
                   print('🏥 Firebase hospitals: ${hospitals.where((h) => !h.isFromGooglePlaces).length}');
+                  print('✅ Verified hospitals: ${hospitals.where((h) => h.isVerified || h.verified).length}');
+                  print('❌ Non-verified hospitals: ${hospitals.where((h) => !(h.isVerified || h.verified)).length}');
                   if (hospitals.isNotEmpty) {
                     print('🏥 First hospital: ${hospitals.first.name}');
                     print('🏥 First hospital location: ${hospitals.first.location}');
+                    print('🏥 First hospital verified: ${hospitals.first.isVerified || hospitals.first.verified}');
                   }
                   print('🎉 === FINAL HOSPITALS END ===');
                   return _buildHospitalsList(hospitals);
@@ -582,86 +587,24 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8FAFB),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: const Color(0xFFE5E7EB),
-                width: 1,
-              ),
-            ),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search hospitals, clinics, or specialties...',
-                hintStyle: TextStyle(
-                  color: Colors.grey[500],
-                  fontSize: 14,
-                ),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.all(16),
-                prefixIcon: Container(
-                  padding: const EdgeInsets.all(12),
-                  child: Icon(
-                    Icons.search_rounded,
-                    color: Colors.grey[400],
-                    size: 20,
-                  ),
-                ),
-                suffixIcon: searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(
-                          Icons.clear_rounded,
-                          color: Colors.grey[400],
-                          size: 20,
-                        ),
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            searchQuery = '';
-                          });
-                        },
-                      )
-                    : Container(
-                        padding: const EdgeInsets.all(8),
-                        child: IconButton(
-                          icon: Icon(
-                            Icons.tune_rounded,
-                            color: Colors.grey[400],
-                            size: 20,
-                          ),
-                          onPressed: () {
-                            // Filter functionality can be added here
-                          },
-                        ),
-                      ),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value;
-                });
-              },
-                  ),
-                ),
+
           
           const SizedBox(height: 20),
           
-          // Find Nearby Healthcare Button with Google Maps
+          // View My Position Button
           Container(
             width: double.infinity,
             height: 56,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF159BBD), Color(0xFF0D7A94)],
+                colors: [Color(0xFF4CAF50), Color(0xFF2E7D32)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF159BBD).withOpacity(0.3),
+                  color: const Color(0xFF4CAF50).withOpacity(0.3),
                   spreadRadius: 0,
                   blurRadius: 12,
                   offset: const Offset(0, 4),
@@ -672,14 +615,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
               color: Colors.transparent,
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const FindHealthcarePage(),
-                    ),
-                  );
-                },
+                onTap: () => _showMyPosition(),
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                   child: Row(
@@ -692,14 +628,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: const Icon(
-                          Icons.map_outlined,
+                          Icons.my_location_rounded,
                           color: Colors.white,
                           size: 20,
                         ),
                       ),
                       const SizedBox(width: 12),
                       const Text(
-                        'Find Healthcare Maps', // Shortened text to avoid overflow
+                        'View My Position',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -715,7 +651,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: const Icon(
-                          Icons.arrow_forward_ios,
+                          Icons.location_on,
                           color: Colors.white,
                           size: 16,
                         ),
@@ -1545,7 +1481,18 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
   }
 
   Widget _buildHospitalsList(List<Hospital> hospitals) {
-    if (hospitals.isEmpty) {
+    // Filter only verified hospitals
+    final verifiedHospitals = hospitals.where((hospital) => 
+      hospital.isVerified || hospital.verified
+    ).toList();
+    
+    print('🔍 === FILTERING HOSPITALS ===');
+    print('🔍 Total hospitals received: ${hospitals.length}');
+    print('🔍 Verified hospitals after filtering: ${verifiedHospitals.length}');
+    print('🔍 Hospitals filtered out: ${hospitals.length - verifiedHospitals.length}');
+    print('🔍 === FILTERING COMPLETE ===');
+
+    if (verifiedHospitals.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(40),
                               child: Column(
@@ -1557,16 +1504,14 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                searchQuery.isEmpty ? Icons.local_hospital_outlined : Icons.search_off_rounded,
+                Icons.verified_user_outlined,
                 size: 48,
               color: Colors.grey[400],
             ),
             ),
             const SizedBox(height: 24),
             Text(
-              searchQuery.isEmpty 
-                  ? 'No Healthcare Centers'
-                  : 'No Results Found',
+              'No Verified Healthcare Centers',
                                           style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
@@ -1575,9 +1520,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
             ),
             const SizedBox(height: 8),
             Text(
-              searchQuery.isEmpty 
-                  ? 'Healthcare centers will appear here once they register'
-                  : 'Try adjusting your search terms',
+              'Only verified healthcare centers will appear here',
                                           style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[500],
@@ -1600,7 +1543,7 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
             child: Row(
               children: [
                 Text(
-                  '${hospitals.length} Healthcare Centers',
+                  '${verifiedHospitals.length} Verified Healthcare Centers',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w700,
@@ -1608,28 +1551,39 @@ class _PatientDashboardPageState extends State<PatientDashboardPage> {
                   ),
                 ),
                 const Spacer(),
-                if (searchQuery.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF159BBD).withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'for "$searchQuery"',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF159BBD),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                // Add verified badge
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.verified,
+                        color: Colors.green,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Verified',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
           
           // Hospitals List
-          ...hospitals.map((hospital) => _buildHospitalCard(hospital)).toList(),
+          ...verifiedHospitals.map((hospital) => _buildHospitalCard(hospital)).toList(),
           
           // Bottom Spacing
           const SizedBox(height: 40),
