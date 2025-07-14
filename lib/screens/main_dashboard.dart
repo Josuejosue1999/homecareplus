@@ -53,21 +53,13 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
   bool showHospitalBooking = false;
   bool showAiWelcomeMessage = true;
 
-  // Animation controllers for moving bubbles
-  late AnimationController _bubble1Controller;
-  late AnimationController _bubble2Controller;
-  late AnimationController _bubble3Controller;
-  late AnimationController _bubble4Controller;
+
   
   // Animation controller for speech bubble
   late AnimationController _speechBubbleController;
   late Animation<double> _speechBubbleAnimation;
   
-  // Animations for bubble positions
-  late Animation<Offset> _bubble1Animation;
-  late Animation<Offset> _bubble2Animation;
-  late Animation<Offset> _bubble3Animation;
-  late Animation<Offset> _bubble4Animation;
+
 
   // Video player controller for AI button
   VideoPlayerController? _videoController;
@@ -77,7 +69,6 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
     super.initState();
     _updateGreeting();
     _loadUserName();
-    _initializeAnimations();
     _initializeSpeechBubbleAnimation();
     _initializeVideoController();
     if (widget.selectedHospitalName != null) {
@@ -85,67 +76,7 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
     }
   }
 
-  void _initializeAnimations() {
-    // Initialize bubble animation controllers with different durations for variety
-    _bubble1Controller = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    
-    _bubble2Controller = AnimationController(
-      duration: const Duration(seconds: 12),
-      vsync: this,
-    );
-    
-    _bubble3Controller = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    );
-    
-    _bubble4Controller = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
 
-    // Create different movement patterns for each bubble
-    _bubble1Animation = Tween<Offset>(
-      begin: const Offset(-0.2, 0.3),
-      end: const Offset(1.2, 0.1),
-    ).animate(CurvedAnimation(
-      parent: _bubble1Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble2Animation = Tween<Offset>(
-      begin: const Offset(1.1, 0.8),
-      end: const Offset(-0.1, 0.2),
-    ).animate(CurvedAnimation(
-      parent: _bubble2Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble3Animation = Tween<Offset>(
-      begin: const Offset(0.2, -0.1),
-      end: const Offset(0.8, 0.9),
-    ).animate(CurvedAnimation(
-      parent: _bubble3Controller,
-      curve: Curves.easeInOut,
-    ));
-    
-    _bubble4Animation = Tween<Offset>(
-      begin: const Offset(0.9, 0.1),
-      end: const Offset(0.1, 0.7),
-    ).animate(CurvedAnimation(
-      parent: _bubble4Controller,
-      curve: Curves.easeInOut,
-    ));
-
-    // Start animations and repeat them
-    _bubble1Controller.repeat(reverse: true);
-    _bubble2Controller.repeat(reverse: true);
-    _bubble3Controller.repeat(reverse: true);
-    _bubble4Controller.repeat(reverse: true);
-  }
 
   void _initializeSpeechBubbleAnimation() {
     _speechBubbleController = AnimationController(
@@ -591,156 +522,7 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
                 height: 140,
                 child: Stack(
                   children: [
-                    // Animated Moving Bubbles for Dynamic Feel
-                    AnimatedBuilder(
-                      animation: _bubble1Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble1Animation.value.dx,
-                          top: 140 * _bubble1Animation.value.dy,
-                          child: Container(
-                            width: 80,
-                            height: 80,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.15),
-                                  Colors.white.withOpacity(0.08),
-                                  Colors.white.withOpacity(0.03),
-                                ],
-                                stops: const [0.0, 0.6, 1.0],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
-                                width: 2,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.1),
-                                  spreadRadius: 0,
-                                  blurRadius: 20,
-                                  offset: const Offset(-4, -4),
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
-                                  spreadRadius: 0,
-                                  blurRadius: 15,
-                                  offset: const Offset(4, 4),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    AnimatedBuilder(
-                      animation: _bubble2Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble2Animation.value.dx,
-                          top: 140 * _bubble2Animation.value.dy,
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.12),
-                                  Colors.white.withOpacity(0.06),
-                                  Colors.white.withOpacity(0.02),
-                                ],
-                                stops: const [0.0, 0.7, 1.0],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.15),
-                                width: 1.5,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.08),
-                                  spreadRadius: 0,
-                                  blurRadius: 18,
-                                  offset: const Offset(-3, -3),
-                                ),
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.08),
-                                  spreadRadius: 0,
-                                  blurRadius: 12,
-                                  offset: const Offset(3, 3),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    AnimatedBuilder(
-                      animation: _bubble3Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble3Animation.value.dx,
-                          top: 140 * _bubble3Animation.value.dy,
-                          child: Container(
-                            width: 45,
-                            height: 45,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.08),
-                                  Colors.white.withOpacity(0.04),
-                                  Colors.transparent,
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.1),
-                                width: 1,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.white.withOpacity(0.05),
-                                  spreadRadius: 0,
-                                  blurRadius: 10,
-                                  offset: const Offset(-2, -2),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    AnimatedBuilder(
-                      animation: _bubble4Controller,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: MediaQuery.of(context).size.width * _bubble4Animation.value.dx,
-                          top: 140 * _bubble4Animation.value.dy,
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.1),
-                                  Colors.white.withOpacity(0.05),
-                                  Colors.transparent,
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.08),
-                                width: 1,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
+
                     
                     // Main Header Content
                     Container(
@@ -2570,10 +2352,6 @@ class _MainDashboardState extends State<MainDashboard> with TickerProviderStateM
 
   @override
   void dispose() {
-    _bubble1Controller.dispose();
-    _bubble2Controller.dispose();
-    _bubble3Controller.dispose();
-    _bubble4Controller.dispose();
     _speechBubbleController.dispose();
     _videoController?.dispose();
     super.dispose();

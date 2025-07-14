@@ -21,38 +21,13 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
-  // Animation controllers for moving bubbles (10+ bubbles)
-  late AnimationController _bubble1Controller;
-  late AnimationController _bubble2Controller;
-  late AnimationController _bubble3Controller;
-  late AnimationController _bubble4Controller;
-  late AnimationController _bubble5Controller;
-  late AnimationController _bubble6Controller;
-  late AnimationController _bubble7Controller;
-  late AnimationController _bubble8Controller;
-  late AnimationController _bubble9Controller;
-  late AnimationController _bubble10Controller;
-  late AnimationController _bubble11Controller;
-  late AnimationController _bubble12Controller;
+
   
-  // Animations for bubble positions
-  late Animation<Offset> _bubble1Animation;
-  late Animation<Offset> _bubble2Animation;
-  late Animation<Offset> _bubble3Animation;
-  late Animation<Offset> _bubble4Animation;
-  late Animation<Offset> _bubble5Animation;
-  late Animation<Offset> _bubble6Animation;
-  late Animation<Offset> _bubble7Animation;
-  late Animation<Offset> _bubble8Animation;
-  late Animation<Offset> _bubble9Animation;
-  late Animation<Offset> _bubble10Animation;
-  late Animation<Offset> _bubble11Animation;
-  late Animation<Offset> _bubble12Animation;
+
 
   @override
   void initState() {
     super.initState();
-    _initializeBubbleAnimations();
   }
 
   @override
@@ -62,18 +37,6 @@ class _SignupPageState extends State<SignupPage> with TickerProviderStateMixin {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _phoneController.dispose();
-    _bubble1Controller.dispose();
-    _bubble2Controller.dispose();
-    _bubble3Controller.dispose();
-    _bubble4Controller.dispose();
-    _bubble5Controller.dispose();
-    _bubble6Controller.dispose();
-    _bubble7Controller.dispose();
-    _bubble8Controller.dispose();
-    _bubble9Controller.dispose();
-    _bubble10Controller.dispose();
-    _bubble11Controller.dispose();
-    _bubble12Controller.dispose();
     super.dispose();
   }
 
