@@ -6,10 +6,29 @@ const http = require("http");
 const { Server } = require("socket.io");
 require("dotenv").config();
 
-// Import Firebase configuration
-const { db, storage, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment, setDoc, ref, uploadBytes, getDownloadURL } = require("./config/firebase");
-const { deleteObject } = require('firebase/storage');
-const { getAuth } = require('firebase/auth');
+// Import Firebase centralisé 
+const { 
+  db, 
+  storage, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  collection, 
+  query, 
+  where, 
+  orderBy, 
+  getDocs, 
+  updateDoc, 
+  addDoc, 
+  deleteDoc,
+  serverTimestamp, 
+  increment, 
+  writeBatch,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject
+} = require("./firebase-config");
 
 // Import des routes et middleware
 const authRoutes = require("./routes/auth");
@@ -1321,6 +1340,46 @@ io.on('connection', (socket) => {
     });
 });
 
+// 🔧 Global Error Handler pour Express
+app.use((err, req, res, next) => {
+    // Gestion spécifique de l'erreur RangeNotSatisfiableError
+    if (err.code === 'ERANGE' || err.status === 416 || err.message.includes('Range Not Satisfiable')) {
+        console.log(`⚠️  Range request error for: ${req.url} - Handled gracefully`);
+        
+        // Répondre avec un statut 200 au lieu de 416 pour éviter le crash
+        if (!res.headersSent) {
+            res.status(200).end();
+        }
+        return;
+    }
+    
+    // Autres erreurs de fichiers statiques
+    if (err.code === 'ENOENT') {
+        console.log(`⚠️  File not found: ${req.url}`);
+        if (!res.headersSent) {
+            res.status(404).send('File not found');
+        }
+        return;
+    }
+    
+    // Log des autres erreurs pour debugging
+    console.error('🚨 Express Error:', {
+        message: err.message,
+        status: err.status,
+        code: err.code,
+        url: req.url,
+        method: req.method
+    });
+    
+    // Réponse générique pour éviter les crashes
+    if (!res.headersSent) {
+        res.status(err.status || 500).json({
+            error: 'Internal server error',
+            message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+        });
+    }
+});
+
 // Handle server errors
 server.on('error', (error) => {
     if (error.code === 'EADDRINUSE') {
@@ -1342,6 +1401,19 @@ server.on('error', (error) => {
         console.error(`❌ Server error:`, error);
         process.exit(1);
     }
+});
+
+// 🛡️ Protection contre les erreurs non capturées
+process.on('uncaughtException', (error) => {
+    console.error('🚨 Uncaught Exception:', error);
+    // Ne pas faire process.exit() pour éviter les crashes
+    console.log('🔄 Server continues running...');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('🚨 Unhandled Rejection at:', promise, 'reason:', reason);
+    // Ne pas faire process.exit() pour éviter les crashes
+    console.log('🔄 Server continues running...');
 });
 
 // 🚀 Server startup

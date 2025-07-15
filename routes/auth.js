@@ -1,7 +1,21 @@
 const express = require("express");
 const router = express.Router();
-const { auth, db, doc, getDoc, setDoc, collection, query, where, getDocs } = require("../config/firebase");
-const { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } = require("firebase/auth");
+
+// Import Firebase centralisé
+const { 
+  auth, 
+  db, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut,
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs
+} = require("../firebase-config");
 
 // Route de login
 router.post("/login", async (req, res) => {

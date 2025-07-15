@@ -1,0 +1,9 @@
+[build]
+  base = "healthcenter-dashboard"
+  command = "echo 'Build completed'"
+  publish = "public"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200 

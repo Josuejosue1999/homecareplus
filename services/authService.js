@@ -1,7 +1,7 @@
-// Firebase imports for authentication and database
+// Import Firebase centralisé
 const { 
-  auth, 
-  db, 
+  auth,
+  db,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut,
@@ -12,7 +12,7 @@ const {
   query,
   where,
   getDocs
-} = require('../config/firebase');
+} = require('../firebase-config');
 
 // Simple auth service for basic functionality
 // This is a minimal implementation - should be enhanced for production

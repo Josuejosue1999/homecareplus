@@ -67,8 +67,8 @@ const requireAuth = (req, res, next) => {
     
     if (req.xhr || req.headers.accept.indexOf('json') > -1) {
       res.status(401).json({ success: false, message: 'Authentication required' });
-    } else {
-      res.redirect('/login');
+  } else {
+    res.redirect('/login');
     }
   }
 };

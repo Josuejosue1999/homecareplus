@@ -1,5 +1,5 @@
 # Railway ignore file
-# Focus deployment on healthcenter-dashboard only
+# Deployment for main hospital dashboard (server.js on port 3000)
 
 # Flutter specific
 lib/
@@ -38,15 +38,8 @@ start-clean.sh
 # Admin dashboard (separate deployment)
 admin-dashboard/
 
-# Exclude everything except healthcenter-dashboard
-server.js
-routes/
-middleware/
-views/
-public/
-config/
-package.json
-package-lock.json
+# Alternative healthcenter dashboard (not the main one)
+healthcenter-dashboard/
 
 # Git
 .git/
@@ -59,7 +52,9 @@ env.example
 *.log
 
 # Assets (keep only essential ones)
-assets/
+assets/Downloads/
+assets/*.ttf
+assets/*.glb
 
 # Documentation files
 API_CONFIG.md

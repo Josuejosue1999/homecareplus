@@ -15,7 +15,7 @@ class _NotificationPageState extends State<NotificationPage>
     with TickerProviderStateMixin {
   bool _isRefreshing = false;
   List<AppointmentNotification> _notifications = [];
-
+  
   @override
   void initState() {
     super.initState();
@@ -51,9 +51,9 @@ class _NotificationPageState extends State<NotificationPage>
     } catch (e) {
       print('Error refreshing notifications: $e');
     } finally {
-      setState(() {
-        _isRefreshing = false;
-      });
+    setState(() {
+      _isRefreshing = false;
+    });
     }
   }
 

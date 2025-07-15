@@ -2,10 +2,16 @@
 builder = "NIXPACKS"
 
 [deploy]
-startCommand = "cd healthcenter-dashboard && node app.js"
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 10
 
 [environments.production.variables]
 NODE_ENV = "production"
-PORT = "3000" 
+
+# Add these Firebase environment variables in Railway Dashboard:
+# FIREBASE_API_KEY = "your-actual-firebase-api-key"
+# FIREBASE_AUTH_DOMAIN = "homecare-9f4d0.firebaseapp.com"
+# FIREBASE_PROJECT_ID = "homecare-9f4d0"
+# FIREBASE_STORAGE_BUCKET = "homecare-9f4d0.appspot.com"
+# FIREBASE_MESSAGING_SENDER_ID = "your-actual-sender-id"
+# FIREBASE_APP_ID = "your-actual-app-id" 
