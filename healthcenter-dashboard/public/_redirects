@@ -1,0 +1,5 @@
+/api/* /.netlify/functions/api/:splat 200
+/register /.netlify/functions/api/register 200
+/login /.netlify/functions/api/login 200
+/dashboard /.netlify/functions/api/dashboard 200
+/* /index.html 200 

@@ -2721,6 +2721,39 @@ app.post('/api/profile/upload-certificate', requireAuth, upload.single('certific
   }
 });
 
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error('❌ Unhandled error:', error);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error',
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+  });
+});
+
+// 404 handler
+app.use((req, res) => {
+  console.log(`❌ 404 - Route not found: ${req.method} ${req.url}`);
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+    path: req.url
+  });
+});
+
+// Start server only if not in AWS Lambda environment (Netlify Functions)
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Health Center Dashboard server running on port ${PORT}`);
+    console.log(`📱 Dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`🔐 Login: http://localhost:${PORT}/login`);
+    console.log(`✅ Registration: http://localhost:${PORT}/register`);
+  });
+}
+
+// Export for Netlify Functions
+module.exports = app;
+
 
 
 

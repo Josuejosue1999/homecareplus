@@ -17,14 +17,16 @@ class AuthService {
   // Login avec Firebase
   async login(email, password, req) {
     try {
+      console.log("🔐 AuthService.login - Starting login process for:", email);
+      
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
       
-      console.log("Login successful for user:", user.uid);
+      console.log("✅ Login successful for user:", user.uid);
       
       // Récupérer les données de la clinique depuis Firestore
       const clinicData = await this.getClinicData(user.uid);
-      console.log("Clinic data retrieved:", clinicData);
+      console.log("📋 Clinic data retrieved:", clinicData);
       
       // S'assurer que le nom de la clinique est correctement récupéré
       const clinicName = clinicData?.clinicName || clinicData?.name || clinicData?.hospitalName || "Clinic";
@@ -48,7 +50,7 @@ class AuthService {
         updatedAt: clinicData?.updatedAt || new Date()
       };
 
-      console.log("User data prepared for session:", userData);
+      console.log("📦 User data prepared for session:", userData);
 
       // Créer une session
       const sessionId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -57,43 +59,70 @@ class AuthService {
       req.app.locals.sessions = req.app.locals.sessions || new Map();
       req.app.locals.sessions.set(sessionId, userData);
       
-      console.log("Session created with ID:", sessionId);
-      
+      console.log("🎫 Session created with ID:", sessionId);
+
       return {
         success: true,
-        user: userData,
-        sessionId
+        sessionId,
+        user: userData
       };
+
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("❌ AuthService.login - Error:", {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      
       return {
         success: false,
-        message: this.getErrorMessage(error.code)
+        message: this.getErrorMessage(error)
       };
     }
   }
 
-  // Register avec Firebase
-  async register(email, password, req) {
+  // Register avec Firebase - clinicName optionnel
+  async register(email, password, req, clinicName = null) {
     try {
-      // Créer l"utilisateur dans Firebase Auth
+      console.log("🆕 AuthService.register - Starting registration process");
+      console.log("📧 Email:", email);
+      console.log("🏥 Clinic name provided:", clinicName || 'None (will generate default)');
+      console.log("🔧 Firebase auth object:", !!auth ? "Available" : "Missing");
+      
+      // Vérifier que Firebase est correctement configuré
+      if (!auth) {
+        console.error("❌ Firebase auth is not initialized!");
+        throw new Error("Firebase authentication not initialized");
+      }
+
+      console.log("🔥 Attempting to create user with Firebase Auth...");
+      
+      // Créer l'utilisateur dans Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      console.log('User created with UID:', user.uid);
+      console.log('✅ User created in Firebase Auth with UID:', user.uid);
+      console.log('📧 User email confirmed:', user.email);
 
-      // Générer un nom de clinique par défaut basé sur l'email
-      const emailPrefix = email.split('@')[0];
-      const defaultClinicName = `${emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)} Health Center`;
+      // Utiliser le nom de clinique fourni ou générer un par défaut
+      let finalClinicName;
+      if (clinicName && clinicName.trim().length > 0) {
+        finalClinicName = clinicName.trim();
+        console.log('🏥 Using provided clinic name:', finalClinicName);
+      } else {
+        const emailPrefix = email.split('@')[0];
+        finalClinicName = `${emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1)} Health Center`;
+        console.log('🏥 Generated default clinic name:', finalClinicName);
+      }
 
-      // Sauvegarder les données de la clinique dans Firestore
-      await this.saveClinicData(user.uid, {
-        clinicName: defaultClinicName,
-        name: defaultClinicName, // Ajouter aussi 'name' pour compatibilité
+      // Préparer les données de la clinique
+      const clinicData = {
+        clinicName: finalClinicName,
+        name: finalClinicName, // Ajouter aussi 'name' pour compatibilité
         email,
         createdAt: new Date(),
-        status: "pending", // Par défaut sur pending
-        about: `Welcome to ${defaultClinicName}. We are committed to providing exceptional medical care and services. Please update your clinic information in your profile settings.`,
+        status: "active", // Changer de pending à active
+        about: `Welcome to ${finalClinicName}. We are committed to providing exceptional medical care and services. Please update your clinic information in your profile settings.`,
         address: 'Address to be updated',
         location: 'Location to be updated',
         phone: 'Phone to be updated',
@@ -110,76 +139,67 @@ class AuthService {
           'Saturday': {'start': '09:00', 'end': '15:00'},
           'Sunday': {'start': 'Closed', 'end': 'Closed'},
         }
-      });
+      };
 
-      console.log('Clinic registration completed for:', defaultClinicName);
+      console.log('📋 Clinic data prepared:', JSON.stringify(clinicData, null, 2));
+      console.log('🔧 Firestore db object:', !!db ? "Available" : "Missing");
+
+      // Sauvegarder les données de la clinique dans Firestore
+      console.log('💾 Saving clinic data to Firestore...');
+      await this.saveClinicData(user.uid, clinicData);
+
+      console.log('✅ Clinic registration completed successfully for:', finalClinicName);
 
       // Ne pas créer de session après l'inscription
       // L'utilisateur devra se connecter manuellement
       
       return {
         success: true,
-        message: "Compte créé avec succès"
+        message: "Compte créé avec succès",
+        uid: user.uid,
+        email: user.email,
+        clinicName: finalClinicName
       };
-    } catch (error) {
-      console.error("Register error:", error);
-      return {
-        success: false,
-        message: this.getErrorMessage(error.code)
-      };
-    }
-  }
 
-  // Logout
-  async logout(req) {
-    try {
-      await signOut(auth);
-      
-      // Supprimer la session
-      const sessionId = req.cookies?.sessionId;
-      if (sessionId && req.app.locals.sessions) {
-        req.app.locals.sessions.delete(sessionId);
+    } catch (error) {
+      console.error("❌ AuthService.register - Detailed error:", {
+        message: error.message,
+        code: error.code,
+        stack: error.stack,
+        name: error.name
+      });
+
+      // Log spécifique pour les erreurs Firebase
+      if (error.code) {
+        console.error("🔥 Firebase error code:", error.code);
+        console.error("🔥 Firebase error message:", error.message);
       }
       
-      return { success: true };
-    } catch (error) {
-      console.error("Logout error:", error);
-      return { success: false, message: "Logout failed" };
+      return {
+        success: false,
+        message: this.getErrorMessage(error),
+        errorCode: error.code,
+        errorDetails: error.message
+      };
     }
   }
 
   // Récupérer les données de la clinique
   async getClinicData(uid) {
     try {
-      console.log("Getting clinic data for UID:", uid);
+      console.log("📖 Getting clinic data for UID:", uid);
       
-      // Essayer d'abord la collection "clinics"
-      let clinicDoc = await getDoc(doc(db, "clinics", uid));
+      const clinicDoc = await getDoc(doc(db, 'clinics', uid));
+      
       if (clinicDoc.exists()) {
-        console.log("Found clinic data in 'clinics' collection");
+        console.log("✅ Clinic document found");
         return clinicDoc.data();
+      } else {
+        console.log("⚠️ No clinic document found for UID:", uid);
+        return null;
       }
-      
-      // Si pas trouvé, essayer la collection "users" (pour compatibilité)
-      clinicDoc = await getDoc(doc(db, "users", uid));
-      if (clinicDoc.exists()) {
-        console.log("Found clinic data in 'users' collection");
-        return clinicDoc.data();
-      }
-      
-      // Si toujours pas trouvé, chercher par email dans la collection "clinics"
-      console.log("Searching for clinic by email...");
-      const q = query(collection(db, "clinics"), where("email", "==", uid));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        console.log("Found clinic data by email search");
-        return querySnapshot.docs[0].data();
-      }
-      
-      console.log("No clinic data found");
-      return null;
     } catch (error) {
-      console.error("Error getting clinic data:", error);
+      console.error("❌ Error getting clinic data:", error);
       return null;
     }
   }
@@ -187,64 +207,72 @@ class AuthService {
   // Sauvegarder les données de la clinique
   async saveClinicData(uid, data) {
     try {
-      // Créer des données de clinique complètes avec des valeurs par défaut
-      const completeClinicData = {
-        ...data,
-        name: data.clinicName || data.name || 'New Clinic',
-        clinicName: data.clinicName || data.name || 'New Clinic',
-        email: data.email || '',
-        about: data.about || 'This healthcare facility is committed to providing exceptional medical care and services.',
-        address: data.address || 'Address not set',
-        location: data.location || 'Location not set',
-        phone: data.phone || 'Phone not set',
-        facilities: data.facilities || ['General Medicine'],
-        profileImageUrl: data.profileImageUrl || null,
-        certificateUrl: data.certificateUrl || null,
-        createdAt: data.createdAt || new Date(),
-        updatedAt: new Date(),
-        status: data.status || 'pending', // Par défaut sur pending
-        isVerified: false,
-        verified: data.verified || false, // Par défaut sur false
-        availableSchedule: data.availableSchedule || {},
-        latitude: data.latitude || null,
-        longitude: data.longitude || null,
-      };
-
-      console.log('Saving complete clinic data:', completeClinicData);
-      await setDoc(doc(db, "clinics", uid), completeClinicData);
-      console.log('Clinic data saved successfully for UID:', uid);
-      return true;
+      console.log("💾 Saving clinic data for UID:", uid);
+      console.log("📋 Data to save:", JSON.stringify(data, null, 2));
+      
+      await setDoc(doc(db, 'clinics', uid), data);
+      console.log("✅ Clinic data saved successfully");
+      
     } catch (error) {
-      console.error("Error saving clinic data:", error);
-      return false;
+      console.error("❌ Error saving clinic data:", {
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
+      throw error; // Re-throw to be caught by register method
     }
   }
 
-  // Vérifier si l"email existe déjà
-  async checkEmailExists(email) {
-    try {
-      const q = query(collection(db, "clinics"), where("email", "==", email));
-      const querySnapshot = await getDocs(q);
-      return !querySnapshot.empty;
-    } catch (error) {
-      console.error("Error checking email:", error);
-      return false;
-    }
-  }
-
-  // Convertir les codes d"erreur Firebase en messages utilisateur
-  getErrorMessage(errorCode) {
-    const errorMessages = {
-      "auth/user-not-found": "Aucun compte trouvé avec cet email",
-      "auth/wrong-password": "Mot de passe incorrect",
-      "auth/email-already-in-use": "Cet email est déjà utilisé",
-      "auth/weak-password": "Le mot de passe doit contenir au moins 6 caractères",
-      "auth/invalid-email": "Email invalide",
-      "auth/too-many-requests": "Trop de tentatives. Réessayez plus tard",
-      "auth/network-request-failed": "Erreur de connexion réseau"
-    };
+  // Gestion des messages d'erreur
+  getErrorMessage(error) {
+    console.log("🔍 Processing error message for code:", error.code);
     
-    return errorMessages[errorCode] || "Une erreur est survenue";
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        return 'Cette adresse email est déjà utilisée';
+      case 'auth/weak-password':
+        return 'Le mot de passe doit contenir au moins 6 caractères';
+      case 'auth/invalid-email':
+        return 'Adresse email invalide';
+      case 'auth/user-not-found':
+        return 'Utilisateur non trouvé';
+      case 'auth/wrong-password':
+        return 'Mot de passe incorrect';
+      case 'auth/network-request-failed':
+        return 'Erreur de connexion réseau';
+      case 'auth/too-many-requests':
+        return 'Trop de tentatives. Veuillez réessayer plus tard';
+      case 'auth/operation-not-allowed':
+        return 'Cette opération n\'est pas autorisée';
+      case 'auth/api-key-not-valid':
+        return 'Configuration Firebase invalide';
+      default:
+        console.log("⚠️ Unknown error code, returning generic message");
+        return error.message || 'Erreur inconnue';
+    }
+  }
+
+  // Logout
+  async logout(req) {
+    try {
+      console.log("🚪 AuthService.logout - Starting logout process");
+      
+      await signOut(auth);
+      
+      // Supprimer la session
+      const sessionId = req.cookies?.sessionId;
+      if (sessionId && req.app.locals.sessions) {
+        req.app.locals.sessions.delete(sessionId);
+        console.log("🗑️ Session deleted:", sessionId);
+      }
+      
+      console.log("✅ Logout completed successfully");
+      
+      return { success: true, message: "Déconnexion réussie" };
+    } catch (error) {
+      console.error("❌ AuthService.logout - Error:", error);
+      return { success: false, message: "Erreur lors de la déconnexion" };
+    }
   }
 }
 
