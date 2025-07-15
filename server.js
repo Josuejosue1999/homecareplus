@@ -3101,12 +3101,13 @@ app.use((req, res) => {
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL) {
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
-    console.log(`🚀 HomeCare Plus server running on port ${PORT}`);
+    console.log(`🚀 HomeCare Plus server running on port ${PORT} - v1.0.2`);
     console.log(`🏥 Homepage: http://localhost:${PORT}/`);
     console.log(`📱 Dashboard: http://localhost:${PORT}/dashboard`);
     console.log(`🔐 Login: http://localhost:${PORT}/login`);
     console.log(`✅ Registration: http://localhost:${PORT}/register`);
-    console.log(`🎯 Application fully loaded and ready!`);
+    console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth/*`);
+    console.log(`🎯 Application fully loaded and ready! Auth routes active.`);
   });
 }
 
