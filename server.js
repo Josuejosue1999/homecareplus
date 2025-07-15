@@ -54,31 +54,14 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Set view engine
 app.set("view engine", "ejs");
-const viewsPath = path.join(__dirname, "views");
-console.log('Setting views path to:', viewsPath);
-app.set("views", viewsPath);
+app.set("views", path.join(__dirname, "views"));
 
 // Session management (simple in-memory for demo)
 const sessions = new Map();
 
 // Routes publiques
 app.get("/", (req, res) => {
-    console.log(`🏠 Home route called - URL: ${req.url}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
-    console.log(`📂 Current directory: ${__dirname}`);
-    console.log(`📁 Views directory: ${app.get('views')}`);
-    
-    try {
-        res.render("index");
-    } catch (error) {
-        console.error(`❌ Error rendering index:`, error);
-        res.status(500).json({
-            error: 'Template rendering failed',
-            message: error.message,
-            stack: error.stack,
-            currentDir: __dirname,
-            viewsDir: app.get('views')
-        });
-    }
+    res.render("index");
 });
 
 // New selection page route
@@ -86,62 +69,7 @@ app.get("/selection", (req, res) => {
     res.render("selection");
 });
 
-// Debug route to test Vercel deployment
-app.get("/debug", (req, res) => {
-    const fs = require('fs');
-    const path = require('path');
-    
-    try {
-        const viewsPath = path.join(__dirname, 'views');
-        const publicPath = path.join(__dirname, 'public');
-        
-        const viewsExists = fs.existsSync(viewsPath);
-        const publicExists = fs.existsSync(publicPath);
-        const indexViewExists = fs.existsSync(path.join(viewsPath, 'index.ejs'));
-        
-        let viewsFiles = [];
-        let publicFiles = [];
-        
-        if (viewsExists) {
-            viewsFiles = fs.readdirSync(viewsPath);
-        }
-        if (publicExists) {
-            publicFiles = fs.readdirSync(publicPath);
-        }
-        
-        res.json({
-            status: 'Vercel deployment working! 🎉',
-            environment: {
-                NODE_ENV: process.env.NODE_ENV,
-                VERCEL: process.env.VERCEL,
-                currentDir: __dirname,
-                viewsDir: app.get('views')
-            },
-            paths: {
-                viewsPath,
-                publicPath,
-                viewsExists,
-                publicExists,
-                indexViewExists
-            },
-            files: {
-                viewsFiles: viewsFiles.slice(0, 10), // Limiter pour éviter trop de données
-                publicFiles: publicFiles.slice(0, 10)
-            },
-            firebase: {
-                apiKey: process.env.FIREBASE_API_KEY ? 'SET' : 'MISSING',
-                authDomain: process.env.FIREBASE_AUTH_DOMAIN ? 'SET' : 'MISSING',
-                projectId: process.env.FIREBASE_PROJECT_ID ? 'SET' : 'MISSING'
-            }
-        });
-    } catch (error) {
-        res.status(500).json({
-            error: 'Debug failed',
-            message: error.message,
-            stack: error.stack
-        });
-    }
-});
+// Debug route removed - no longer needed
 
 // New app features page route
 app.get("/app-features", (req, res) => {
@@ -3004,37 +2932,20 @@ app.post('/api/save-hospital-profile', requireAuth, async (req, res) => {
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error('❌ Unhandled error:', error);
-  console.error('❌ Error stack:', error.stack);
-  console.error('❌ Request URL:', req.url);
-  console.error('❌ Request method:', req.method);
-  
   res.status(500).json({
     success: false,
     message: 'Internal server error',
-    error: error.message, // Toujours afficher le message d'erreur pour debugging
-    stack: error.stack, // Temporairement afficher la stack trace pour debugging
-    request: {
-      url: req.url,
-      method: req.method,
-      path: req.path
-    },
-    environment: process.env.NODE_ENV
+    error: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
   });
 });
 
 // 404 handler
 app.use((req, res) => {
   console.log(`❌ 404 - Route not found: ${req.method} ${req.url}`);
-  console.log(`📍 Debug info - Path: ${req.path}, OriginalUrl: ${req.originalUrl}, BaseUrl: ${req.baseUrl}`);
   res.status(404).json({
     success: false,
     message: 'Route not found',
-    path: req.url,
-    debug: {
-      path: req.path,
-      originalUrl: req.originalUrl,
-      baseUrl: req.baseUrl
-    }
+    path: req.url
   });
 });
 
