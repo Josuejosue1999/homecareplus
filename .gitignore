@@ -52,6 +52,9 @@ app.*.map.json
 
 # API Keys and sensitive files
 config/
+# Allow dashboard config directories (now using environment variables)
+!admin-dashboard/config/
+!healthcenter-dashboard/config/
 *.key
 *.pem
 *.p12
