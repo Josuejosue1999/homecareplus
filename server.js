@@ -240,9 +240,9 @@ app.get("/register", redirectIfAuthenticated, (req, res) => {
 // Routes d"authentification API
 app.use("/api/auth", authRoutes);
 
-// Route protégée du dashboard - Utiliser le vrai dashboard healthcare
+// Route protégée du dashboard - Utiliser le vrai dashboard healthcare complet
 app.get("/dashboard", requireAuth, (req, res) => {
-    res.render("dashboard", { user: req.user });  // Utilise healthcenter-dashboard/views/dashboard.ejs
+    res.render("dashboard-new", { user: req.user });  // Utilise le dashboard complet avec toutes les fonctionnalités
 });
 
 // Route protégée des paramètres
