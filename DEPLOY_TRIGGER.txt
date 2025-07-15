@@ -1,5 +1,0 @@
-FORCE RENDER REDEPLOY - AUTH ROUTES FIXED
-Timestamp: 2025-01-15 21:15:00
-Version: 1.0.2
-Auth routes: /api/auth/login, /api/auth/register, /api/auth/logout
-Firebase config: Updated with correct environment variables 
