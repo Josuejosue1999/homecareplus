@@ -36,9 +36,16 @@ const sessionConfig = {
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
+  console.log('🔍 RequireAuth middleware called');
+  console.log('📋 Session exists:', !!req.session);
+  console.log('🔑 Session data:', req.session);
+  console.log('✅ Admin authenticated:', req.session && req.session.adminAuthenticated);
+  
   if (req.session && req.session.adminAuthenticated) {
+    console.log('✅ Authentication successful - proceeding to next middleware');
     next();
   } else {
+    console.log('❌ Authentication failed - redirecting to login');
     res.redirect('/login');
   }
 };
