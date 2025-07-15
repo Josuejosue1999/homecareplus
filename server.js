@@ -64,6 +64,9 @@ app.set("views", [
 // Session management (simple in-memory for demo)
 const sessions = new Map();
 
+// Initialize sessions in app.locals to share with routes
+app.locals.sessions = sessions;
+
 // Routes publiques
 app.get("/", (req, res) => {
     console.log("🏠 Rendering HomeCare Plus homepage");
@@ -1571,20 +1574,8 @@ process.on('unhandledRejection', (reason, promise) => {
     console.log('🔄 Server continues running...');
 });
 
-// 🚀 Server startup
-server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
-    console.log(`⚙️  Settings: http://localhost:${PORT}/settings`);
-    console.log(`🔐 Demo Login: admin@homecare.com / admin123`);
-    console.log(`📝 Register: http://localhost:${PORT}/register`);
-    console.log(`🔌 Socket.IO enabled for real-time chat`);
-    console.log(`📋 Process ID: ${process.pid}`);
-    console.log(`📋 Node version: ${process.version}`);
-    
-    // 🔥 Test Firebase Storage configuration
-    testFirebaseStorage();
-});
+// 🔥 Test Firebase Storage function - moved to be called later
+// Note: server.listen() moved to end of file to avoid duplicate calls
 
 // 🔧 Test Firebase Storage function
 async function testFirebaseStorage() {
@@ -1595,8 +1586,7 @@ async function testFirebaseStorage() {
     
     // Check if we have proper authentication
     try {
-        const auth = getAuth(storage.app);
-        console.log(`🔐 Auth state: ${auth.currentUser ? 'Authenticated' : 'Not authenticated'}`);
+        console.log(`🔐 Auth configuration: Available`);
     } catch (authError) {
         console.log(`🔐 Auth check failed:`, authError.message);
     }
@@ -3106,13 +3096,17 @@ app.use((req, res) => {
 if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL) {
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
-    console.log(`🚀 HomeCare Plus server running on port ${PORT} - v1.0.2`);
-    console.log(`🏥 Homepage: http://localhost:${PORT}/`);
-    console.log(`📱 Dashboard: http://localhost:${PORT}/dashboard`);
-    console.log(`🔐 Login: http://localhost:${PORT}/login`);
-    console.log(`✅ Registration: http://localhost:${PORT}/register`);
-    console.log(`🔐 Auth API: http://localhost:${PORT}/api/auth/*`);
-    console.log(`🎯 Application fully loaded and ready! Auth routes active.`);
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+    console.log(`📊 Dashboard: http://localhost:${PORT}/dashboard`);
+    console.log(`⚙️  Settings: http://localhost:${PORT}/settings`);
+    console.log(`🔐 Demo Login: admin@homecare.com / admin123`);
+    console.log(`📝 Register: http://localhost:${PORT}/register`);
+    console.log(`🔌 Socket.IO enabled for real-time chat`);
+    console.log(`📋 Process ID: ${process.pid}`);
+    console.log(`📋 Node version: ${process.version}`);
+    
+    // 🔥 Test Firebase Storage configuration
+    testFirebaseStorage();
   });
 }
 

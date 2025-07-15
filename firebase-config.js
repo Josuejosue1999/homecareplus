@@ -35,6 +35,7 @@ module.exports = {
   db,
   storage,
   // Réexporter les fonctions Firebase nécessaires
+  getAuth,
   signInWithEmailAndPassword: require('firebase/auth').signInWithEmailAndPassword,
   createUserWithEmailAndPassword: require('firebase/auth').createUserWithEmailAndPassword,
   signOut: require('firebase/auth').signOut,
