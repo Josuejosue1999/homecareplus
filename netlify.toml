@@ -8,6 +8,11 @@
   NODE_VERSION = "18"
 
 [[redirects]]
+  from = "/test-config"
+  to = "/.netlify/functions/test-config"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/api/:splat"
   status = 200
