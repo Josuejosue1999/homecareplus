@@ -1,0 +1,4 @@
+# Render deployment - force cache clear
+*.log
+.tmp
+.cache 

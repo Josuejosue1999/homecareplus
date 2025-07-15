@@ -1,7 +1,7 @@
 {
   "name": "homecare-healthcenter-dashboard",
-  "version": "1.0.0",
-  "description": "Healthcare center dashboard for HomeCare Plus",
+  "version": "1.0.1",
+  "description": "HomeCare Plus - Professional Medical Management Platform",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
