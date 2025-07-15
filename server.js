@@ -61,6 +61,7 @@ const sessions = new Map();
 
 // Routes publiques
 app.get("/", (req, res) => {
+    console.log("🏠 Rendering HomeCare Plus homepage");
     res.render("index");
 });
 
