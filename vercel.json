@@ -9,11 +9,15 @@
     "FIREBASE_APP_ID": "1:54787084616:web:2fe62181a935fefc08a37d"
   },
   "functions": {
-    "api/index.js": {
+    "api/*.js": {
       "maxDuration": 30
     }
   },
   "routes": [
+    {
+      "src": "/test",
+      "dest": "/api/test"
+    },
     {
       "src": "/css/(.*)",
       "dest": "/public/css/$1"
@@ -36,7 +40,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "/api/index.js"
+      "dest": "/api/index"
     }
   ]
 } 
