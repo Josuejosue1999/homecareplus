@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
+    "build": "npm install && echo 'Build completed'",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -29,7 +30,8 @@
     "firebase": "^11.9.1",
     "firebase-admin": "^13.4.0",
     "multer": "^2.0.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "serverless-http": "^3.2.0"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -6,6 +6,12 @@ const dotenv = require("dotenv");
 const multer = require("multer");
 dotenv.config();
 
+console.log("🚀 Health Center Dashboard - Starting server...");
+console.log("📋 Environment:", {
+  NODE_ENV: process.env.NODE_ENV || 'development',
+  PORT: process.env.PORT || 3001
+});
+
 // Import Firebase configuration
 const { db, doc, getDoc, collection, query, where, orderBy, getDocs, updateDoc, addDoc, serverTimestamp, writeBatch, increment } = require("./config/firebase");
 
@@ -41,7 +47,16 @@ const authRoutes = require("./routes/auth");
 const { requireAuth, redirectIfAuthenticated } = require("./middleware/auth");
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
+
+// Middleware de logging pour toutes les requêtes
+app.use((req, res, next) => {
+  console.log(`📝 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log("📋 Request body keys:", Object.keys(req.body));
+  }
+  next();
+});
 
 // Middleware
 app.use(cors());
@@ -59,23 +74,28 @@ const sessions = new Map();
 
 // Routes publiques
 app.get("/", (req, res) => {
+    console.log("🏠 Home route accessed");
     res.render("index");
 });
 
 app.get("/login", redirectIfAuthenticated, (req, res) => {
+    console.log("🚪 Login page accessed");
     res.render("login");
 });
 
 app.get("/register", redirectIfAuthenticated, (req, res) => {
+    console.log("📝 Register page accessed");
     res.render("register");
 });
 
-// Routes d"authentification API
+// Routes d'authentification API
+console.log("🔗 Setting up auth routes...");
 app.use("/api/auth", authRoutes);
 
 // Route protégée du dashboard
 app.get("/dashboard", requireAuth, async (req, res) => {
     try {
+        console.log("📊 Dashboard accessed by user:", req.user.uid);
         const user = req.user;
         
         // Get comprehensive clinic data from Firestore
@@ -126,103 +146,73 @@ app.get("/dashboard", requireAuth, async (req, res) => {
                 return formatted;
             };
             
-            // Format services for display
-            const formatServices = (facilities) => {
-                if (Array.isArray(facilities)) {
-                    return facilities.filter(service => service && service.trim().length > 0);
-                }
-                return [];
-            };
-            
-            // Prepare comprehensive clinic data
             clinicData = {
-                // Basic Information
-                name: data.name || data.clinicName || user.clinicName || 'Clinic Name Not Set',
-                clinicName: data.clinicName || data.name || user.clinicName || 'Clinic Name Not Set',
-                email: data.email || user.email || 'Email not set',
+                clinicName: data.name || data.clinicName || user.clinicName || 'Health Center',
+                name: data.name || data.clinicName || user.clinicName || 'Health Center',
+                about: data.about || 'Professional healthcare services',
                 phone: data.phone || 'Phone not set',
-                
-                // Location Information
                 address: data.address || 'Address not set',
-                city: data.city || 'City not set',
-                country: data.country || 'Country not set',
-                location: data.location || 'Location not set',
-                
-                // Profile Information
-                about: data.about || 'About information not available',
-                description: data.description || data.about || 'Description not available',
-                website: data.website || null,
-                
-                // Services and Schedule
-                services: formatServices(data.facilities || data.services),
-                facilities: formatServices(data.facilities || data.services),
-                schedule: formatSchedule(data.availableSchedule),
-                workingHours: formatSchedule(data.availableSchedule),
-                
-                // Status and Verification
-                status: data.status || 'active',
+                sector: data.sector || 'Healthcare',
+                profileImageUrl: profileImage,
                 isVerified: data.isVerified || false,
-                
-                // Images and Media
-                profileImage: profileImage || '/assets/hospital.PNG',
-                profileImageUrl: profileImage || '/assets/hospital.PNG',
-                
-                // Timestamps
-                createdAt: data.createdAt || null,
-                updatedAt: data.updatedAt || null,
-                
-                // Additional Information
-                meetingDuration: data.meetingDuration || 30,
-                specialties: data.specialties || [],
-                sector: data.sector || 'Healthcare'
+                facilities: data.facilities || [],
+                availableSchedule: formatSchedule(data.availableSchedule || {}),
+                createdAt: data.createdAt || new Date(),
+                updatedAt: data.updatedAt || new Date()
             };
         } else {
-            // Default data structure if no clinic document exists
+            console.log("⚠️ No clinic data found for user:", user.uid);
             clinicData = {
-                name: user.clinicName || 'Clinic Name Not Set',
-                clinicName: user.clinicName || 'Clinic Name Not Set',
-                email: user.email || 'Email not set',
+                clinicName: user.clinicName || 'Health Center',
+                name: user.clinicName || 'Health Center',
+                about: 'Professional healthcare services',
                 phone: 'Phone not set',
                 address: 'Address not set',
-                city: 'City not set',
-                country: 'Country not set',
-                location: 'Location not set',
-                about: 'About information not available',
-                description: 'Description not available',
-                services: [],
-                facilities: [],
-                schedule: {},
-                workingHours: {},
-                status: 'active',
+                sector: 'Healthcare',
+                profileImageUrl: null,
                 isVerified: false,
-                profileImage: '/assets/hospital.PNG',
-                profileImageUrl: '/assets/hospital.PNG',
-                website: null,
-                createdAt: null,
-                updatedAt: null,
-                meetingDuration: 30,
-                specialties: [],
-                sector: 'Healthcare'
+                facilities: [],
+                availableSchedule: {},
+                createdAt: new Date(),
+                updatedAt: new Date()
             };
         }
+
+        // Get appointments for the clinic
+        const appointmentsQuery = query(
+            collection(db, 'appointments'), 
+            where('hospitalId', '==', user.uid),
+            orderBy('createdAt', 'desc')
+        );
+        const appointmentsSnapshot = await getDocs(appointmentsQuery);
+        const appointments = [];
         
-        // Merge user data with clinic data for comprehensive profile
-        const completeUserData = {
-            ...user,
-            ...clinicData,
-            // Ensure user fields take precedence for auth-related data
-            uid: user.uid,
-            email: user.email || clinicData.email
-        };
-        
-        res.render("dashboard-new", { 
-            user: completeUserData,
-            clinic: clinicData 
+        appointmentsSnapshot.forEach((doc) => {
+            const appointment = { id: doc.id, ...doc.data() };
+            // Convert Firestore timestamp to Date if needed
+            if (appointment.appointmentDate && appointment.appointmentDate.toDate) {
+                appointment.appointmentDate = appointment.appointmentDate.toDate();
+            }
+            if (appointment.createdAt && appointment.createdAt.toDate) {
+                appointment.createdAt = appointment.createdAt.toDate();
+            }
+            appointments.push(appointment);
         });
+
+        console.log(`📋 Found ${appointments.length} appointments for clinic`);
+
+        res.render("dashboard-new", { 
+            user: {
+                ...user,
+                ...clinicData
+            },
+            clinic: clinicData,
+            appointments: appointments
+        });
+        
     } catch (error) {
-        console.error('Error loading dashboard with clinic data:', error);
-        // Fallback to basic user data if there's an error
-        res.render("dashboard-new", { user: req.user, clinic: null });
+        console.error("❌ Dashboard error:", error);
+        res.status(500).render("500", { error: error.message });
     }
 });
 
@@ -1204,20 +1194,57 @@ app.get("/api/settings/hospital-image", requireAuth, async (req, res) => {
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log("Server running on http://localhost:" + PORT);
-    console.log("Dashboard: http://localhost:" + PORT + "/dashboard");
-    console.log("Settings: http://localhost:" + PORT + "/settings");
-    console.log("Demo Login: admin@homecare.com / admin123");
-    console.log("Register: http://localhost:" + PORT + "/register");
-});// Graceful shutdown
-process.on("SIGINT", () => {
-    console.log("Shutting down server gracefully...");
-    process.exit(0);
-});process.on("SIGTERM", () => {
-    console.log("Shutting down server gracefully...");
-    process.exit(0);
+// Export app for Netlify Functions or start server for local development
+if (process.env.NODE_ENV === 'production' && process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    // Export app for Netlify Functions (Netlify uses AWS Lambda under the hood)
+    module.exports = app;
+} else {
+    // Start server for local development or other environments
+    app.listen(PORT, () => {
+        console.log("✅ Server running on http://localhost:" + PORT);
+        console.log("📊 Dashboard: http://localhost:" + PORT + "/dashboard");
+        console.log("⚙️ Settings: http://localhost:" + PORT + "/settings");
+        console.log("🔐 Demo Login: admin@homecare.com / admin123");
+        console.log("📝 Register: http://localhost:" + PORT + "/register");
+        console.log("🎉 Health Center Dashboard ready!");
+    });
+}
+
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('❌ UNCAUGHT EXCEPTION:', {
+    message: error.message,
+    stack: error.stack,
+    name: error.name
+  });
+  console.log('🔄 Server continues running...');
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ UNHANDLED REJECTION at:', promise);
+  console.error('❌ Reason:', reason);
+  console.log('🔄 Server continues running...');
+});
+
+// Global Express error handler
+app.use((err, req, res, next) => {
+  console.error('❌ EXPRESS ERROR:', {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    body: req.body,
+    params: req.params,
+    query: req.query
+  });
+  
+  if (!res.headersSent) {
+    res.status(err.status || 500).json({
+      success: false,
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+    });
+  }
 });
 
 // API pour envoyer un message de confirmation de rendez-vous via le chat
