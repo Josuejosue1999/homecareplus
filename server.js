@@ -70,6 +70,153 @@ app.get("/selection", (req, res) => {
     res.render("selection");
 });
 
+// ===== ROUTES D'AUTHENTIFICATION =====
+
+// Route de connexion API
+app.post("/api/auth/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: "Email et mot de passe requis"
+            });
+        }
+
+        // Utiliser Firebase Auth côté serveur
+        const { signInWithEmailAndPassword } = require('./firebase-config');
+        const { auth } = require('./firebase-config');
+        
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Créer une session simple (vous pourriez utiliser des JWT tokens)
+        const sessionId = Math.random().toString(36).substr(2, 9);
+        sessions.set(sessionId, {
+            uid: user.uid,
+            email: user.email,
+            createdAt: new Date()
+        });
+        
+        res.cookie('sessionId', sessionId, { 
+            httpOnly: true, 
+            maxAge: 24 * 60 * 60 * 1000 // 24h
+        });
+        
+        res.json({
+            success: true,
+            message: "Connexion réussie",
+            user: {
+                uid: user.uid,
+                email: user.email
+            }
+        });
+        
+    } catch (error) {
+        console.error('Erreur de connexion:', error);
+        res.status(401).json({
+            success: false,
+            message: "Email ou mot de passe incorrect"
+        });
+    }
+});
+
+// Route d'inscription API
+app.post("/api/auth/register", async (req, res) => {
+    try {
+        const { email, password, confirmPassword } = req.body;
+        
+        if (!email || !password || !confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Tous les champs sont requis"
+            });
+        }
+        
+        if (password !== confirmPassword) {
+            return res.status(400).json({
+                success: false,
+                message: "Les mots de passe ne correspondent pas"
+            });
+        }
+        
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: "Le mot de passe doit contenir au moins 6 caractères"
+            });
+        }
+
+        // Utiliser Firebase Auth côté serveur
+        const { createUserWithEmailAndPassword } = require('./firebase-config');
+        const { auth, db, doc, setDoc } = require('./firebase-config');
+        
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Créer le profil utilisateur dans Firestore
+        await setDoc(doc(db, 'users', user.uid), {
+            email: user.email,
+            createdAt: new Date(),
+            type: 'clinic', // Par défaut
+            profileComplete: false
+        });
+        
+        // Créer une session
+        const sessionId = Math.random().toString(36).substr(2, 9);
+        sessions.set(sessionId, {
+            uid: user.uid,
+            email: user.email,
+            createdAt: new Date()
+        });
+        
+        res.cookie('sessionId', sessionId, { 
+            httpOnly: true, 
+            maxAge: 24 * 60 * 60 * 1000 // 24h
+        });
+        
+        res.json({
+            success: true,
+            message: "Compte créé avec succès",
+            user: {
+                uid: user.uid,
+                email: user.email
+            }
+        });
+        
+    } catch (error) {
+        console.error('Erreur d\'inscription:', error);
+        let message = "Erreur lors de la création du compte";
+        
+        if (error.code === 'auth/email-already-in-use') {
+            message = "Cette adresse email est déjà utilisée";
+        } else if (error.code === 'auth/weak-password') {
+            message = "Le mot de passe est trop faible";
+        } else if (error.code === 'auth/invalid-email') {
+            message = "Adresse email invalide";
+        }
+        
+        res.status(400).json({
+            success: false,
+            message: message
+        });
+    }
+});
+
+// Route de déconnexion API
+app.post("/api/auth/logout", (req, res) => {
+    const sessionId = req.cookies.sessionId;
+    if (sessionId) {
+        sessions.delete(sessionId);
+    }
+    res.clearCookie('sessionId');
+    res.json({
+        success: true,
+        message: "Déconnexion réussie"
+    });
+});
+
 // Debug route removed - no longer needed
 
 // New app features page route

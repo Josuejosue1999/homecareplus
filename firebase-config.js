@@ -4,14 +4,14 @@ const { getAuth } = require('firebase/auth');
 const { getFirestore } = require('firebase/firestore');
 const { getStorage } = require('firebase/storage');
 
-// Configuration Firebase
+// Configuration Firebase utilisant les variables d'environnement
 const firebaseConfig = {
-  apiKey: "AIzaSyA1g-UDJcfQS_33U3Sysxe9g4zlAOnpS3g",
-  authDomain: "homecare-9f4d0.firebaseapp.com",
-  projectId: "homecare-9f4d0",
-  storageBucket: "homecare-9f4d0.appspot.com",
-  messagingSenderId: "1092550453140",
-  appId: "1:1092550453140:web:12345abcdef67890"
+  apiKey: process.env.FIREBASE_API_KEY || "AIzaSyBWnaj_7qrK9pSBSI2sKSnFVLkyskhcZog",
+  authDomain: process.env.FIREBASE_AUTH_DOMAIN || "homecare-9f4d0.firebaseapp.com",
+  projectId: process.env.FIREBASE_PROJECT_ID || "homecare-9f4d0",
+  storageBucket: process.env.FIREBASE_STORAGE_BUCKET || "homecare-9f4d0.firebasestorage.app",
+  messagingSenderId: process.env.FIREBASE_MESSAGING_SENDER_ID || "54787084616",
+  appId: process.env.FIREBASE_APP_ID || "1:54787084616:web:2fe62181a935fefc08a37d"
 };
 
 // Initialiser Firebase seulement si pas déjà initialisé
