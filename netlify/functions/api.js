@@ -15,8 +15,10 @@ try {
   throw error;
 }
 
-// Create the handler for the main hospital dashboard
-const handler = serverless(app);
+// Create the handler for the main hospital dashboard with correct path mapping
+const handler = serverless(app, {
+  basePath: '/.netlify/functions/api'
+});
 
 // Export the handler
 module.exports.handler = async (event, context) => {
