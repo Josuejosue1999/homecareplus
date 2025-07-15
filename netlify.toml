@@ -26,11 +26,10 @@
   to = "/.netlify/functions/api/:splat"
   status = 200
 
-# Temporarily comment out main route redirect to test static site
-# [[redirects]]
-#   from = "/"
-#   to = "/.netlify/functions/api/"
-#   status = 200
+[[redirects]]
+  from = "/"
+  to = "/.netlify/functions/api/"
+  status = 200
 
 [[redirects]]
   from = "/register"

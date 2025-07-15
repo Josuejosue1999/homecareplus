@@ -63,6 +63,7 @@ const sessions = new Map();
 
 // Routes publiques
 app.get("/", (req, res) => {
+    console.log(`🏠 Home route called - URL: ${req.url}, Path: ${req.path}, OriginalUrl: ${req.originalUrl}`);
     res.render("index");
 });
 
@@ -2942,10 +2943,16 @@ app.use((error, req, res, next) => {
 // 404 handler
 app.use((req, res) => {
   console.log(`❌ 404 - Route not found: ${req.method} ${req.url}`);
+  console.log(`📍 Debug info - Path: ${req.path}, OriginalUrl: ${req.originalUrl}, BaseUrl: ${req.baseUrl}`);
   res.status(404).json({
     success: false,
     message: 'Route not found',
-    path: req.url
+    path: req.url,
+    debug: {
+      path: req.path,
+      originalUrl: req.originalUrl,
+      baseUrl: req.baseUrl
+    }
   });
 });
 
