@@ -244,7 +244,9 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // Enhanced login function with retry mechanism
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const email = document.getElementById('email').value;
@@ -260,43 +262,102 @@
             submitBtn.disabled = true;
             errorDiv.innerHTML = '';
             
-            try {
-                const response = await fetch('/api/admin/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    credentials: 'include', // Important: Include cookies in the request
-                    body: JSON.stringify({ email, password, remember: document.getElementById('remember').checked })
-                });
+            // Enhanced retry mechanism
+            let attempts = 0;
+            const maxAttempts = 3;
+            const retryDelay = 1000; // 1 second
+            
+            const tryLogin = async () => {
+                attempts++;
+                console.log(`🔄 Login attempt ${attempts}/${maxAttempts}`);
                 
-                const data = await response.json();
-                
-                if (response.ok) {
-                    console.log('✅ Login successful, session ID:', data.sessionId);
+                try {
+                    // Add timeout to the fetch request
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
                     
-                    // Small delay to ensure session is properly saved
-                    setTimeout(() => {
-                        // Force a full page reload to ensure session is read correctly
-                        window.location.replace('/');
-                    }, 100);
-                } else {
-                    // Show error
-                    errorDiv.innerHTML = `
-                        <div class="alert alert-danger">
-                            <i class="fas fa-exclamation-circle"></i>
-                            ${data.message || 'Login failed. Please try again.'}
-                        </div>
-                    `;
+                    const response = await fetch('/api/admin/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'include', // Important: Include cookies in the request
+                        signal: controller.signal,
+                        body: JSON.stringify({ email, password, remember: document.getElementById('remember').checked })
+                    });
+                    
+                    clearTimeout(timeoutId);
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        console.log('✅ Login successful, session ID:', data.sessionId);
+                        
+                        // Small delay to ensure session is properly saved
+                        setTimeout(() => {
+                            // Force a full page reload to ensure session is read correctly
+                            window.location.replace('/');
+                        }, 100);
+                        return;
+                    } else {
+                        // Show error
+                        errorDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i>
+                                ${data.message || 'Login failed. Please try again.'}
+                            </div>
+                        `;
+                        return;
+                    }
+                } catch (error) {
+                    console.error(`❌ Login attempt ${attempts} failed:`, error);
+                    
+                    if (error.name === 'AbortError') {
+                        errorDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-clock"></i>
+                                Request timeout. Please check your internet connection.
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    if (attempts < maxAttempts) {
+                        errorDiv.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                Connection failed. Retrying... (${attempts}/${maxAttempts})
+                            </div>
+                        `;
+                        
+                        // Wait and retry
+                        await new Promise(resolve => setTimeout(resolve, retryDelay));
+                        return tryLogin();
+                    } else {
+                        // All attempts failed
+                        let errorMessage = 'Connection error. Please try again.';
+                        
+                        if (error.message.includes('Failed to fetch')) {
+                            errorMessage = 'Network error. Please check your internet connection or try refreshing the page.';
+                        } else if (error.message.includes('NetworkError')) {
+                            errorMessage = 'Network error. Please check if you have an active internet connection.';
+                        } else if (error.message.includes('CORS')) {
+                            errorMessage = 'Security error. Please clear your browser cache and try again.';
+                        }
+                        
+                        errorDiv.innerHTML = `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-circle"></i>
+                                ${errorMessage}
+                                <br><small>Try clearing your browser cache or using incognito mode.</small>
+                            </div>
+                        `;
+                    }
                 }
-            } catch (error) {
-                console.error('Login error:', error);
-                errorDiv.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-circle"></i>
-                        Connection error. Please try again.
-                    </div>
-                `;
+            };
+            
+            try {
+                await tryLogin();
             } finally {
                 // Reset loading state
                 loginText.style.display = 'inline';
