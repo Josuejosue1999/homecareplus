@@ -2956,8 +2956,8 @@ app.use((req, res) => {
   });
 });
 
-// Start server only if not in AWS Lambda environment (Netlify Functions)
-if (!process.env.AWS_LAMBDA_FUNCTION_NAME) {
+// Start server only if not in serverless environment (Netlify Functions, Vercel, etc.)
+if (!process.env.AWS_LAMBDA_FUNCTION_NAME && !process.env.VERCEL) {
   const PORT = process.env.PORT || 3000;
   server.listen(PORT, () => {
     console.log(`🚀 Hospital Dashboard server running on port ${PORT}`);
