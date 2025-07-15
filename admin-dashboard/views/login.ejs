@@ -283,96 +283,125 @@
                         },
                         credentials: 'include', // Important: Include cookies in the request
                         signal: controller.signal,
-                        body: JSON.stringify({ email, password, remember: document.getElementById('remember')?.checked || false })
+                        body: JSON.stringify({ 
+                            email: email, 
+                            password: password, 
+                            remember: false // Default value, no need to access DOM element
+                        })
                     });
                     
                     clearTimeout(timeoutId);
                     
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
                     const data = await response.json();
                     
-                    if (response.ok) {
-                        console.log('✅ Login successful, session ID:', data.sessionId);
+                    if (data.success) {
+                        console.log('✅ Login successful');
                         
-                        // Small delay to ensure session is properly saved
+                        // Hide loading state
+                        loadingDiv.classList.remove('active');
+                        loginText.style.display = 'block';
+                        
+                        // Success message
+                        errorDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> 
+                                Login successful! Redirecting...
+                            </div>
+                        `;
+                        
+                        // Delay before redirect to ensure session is saved
                         setTimeout(() => {
-                            // Force a full page reload to ensure session is read correctly
-                            window.location.replace('/');
-                        }, 100);
-                        return;
+                            window.location.replace('/dashboard');
+                        }, 1000);
+                        
                     } else {
-                        // Show error
-                        errorDiv.innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle"></i>
-                                ${data.message || 'Login failed. Please try again.'}
-                            </div>
-                        `;
-                        return;
+                        throw new Error(data.message || 'Login failed');
                     }
+                    
                 } catch (error) {
-                    console.error(`❌ Login attempt ${attempts} failed:`, error);
+                    console.error('Login error:', error);
                     
+                    // Check if this is a timeout error
                     if (error.name === 'AbortError') {
-                        errorDiv.innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-clock"></i>
-                                Request timeout. Please check your internet connection.
-                            </div>
-                        `;
-                        return;
+                        throw new Error('Request timeout - please check your internet connection');
                     }
                     
-                    if (attempts < maxAttempts) {
-                        errorDiv.innerHTML = `
-                            <div class="alert alert-warning">
-                                <i class="fas fa-exclamation-triangle"></i>
-                                Connection failed. Retrying... (${attempts}/${maxAttempts})
-                            </div>
-                        `;
-                        
-                        // Wait and retry
-                        await new Promise(resolve => setTimeout(resolve, retryDelay));
-                        return tryLogin();
-                    } else {
-                        // All attempts failed
-                        let errorMessage = 'Connection error. Please try again.';
-                        
-                        if (error.message.includes('Failed to fetch')) {
-                            errorMessage = 'Network error. Please check your internet connection or try refreshing the page.';
-                        } else if (error.message.includes('NetworkError')) {
-                            errorMessage = 'Network error. Please check if you have an active internet connection.';
-                        } else if (error.message.includes('CORS')) {
-                            errorMessage = 'Security error. Please clear your browser cache and try again.';
-                        }
-                        
-                        errorDiv.innerHTML = `
-                            <div class="alert alert-danger">
-                                <i class="fas fa-exclamation-circle"></i>
-                                ${errorMessage}
-                                <br><small>Try clearing your browser cache or using incognito mode.</small>
-                            </div>
-                        `;
+                    // Check if this is a network error
+                    if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+                        throw new Error('Network error - please check your internet connection');
                     }
+                    
+                    throw error;
                 }
             };
             
+            // Try login with retry mechanism
             try {
                 await tryLogin();
-            } finally {
-                // Reset loading state
-                loginText.style.display = 'inline';
-                loadingDiv.classList.remove('active');
-                submitBtn.disabled = false;
+            } catch (error) {
+                if (attempts < maxAttempts) {
+                    console.log(`⏳ Retrying in ${retryDelay}ms... (${attempts}/${maxAttempts})`);
+                    
+                    errorDiv.innerHTML = `
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Attempt ${attempts} failed. Retrying... (${attempts}/${maxAttempts})
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        tryLogin().catch(retryError => {
+                            if (attempts >= maxAttempts) {
+                                // Final failure
+                                loadingDiv.classList.remove('active');
+                                loginText.style.display = 'block';
+                                submitBtn.disabled = false;
+                                
+                                const errorMessage = retryError.message || 'Connection failed after multiple attempts';
+                                errorDiv.innerHTML = `
+                                    <div class="alert alert-danger">
+                                        <i class="fas fa-exclamation-circle"></i> 
+                                        ${errorMessage}
+                                        <br><small>Please try again or contact support if the problem persists.</small>
+                                    </div>
+                                `;
+                            }
+                        });
+                    }, retryDelay);
+                } else {
+                    // Final failure
+                    loadingDiv.classList.remove('active');
+                    loginText.style.display = 'block';
+                    submitBtn.disabled = false;
+                    
+                    const errorMessage = error.message || 'Login failed after multiple attempts';
+                    errorDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i> 
+                            ${errorMessage}
+                            <br><small>Please try again or contact support if the problem persists.</small>
+                        </div>
+                    `;
+                }
             }
         });
-
-        // Auto-focus on email field
-        document.getElementById('email').focus();
         
-        // Handle Enter key
-        document.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+        // Optional: Add form validation
+        document.getElementById('email').addEventListener('input', function() {
+            const errorDiv = document.getElementById('errorMessage');
+            if (errorDiv.innerHTML !== '') {
+                errorDiv.innerHTML = '';
+            }
+        });
+        
+        document.getElementById('password').addEventListener('input', function() {
+            const errorDiv = document.getElementById('errorMessage');
+            if (errorDiv.innerHTML !== '') {
+                errorDiv.innerHTML = '';
             }
         });
     </script>
