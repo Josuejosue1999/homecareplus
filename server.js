@@ -51,10 +51,15 @@ app.use(express.json({ limit: '50mb' })); // Increase limit to 50MB for document
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); // Increase limit to 50MB for form data
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+// Ajouter les fichiers statiques du healthcenter-dashboard  
+app.use('/healthcenter', express.static(path.join(__dirname, "healthcenter-dashboard/public")));
 
 // Set view engine
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
+app.set("views", [
+    path.join(__dirname, "views"),
+    path.join(__dirname, "healthcenter-dashboard/views")  // Ajouter le vrai dashboard healthcare
+]);
 
 // Session management (simple in-memory for demo)
 const sessions = new Map();
@@ -235,9 +240,9 @@ app.get("/register", redirectIfAuthenticated, (req, res) => {
 // Routes d"authentification API
 app.use("/api/auth", authRoutes);
 
-// Route protégée du dashboard
+// Route protégée du dashboard - Utiliser le vrai dashboard healthcare
 app.get("/dashboard", requireAuth, (req, res) => {
-    res.render("dashboard-new", { user: req.user });
+    res.render("dashboard", { user: req.user });  // Utilise healthcenter-dashboard/views/dashboard.ejs
 });
 
 // Route protégée des paramètres
