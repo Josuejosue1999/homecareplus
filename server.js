@@ -54,7 +54,9 @@ app.use(express.static(path.join(__dirname, "public")));
 
 // Set view engine
 app.set("view engine", "ejs");
-app.set("views", path.join(__dirname, "views"));
+const viewsPath = path.join(__dirname, "views");
+console.log('Setting views path to:', viewsPath);
+app.set("views", viewsPath);
 
 // Session management (simple in-memory for demo)
 const sessions = new Map();
