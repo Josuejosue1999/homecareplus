@@ -7,7 +7,7 @@ service cloud.firestore {
       // Admin peut tout voir et modifier (AUTHENTIFIÉ)
       allow read, write: if request.auth != null && 
         (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
-         request.auth.token.email == 'admin@healthcare.com');
+         request.auth.token.email == 'admin@homecare.com');
       
       // 🚨 ACCÈS TEMPORAIRE POUR ADMIN DASHBOARD (À RETIRER EN PRODUCTION)
       allow read, write: if true;
@@ -24,7 +24,7 @@ service cloud.firestore {
       // Admin peut tout voir et modifier
       allow read, write: if request.auth != null && 
         (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
-         request.auth.token.email == 'admin@healthcare.com');
+         request.auth.token.email == 'admin@homecare.com');
       
       // 🚨 ACCÈS TEMPORAIRE POUR RÉSOUDRE LES PROBLÈMES DE LOGIN
       allow read, write: if true;
@@ -41,7 +41,7 @@ service cloud.firestore {
       // Admin peut tout voir et modifier
       allow read, write: if request.auth != null && 
         (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
-         request.auth.token.email == 'admin@healthcare.com');
+         request.auth.token.email == 'admin@homecare.com');
       
       // 🚨 ACCÈS TEMPORAIRE POUR RÉSOUDRE LES PROBLÈMES DE LOGIN
       allow read, write: if true;
@@ -61,7 +61,7 @@ service cloud.firestore {
       // Admin peut tout voir et modifier
       allow read, write: if request.auth != null && 
         (request.auth.uid == 'EjupRzLvztdxrnox2xWLXAe5Oct1' ||
-         request.auth.token.email == 'admin@healthcare.com');
+         request.auth.token.email == 'admin@homecare.com');
       
       // 🚨 ACCÈS TEMPORAIRE POUR ADMIN DASHBOARD
       allow read, write: if true;

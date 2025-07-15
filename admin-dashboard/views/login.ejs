@@ -283,7 +283,7 @@
                         },
                         credentials: 'include', // Important: Include cookies in the request
                         signal: controller.signal,
-                        body: JSON.stringify({ email, password, remember: document.getElementById('remember').checked })
+                        body: JSON.stringify({ email, password, remember: document.getElementById('remember')?.checked || false })
                     });
                     
                     clearTimeout(timeoutId);
