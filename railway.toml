@@ -1,0 +1,11 @@
+[build]
+builder = "NIXPACKS"
+
+[deploy]
+startCommand = "cd healthcenter-dashboard && node app.js"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+
+[environments.production.variables]
+NODE_ENV = "production"
+PORT = "3000" 

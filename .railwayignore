@@ -1,0 +1,81 @@
+# Railway ignore file
+# Focus deployment on healthcenter-dashboard only
+
+# Flutter specific
+lib/
+ios/
+android/
+macos/
+windows/
+linux/
+web/
+test/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.metadata
+pubspec.yaml
+pubspec.lock
+analysis_options.yaml
+
+# Development files
+*.md
+fix_compilation_errors.py
+test-*.js
+debug-*.js
+validate-*.js
+simulate-*.js
+setup-*.js
+quick-*.js
+create-*.js
+update-*.js
+start.sh
+quick-test.sh
+stop-servers.sh
+start-clean.sh
+
+# Admin dashboard (separate deployment)
+admin-dashboard/
+
+# Exclude everything except healthcenter-dashboard
+server.js
+routes/
+middleware/
+views/
+public/
+config/
+package.json
+package-lock.json
+
+# Git
+.git/
+
+# Environment
+.env
+env.example
+
+# Logs
+*.log
+
+# Assets (keep only essential ones)
+assets/
+
+# Documentation files
+API_CONFIG.md
+SERVER_MANAGEMENT.md
+DOCUMENT_*.md
+ADMIN_*.md
+BOOKING_*.md
+CAPSTONEBOY_*.md
+CHAT_*.md
+CLINIC_*.md
+COMPLETE_*.md
+CONTACT_*.md
+CUSTOM_*.md
+FIREBASE_*.md
+HOSPITAL_*.md
+PROFILE_*.md
+SETTINGS_*.md
+SIGNUP_*.md
+WATER_*.md 
