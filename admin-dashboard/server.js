@@ -25,28 +25,51 @@ const sessionConfig = {
   secret: process.env.SESSION_SECRET || crypto.randomBytes(64).toString('hex'),
   resave: false,
   saveUninitialized: false,
+  name: 'admin.session.id', // Custom session name
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
+    secure: false, // Set to false to test, will change to true for production HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax', // Important for cross-origin requests
-    domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost' // Let Railway handle domain automatically
-  }
+    sameSite: 'lax'
+  },
+  // Add rolling sessions
+  rolling: true
 };
 
 // Authentication middleware
 const requireAuth = (req, res, next) => {
-  console.log('🔍 RequireAuth middleware called');
+  console.log('🔍 RequireAuth middleware called for:', req.url);
   console.log('📋 Session exists:', !!req.session);
-  console.log('🔑 Session data:', req.session);
+  console.log('🔧 Session ID:', req.sessionID);
+  
+  if (req.session) {
+    console.log('📊 Session data:', {
+      adminAuthenticated: req.session.adminAuthenticated,
+      adminEmail: req.session.adminEmail,
+      loginTime: req.session.loginTime,
+      sessionID: req.sessionID
+    });
+  }
+  
   console.log('✅ Admin authenticated:', req.session && req.session.adminAuthenticated);
   
-  if (req.session && req.session.adminAuthenticated) {
+  if (req.session && req.session.adminAuthenticated === true) {
     console.log('✅ Authentication successful - proceeding to next middleware');
+    console.log('👤 Admin email:', req.session.adminEmail);
+    
+    // Refresh session on each request
+    req.session.touch();
+    
     next();
   } else {
     console.log('❌ Authentication failed - redirecting to login');
-    res.redirect('/login');
+    console.log('🔍 Session adminAuthenticated value:', req.session ? req.session.adminAuthenticated : 'No session');
+    
+    if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      res.status(401).json({ success: false, message: 'Authentication required' });
+    } else {
+      res.redirect('/login');
+    }
   }
 };
 
@@ -106,24 +129,44 @@ app.post('/api/admin/login', (req, res) => {
   const { email, password, remember } = req.body;
   
   console.log('🔑 Admin login attempt:', email);
+  console.log('🔧 Session ID before login:', req.sessionID);
   
   if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
     req.session.adminAuthenticated = true;
     req.session.adminEmail = email;
+    req.session.loginTime = new Date().toISOString();
     
     if (remember) {
       req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
     }
     
-    // Explicitly save the session
+    console.log('📋 Session data after login:', {
+      adminAuthenticated: req.session.adminAuthenticated,
+      adminEmail: req.session.adminEmail,
+      sessionID: req.sessionID
+    });
+    
+    // Explicitly save the session and wait for completion
     req.session.save((err) => {
       if (err) {
         console.error('❌ Error saving session:', err);
         return res.status(500).json({ success: false, message: 'Session save failed' });
       }
       
-      console.log('✅ Admin login successful - Session saved');
-      res.json({ success: true, message: 'Login successful' });
+      console.log('✅ Admin login successful - Session saved with ID:', req.sessionID);
+      
+      // Set cache control headers to prevent caching
+      res.set({
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
+      
+      res.json({ 
+        success: true, 
+        message: 'Login successful',
+        sessionId: req.sessionID // Include session ID for debugging
+      });
     });
   } else {
     console.log('❌ Admin login failed - Invalid credentials');

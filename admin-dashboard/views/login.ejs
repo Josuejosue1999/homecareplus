@@ -266,14 +266,20 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ email, password })
+                    credentials: 'include', // Important: Include cookies in the request
+                    body: JSON.stringify({ email, password, remember: document.getElementById('remember').checked })
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Success - redirect to dashboard
-                    window.location.href = '/';
+                    console.log('✅ Login successful, session ID:', data.sessionId);
+                    
+                    // Small delay to ensure session is properly saved
+                    setTimeout(() => {
+                        // Force a full page reload to ensure session is read correctly
+                        window.location.replace('/');
+                    }, 100);
                 } else {
                     // Show error
                     errorDiv.innerHTML = `
