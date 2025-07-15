@@ -26,9 +26,11 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === 'production', // true for HTTPS in production
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    sameSite: 'lax', // Important for cross-origin requests
+    domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost' // Let Railway handle domain automatically
   }
 };
 
@@ -106,8 +108,16 @@ app.post('/api/admin/login', (req, res) => {
       req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
     }
     
-    console.log('✅ Admin login successful');
-    res.json({ success: true, message: 'Login successful' });
+    // Explicitly save the session
+    req.session.save((err) => {
+      if (err) {
+        console.error('❌ Error saving session:', err);
+        return res.status(500).json({ success: false, message: 'Session save failed' });
+      }
+      
+      console.log('✅ Admin login successful - Session saved');
+      res.json({ success: true, message: 'Login successful' });
+    });
   } else {
     console.log('❌ Admin login failed - Invalid credentials');
     res.status(401).json({ success: false, message: 'Invalid credentials' });
