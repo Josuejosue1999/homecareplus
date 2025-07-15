@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:homecare_app/screens/main_dashboard.dart';
-import 'package:homecare_app/screens/profile_page.dart';
-import 'package:homecare_app/screens/chat_page.dart';
-import 'package:homecare_app/screens/appointments_page.dart';
-import 'package:homecare_app/screens/pro_hospitals_page.dart';
+import 'package:homecare_plus/screens/main_dashboard.dart';
+import 'package:homecare_plus/screens/profile_page.dart';
+import 'package:homecare_plus/screens/chat_page.dart';
+import 'package:homecare_plus/screens/appointments_page.dart';
+import 'package:homecare_plus/screens/pro_hospitals_page.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';

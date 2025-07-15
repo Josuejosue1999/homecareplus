@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'clinic_signup2.dart';
 import 'clinic_dashboard.dart';
 import 'choose.dart';
-import 'package:homecare_app/services/appointment_service.dart';
+import 'package:homecare_plus/services/appointment_service.dart';
 
 class Login2Page extends StatefulWidget {
   const Login2Page({Key? key}) : super(key: key);

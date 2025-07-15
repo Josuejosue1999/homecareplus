@@ -3,10 +3,10 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'dart:convert';
 import 'login.dart';
-import 'package:homecare_app/screens/profile_page.dart';
-import 'package:homecare_app/screens/chat_page.dart';
-import 'package:homecare_app/screens/appointments_page.dart';
-import 'package:homecare_app/services/appointment_service.dart';
+import 'package:homecare_plus/screens/profile_page.dart';
+import 'package:homecare_plus/screens/chat_page.dart';
+import 'package:homecare_plus/screens/appointments_page.dart';
+import 'package:homecare_plus/services/appointment_service.dart';
 
 class BookAppointmentPage extends StatefulWidget {
   final String hospitalName;

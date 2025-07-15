@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:homecare_app/main.dart';
-import 'package:homecare_app/screens/login.dart';
-import 'package:homecare_app/screens/patient_dashboard.dart';
+import 'package:homecare_plus/main.dart';
+import 'package:homecare_plus/screens/login.dart';
+import 'package:homecare_plus/screens/patient_dashboard.dart';
 import 'login2.dart';
 
 class ChoosePage extends StatelessWidget {

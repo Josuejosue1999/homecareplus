@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:homecare_app/screens/main_dashboard.dart';
-import 'package:homecare_app/screens/choose.dart';
-import 'package:homecare_app/screens/signup.dart';
-import 'package:homecare_app/screens/forgot_password_page.dart';
-import 'package:homecare_app/screens/patient_dashboard.dart';
-import 'package:homecare_app/services/appointment_service.dart';
+import 'package:homecare_plus/screens/main_dashboard.dart';
+import 'package:homecare_plus/screens/choose.dart';
+import 'package:homecare_plus/screens/signup.dart';
+import 'package:homecare_plus/screens/forgot_password_page.dart';
+import 'package:homecare_plus/screens/patient_dashboard.dart';
+import 'package:homecare_plus/services/appointment_service.dart';
 
 class LoginPage extends StatefulWidget {
   final String? selectedHospitalName;

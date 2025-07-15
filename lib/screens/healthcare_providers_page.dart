@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:homecare_app/services/enhanced_hospital_service.dart';
-import 'package:homecare_app/models/hospital.dart';
-import 'package:homecare_app/screens/hospital_details.dart';
-import 'package:homecare_app/screens/booking_hub_page.dart';
+import 'package:homecare_plus/services/enhanced_hospital_service.dart';
+import 'package:homecare_plus/models/hospital.dart';
+import 'package:homecare_plus/screens/hospital_details.dart';
+import 'package:homecare_plus/screens/booking_hub_page.dart';
 
 class HealthcareProvidersPage extends StatefulWidget {
   const HealthcareProvidersPage({Key? key}) : super(key: key);

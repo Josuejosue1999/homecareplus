@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:homecare_app/screens/choose.dart';
-import 'package:homecare_app/screens/login.dart';
-import 'package:homecare_app/screens/patient_dashboard.dart';
-import 'package:homecare_app/screens/help_support_page.dart';
-import 'package:homecare_app/screens/security_page.dart';
+import 'package:homecare_plus/screens/choose.dart';
+import 'package:homecare_plus/screens/login.dart';
+import 'package:homecare_plus/screens/patient_dashboard.dart';
+import 'package:homecare_plus/screens/help_support_page.dart';
+import 'package:homecare_plus/screens/security_page.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:homecare_app/screens/login.dart';
+import 'package:homecare_plus/screens/login.dart';
 
 class ForgotPasswordConfirmationPage extends StatefulWidget {
   final String email;
