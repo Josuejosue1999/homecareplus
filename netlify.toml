@@ -1,6 +1,5 @@
 [build]
-  base = "healthcenter-dashboard"
-  command = "npm install"
+  command = "npm install && npm install serverless-http"
   functions = "netlify/functions"
   publish = "public"
 
