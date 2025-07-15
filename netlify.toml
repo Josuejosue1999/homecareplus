@@ -1,5 +1,5 @@
 [build]
-  command = "npm install && npm install serverless-http"
+  command = "npm install && npm install express serverless-http"
   functions = "netlify/functions"
   publish = "public"
 
@@ -14,6 +14,11 @@
 [[redirects]]
   from = "/test-simple"
   to = "/.netlify/functions/test-simple"
+  status = 200
+
+[[redirects]]
+  from = "/hello"
+  to = "/.netlify/functions/hello"
   status = 200
 
 [[redirects]]
