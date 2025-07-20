@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class AiChatService {
-  // OpenAI API key - Replace with your actual API key
+  // OpenAI API key - should be configured via environment variables in production
   static const String _apiKey = 'your-openai-api-key-here';
   static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
 
