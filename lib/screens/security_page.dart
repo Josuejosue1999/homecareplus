@@ -164,8 +164,161 @@ class _SecurityPageState extends State<SecurityPage> {
                 ],
               ),
             ),
+            
+            const SizedBox(height: 24),
+            
+            // Privacy Policy Section
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10B981).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(
+                          Icons.privacy_tip_outlined,
+                          color: Color(0xFF10B981),
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Privacy Policy',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF1E293B),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  _buildPrivacySection(
+                    'Data Collection',
+                    'We collect only essential information to provide healthcare services:\n'
+                    '• User profile information (name, email, phone)\n'
+                    '• Medical booking history and appointments\n'
+                    '• Location data for nearby hospital recommendations\n'
+                    '• Communication data for secure messaging\n'
+                    '• Device information for app functionality',
+                    Icons.data_usage_outlined,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  _buildPrivacySection(
+                    'Data Security & Storage',
+                    'Your data is protected with enterprise-grade security:\n'
+                    '• Firebase Authentication with multi-factor protection\n'
+                    '• Firestore database with end-to-end encryption\n'
+                    '• HIPAA-compliant data handling procedures\n'
+                    '• Regular security audits and updates\n'
+                    '• SSL/TLS encryption for all data transmission',
+                    Icons.security_outlined,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  _buildPrivacySection(
+                    'Data Access',
+                    'Access to your personal information is strictly controlled:\n'
+                    '• Only you can access your complete profile\n'
+                    '• Healthcare providers see only appointment-related data\n'
+                    '• System administrators access anonymized data only\n'
+                    '• No data sharing with third parties without consent\n'
+                    '• Audit logs track all data access activities',
+                    Icons.admin_panel_settings_outlined,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  _buildPrivacySection(
+                    'Your Rights (GDPR Compliant)',
+                    'You have full control over your personal data:\n'
+                    '• Right to access: Request copies of your data\n'
+                    '• Right to rectification: Correct inaccurate information\n'
+                    '• Right to erasure: Request deletion of your data\n'
+                    '• Right to portability: Export your data\n'
+                    '• Right to withdraw consent at any time\n'
+                    '• Right to lodge complaints with supervisory authorities',
+                    Icons.gavel_outlined,
+                  ),
+                  
+                  const SizedBox(height: 16),
+                  
+                  _buildPrivacySection(
+                    'Contact & Data Protection',
+                    'For privacy concerns or data requests:\n'
+                    '• Email: privacy@homecareplus.com\n'
+                    '• Data Protection Officer: dpo@homecareplus.com\n'
+                    '• Response time: Within 30 days\n'
+                    '• Policy updates: Users notified via app\n'
+                    '• Last updated: July 2025',
+                    Icons.contact_support_outlined,
+                  ),
+                ],
+              ),
+            ),
+            
           ],
         ),
+      ),
+    );
+  }
+  
+  Widget _buildPrivacySection(String title, String content, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFC),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey[200]!),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, color: const Color(0xFF159BBD), size: 18),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            content,
+            style: const TextStyle(
+              fontSize: 14,
+              color: Color(0xFF64748B),
+              height: 1.5,
+            ),
+          ),
+        ],
       ),
     );
   }

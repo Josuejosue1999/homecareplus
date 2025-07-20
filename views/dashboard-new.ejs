@@ -97,6 +97,150 @@
         .upload-section {
             padding: 1rem;
         }
+
+        /* Profile Page Styles */
+        .hospital-info-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .hospital-info-grid .info-item.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .info-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: #212529;
+            font-weight: 500;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.5rem;
+        }
+
+        .service-item {
+            padding: 0.5rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-size: 0.9rem;
+        }
+
+        .schedule-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .schedule-item {
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .schedule-item.active {
+            background: #e8f5e8;
+            border-color: #28a745;
+        }
+
+        .schedule-item.inactive {
+            background: #f8f9fa;
+            border-color: #dee2e6;
+            opacity: 0.7;
+        }
+
+        .day-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .day-name {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .time-slots {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .time-slot {
+            padding: 0.25rem 0.5rem;
+            background: #007bff;
+            color: white;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .profile-stats .stat-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .profile-stats .stat-item:last-child {
+            border-bottom: none;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .rating-stars i {
+            font-size: 0.9rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .empty-state i {
+            font-size: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .hospital-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -137,6 +281,12 @@
                     <a href="#messages" class="nav-link">
                         <i class="fas fa-comments"></i>
                         <span>Messages</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="#profile" class="nav-link" id="profile-link">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Profile</span>
                     </a>
                 </li>
                 <li class="nav-item" style="display: none;">
@@ -752,7 +902,16 @@
                                                 <div class="col-md-6">
                                                     <div class="document-upload-section">
                                                         <h6 class="mb-3">Upload Documents</h6>
-                                                        <p class="text-muted mb-3">Upload required documents for hospital verification. Maximum file size: 800KB per document.</p>
+                                                        <div class="alert alert-info mb-3">
+                                                            <i class="fas fa-info-circle me-2"></i>
+                                                            <strong>Upload Requirements:</strong>
+                                                            <ul class="mb-0 mt-2">
+                                                                <li>📄 <strong>Formats accepted:</strong> PDF, JPG, JPEG, PNG</li>
+                                                                <li>📏 <strong>Maximum file size:</strong> 800KB per document</li>
+                                                                <li>🚀 <strong>Firebase Storage:</strong> Automatic fallback for larger files</li>
+                                                                <li>✅ <strong>Instant preview:</strong> View documents immediately after upload</li>
+                                                            </ul>
+                                                        </div>
                                                         
                                                         <!-- Hospital Certificate -->
                                                         <div class="document-upload-item">
@@ -1444,6 +1603,162 @@
                 </div>
             </div>
             
+            <!-- Profile Content (Hidden by default) -->
+            <div id="profile-content" class="dashboard-content" style="display: none;">
+                <!-- Profile Header -->
+                <div class="profile-header mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <div class="header-content">
+                                <h2 class="mb-2">
+                                    <i class="fas fa-user-circle text-primary me-3"></i>
+                                    Hospital Profile
+                                </h2>
+                                <p class="text-muted mb-0">View and manage your hospital profile information</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="header-actions">
+                                <button class="btn btn-primary" onclick="profilePage.refresh()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Profile Information Cards -->
+                <div class="row">
+                    <!-- Hospital Information Card -->
+                    <div class="col-xl-8 col-lg-7 mb-4">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-building text-primary me-2"></i>
+                                        Hospital Information
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Basic information about your hospital</p>
+                                </div>
+                                <!-- Edit button removed - Profile is read-only -->
+                            </div>
+                            <div class="card-body">
+                                <div class="profile-info" id="hospitalInfo">
+                                    <!-- Hospital info will be loaded dynamically -->
+                                    <div class="loading-state">
+                                        <div class="spinner-container">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <p class="loading-text">Loading hospital information...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Profile Statistics Card -->
+                    <div class="col-xl-4 col-lg-5 mb-4">
+                        <div class="content-card">
+                            <div class="card-header">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-pie text-primary me-2"></i>
+                                        Profile Statistics
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Your profile performance</p>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="profile-stats">
+                                    <div class="stat-item mb-3">
+                                        <div class="stat-label">Profile Completeness</div>
+                                        <div class="progress mt-2">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 85%">85%</div>
+                                        </div>
+                                    </div>
+                                    <div class="stat-item mb-3">
+                                        <div class="stat-label">Patient Reviews</div>
+                                        <div class="stat-value">
+                                            <span class="rating-stars">
+                                                <i class="fas fa-star text-warning"></i>
+                                                <i class="fas fa-star text-warning"></i>
+                                                <i class="fas fa-star text-warning"></i>
+                                                <i class="fas fa-star text-warning"></i>
+                                                <i class="far fa-star text-warning"></i>
+                                            </span>
+                                            <span class="ms-2">4.2 (34 reviews)</span>
+                                        </div>
+                                    </div>
+                                    <div class="stat-item">
+                                        <div class="stat-label">Verification Status</div>
+                                        <div class="stat-value">
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>Verified
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Services and Availability Row -->
+                <div class="row">
+                    <!-- Services Card -->
+                    <div class="col-xl-6 col-lg-6 mb-4">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-stethoscope text-primary me-2"></i>
+                                        Medical Services
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Services offered by your hospital</p>
+                                </div>
+                                <!-- Edit button removed - Profile is read-only -->
+                            </div>
+                            <div class="card-body">
+                                <div class="services-list" id="servicesList">
+                                    <!-- Services will be loaded dynamically -->
+                                    <div class="loading-state">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <p class="loading-text">Loading services...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Availability Card -->
+                    <div class="col-xl-6 col-lg-6 mb-4">
+                        <div class="content-card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <div class="header-content">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-clock text-primary me-2"></i>
+                                        Operating Hours
+                                    </h5>
+                                    <p class="text-muted mb-0 mt-1">Your hospital's schedule</p>
+                                </div>
+                                <!-- Edit button removed - Profile is read-only -->
+                            </div>
+                            <div class="card-body">
+                                <div class="schedule-list" id="scheduleList">
+                                    <!-- Schedule will be loaded dynamically -->
+                                    <div class="loading-state">
+                                        <div class="spinner-border text-primary" role="status"></div>
+                                        <p class="loading-text">Loading schedule...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <!-- My Profile Content (Hidden by default) -->
             <div id="my-profile-content" class="dashboard-content" style="display: none;">
                 <!-- My Profile Header -->
@@ -1967,8 +2282,9 @@
     <script src="/js/appointment-details.js"></script>
     <script src="/js/appointments-page.js"></script>
     <script src="/js/messages-page.js" onerror="console.error('❌ Failed to load messages-page.js')" onload="console.log('✅ messages-page.js loaded successfully')"></script>
-    <script src="/js/settings-page.js"></script>
-    <script src="/js/my-profile-steps.js"></script>
+<script src="/js/profile-page.js"></script>
+<script src="/js/settings-page.js"></script>
+<script src="/js/my-profile-steps.js"></script>
     <script src="/js/notification-service.js"></script>
     <script src="/js/chat-notifications.js"></script>
     

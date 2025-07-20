@@ -26,17 +26,7 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
   String userName = 'User';
   String greeting = '';
 
-  // Animation controllers for moving bubbles
-  late AnimationController _bubble1Controller;
-  late AnimationController _bubble2Controller;
-  late AnimationController _bubble3Controller;
-  late AnimationController _bubble4Controller;
-  
-  // Animations for bubble positions
-  late Animation<Offset> _bubble1Animation;
-  late Animation<Offset> _bubble2Animation;
-  late Animation<Offset> _bubble3Animation;
-  late Animation<Offset> _bubble4Animation;
+  // Removed bubble animations for cleaner UI
 
   @override
   void initState() {
@@ -44,70 +34,12 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
     _updateGreeting();
     _loadUserName();
     
-    // Initialize bubble animation controllers with different durations for variety
-    _bubble1Controller = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-    _bubble2Controller = AnimationController(
-      duration: const Duration(seconds: 12),
-      vsync: this,
-    );
-    _bubble3Controller = AnimationController(
-      duration: const Duration(seconds: 10),
-      vsync: this,
-    );
-    _bubble4Controller = AnimationController(
-      duration: const Duration(seconds: 15),
-      vsync: this,
-    );
-
-    // Create bubble movement animations
-    _bubble1Animation = Tween<Offset>(
-      begin: const Offset(-0.1, 0.8),
-      end: const Offset(1.1, -0.2),
-    ).animate(CurvedAnimation(
-      parent: _bubble1Controller,
-      curve: Curves.linear,
-    ));
-
-    _bubble2Animation = Tween<Offset>(
-      begin: const Offset(1.1, 0.9),
-      end: const Offset(-0.1, -0.1),
-    ).animate(CurvedAnimation(
-      parent: _bubble2Controller,
-      curve: Curves.linear,
-    ));
-
-    _bubble3Animation = Tween<Offset>(
-      begin: const Offset(0.5, 1.2),
-      end: const Offset(0.3, -0.3),
-    ).animate(CurvedAnimation(
-      parent: _bubble3Controller,
-      curve: Curves.easeInOut,
-    ));
-
-    _bubble4Animation = Tween<Offset>(
-      begin: const Offset(-0.2, 1.0),
-      end: const Offset(1.2, 0.1),
-    ).animate(CurvedAnimation(
-      parent: _bubble4Controller,
-      curve: Curves.easeInOut,
-    ));
-
-    // Start bubble animations
-    _bubble1Controller.repeat();
-    _bubble2Controller.repeat();
-    _bubble3Controller.repeat();
-    _bubble4Controller.repeat();
+    // Bubble animations removed for cleaner UI
   }
 
   @override
   void dispose() {
-    _bubble1Controller.dispose();
-    _bubble2Controller.dispose();
-    _bubble3Controller.dispose();
-    _bubble4Controller.dispose();
+    // Bubble controllers removed for cleaner UI
     super.dispose();
   }
 
@@ -214,104 +146,8 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
               // Enhanced Header with Animated Bubbles
               Container(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                child: Stack(
-                  children: [
-                    // Animated Bubbles Background
-                    // Bubble 1
-                    AnimatedBuilder(
-                      animation: _bubble1Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble1Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble1Animation.value.dy * 120,
-                          child: Container(
-                            width: 60,
-                            height: 60,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.15),
-                                  Colors.white.withOpacity(0.05),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    // Bubble 2
-                    AnimatedBuilder(
-                      animation: _bubble2Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble2Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble2Animation.value.dy * 120,
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.12),
-                                  Colors.white.withOpacity(0.03),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    // Bubble 3
-                    AnimatedBuilder(
-                      animation: _bubble3Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble3Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble3Animation.value.dy * 120,
-                          child: Container(
-                            width: 35,
-                            height: 35,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.1),
-                                  Colors.white.withOpacity(0.02),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    // Bubble 4
-                    AnimatedBuilder(
-                      animation: _bubble4Animation,
-                      builder: (context, child) {
-                        return Positioned(
-                          left: _bubble4Animation.value.dx * MediaQuery.of(context).size.width,
-                          top: _bubble4Animation.value.dy * 120,
-                          child: Container(
-                            width: 50,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.08),
-                                  Colors.white.withOpacity(0.01),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    
-                    // Header Content
-                    Column(
+                child:                   // Clean Header Content
+                  Column(
                       children: [
                         // Professional Header with greeting and user info
                         Row(
@@ -450,8 +286,6 @@ class _ChatPageState extends State<ChatPage> with TickerProviderStateMixin {
                         ),
                       ],
                     ),
-                  ],
-                ),
               ),
               
               // Enhanced Chat List

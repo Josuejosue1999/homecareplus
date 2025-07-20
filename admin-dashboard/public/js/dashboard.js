@@ -7,10 +7,9 @@ const AppState = {
     notifications: [],
     users: [],
     stats: {
-        totalUsers: 1248,
-        totalClinics: 35,
-        totalAppointments: 892,
-        totalRevenue: 45678
+        totalUsers: 0,
+        totalClinics: 0,
+        totalAppointments: 0
     }
 };
 
@@ -257,15 +256,54 @@ class AdminDashboard {
         this.chart.update('active');
     }
 
-    // Animate stats
-    animateStats() {
+    // Load and animate real stats from API
+    async animateStats() {
+        try {
+            console.log('📊 Loading real-time statistics...');
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+            
+            if (data.users && data.clinics && data.appointments) {
+                // Update global state
+                AppState.stats.totalUsers = data.users.total;
+                AppState.stats.totalClinics = data.clinics.total;
+                AppState.stats.totalAppointments = data.appointments.total;
+                
+                // Update UI elements with animation
+                const statsMap = {
+                    'totalUsers': data.users.total,
+                    'totalClinics': data.clinics.total,
+                    'totalAppointments': data.appointments.total
+                };
+                
+                Object.entries(statsMap).forEach(([elementId, value], index) => {
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        setTimeout(() => {
+                            this.animateNumber(element, 0, value, 2000);
+                        }, index * 200);
+                    }
+                });
+                
+                console.log('✅ Real-time stats loaded successfully:', statsMap);
+            } else {
+                console.warn('⚠️ Invalid API response format, using fallback animation');
+                this.fallbackAnimateStats();
+            }
+        } catch (error) {
+            console.error('❌ Error loading stats:', error);
+            this.fallbackAnimateStats();
+        }
+    }
+    
+    // Fallback animation for when API fails
+    fallbackAnimateStats() {
         const statElements = document.querySelectorAll('[id^="total"]');
         statElements.forEach((element, index) => {
             setTimeout(() => {
-                const endValue = parseInt(element.textContent.replace(/[^0-9]/g, ''));
-                const prefix = element.textContent.includes('$') ? '$' : '';
-                const suffix = element.textContent.includes(',') ? '' : '';
-                this.animateNumber(element, 0, endValue, 2000, prefix, suffix);
+                const currentText = element.textContent.replace('Loading...', '0');
+                const endValue = parseInt(currentText.replace(/[^0-9]/g, '')) || 0;
+                this.animateNumber(element, 0, endValue, 2000);
             }, index * 200);
         });
     }

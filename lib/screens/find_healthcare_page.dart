@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/google_maps_service.dart';
 import '../services/location_service.dart';
+import '../services/enhanced_hospital_service.dart';
 import '../models/hospital.dart';
 
 class FindHealthcarePage extends StatefulWidget {
@@ -16,17 +18,17 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
   GoogleMapController? mapController;
   Position? currentPosition;
   UserLocation? userLocation;
-  List<HealthcarePlace> nearbyHealthcare = [];
+  List<Hospital> verifiedHospitals = [];
   bool isLoading = false;
   bool isLoadingLocation = false;
   String? errorMessage;
-  final TextEditingController searchController = TextEditingController();
   Set<Marker> markers = {};
 
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _loadVerifiedHospitals();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -58,7 +60,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
           isLoadingLocation = false;
         });
         
-        await _findNearbyHealthcare();
+        await _loadVerifiedHospitals();
       } else {
         // Fallback to GoogleMapsService
         final position = await GoogleMapsService.getCurrentPosition();
@@ -67,7 +69,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
           isLoadingLocation = false;
         });
         
-        await _findNearbyHealthcare();
+        await _loadVerifiedHospitals();
       }
     } catch (e) {
       setState(() {
@@ -75,6 +77,73 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
         errorMessage = e.toString();
       });
     }
+  }
+
+  Future<void> _loadVerifiedHospitals() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      print('🏥 Loading verified hospitals from Firebase...');
+      
+      // Load verified hospitals from Firebase
+      final hospitals = await EnhancedHospitalService.getVerifiedHospitals();
+      
+      print('🏥 Found ${hospitals.length} verified hospitals');
+      
+      await _updateMapMarkersForHospitals(hospitals);
+      
+      setState(() {
+        verifiedHospitals = hospitals;
+        isLoading = false;
+      });
+    } catch (e) {
+      print('❌ Error loading verified hospitals: $e');
+      setState(() {
+        isLoading = false;
+        errorMessage = 'Failed to load verified hospitals: ${e.toString()}';
+      });
+    }
+  }
+
+  Future<void> _updateMapMarkersForHospitals(List<Hospital> hospitals) async {
+    final newMarkers = <Marker>{};
+
+    // Add current location marker
+    if (currentPosition != null) {
+      newMarkers.add(
+        Marker(
+          markerId: const MarkerId('current_location'),
+          position: LatLng(currentPosition!.latitude, currentPosition!.longitude),
+          infoWindow: const InfoWindow(title: 'Ma position'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+        ),
+      );
+    }
+
+    // Add verified hospital markers
+    for (final hospital in hospitals) {
+      if (hospital.latitude != null && hospital.longitude != null) {
+        newMarkers.add(
+          Marker(
+            markerId: MarkerId(hospital.id),
+            position: LatLng(hospital.latitude!, hospital.longitude!),
+            infoWindow: InfoWindow(
+              title: hospital.name,
+              snippet: hospital.address,
+            ),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+            onTap: () => _showHospitalDetails(hospital),
+          ),
+        );
+      }
+    }
+
+    setState(() {
+      markers = newMarkers;
+    });
   }
 
   Future<void> _findNearbyHealthcare() async {
@@ -169,6 +238,267 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
         errorMessage = e.toString();
       });
     }
+  }
+
+  void _showHospitalDetails(Hospital hospital) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.3,
+        maxChildSize: 0.9,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: const EdgeInsets.only(bottom: 20),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    
+                    // Hospital name and verification badge
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            hospital.name,
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.verified,
+                                size: 16,
+                                color: Colors.green,
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                'Verified',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.green,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Address
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            hospital.address,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // Distance
+                    if (currentPosition != null && hospital.latitude != null && hospital.longitude != null)
+                      Row(
+                        children: [
+                          const Icon(Icons.directions, size: 16, color: Colors.grey),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${(GoogleMapsService.calculateDistance(
+                              currentPosition!.latitude,
+                              currentPosition!.longitude,
+                              hospital.latitude!,
+                              hospital.longitude!,
+                            ) / 1000).toStringAsFixed(1)} km',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                      ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Rating
+                    if (hospital.rating != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              size: 16,
+                              color: Colors.amber,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              hospital.rating!.toStringAsFixed(1),
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
+                    const SizedBox(height: 20),
+                    
+                    // About
+                    if (hospital.about.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'About:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            hospital.about,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                        ],
+                      ),
+                    
+                    // Services
+                    if (hospital.services.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Services:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: hospital.services.map((service) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF159BBD).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  service,
+                                  style: const TextStyle(
+                                    color: Color(0xFF159BBD),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    
+                    const SizedBox(height: 30),
+                    
+                    // Contact and directions buttons
+                    Row(
+                      children: [
+                        if (hospital.phone.isNotEmpty)
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () {
+                                // Add phone call functionality here
+                              },
+                              icon: const Icon(Icons.phone),
+                              label: const Text('Call'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF159BBD),
+                                foregroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.pushNamed(
+                                context,
+                                '/hospital_details',
+                                arguments: hospital,
+                              );
+                            },
+                            icon: const Icon(Icons.info_outline),
+                            label: const Text('Details'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: const Color(0xFF159BBD),
+                              side: const BorderSide(color: Color(0xFF159BBD)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _showPlaceDetails(HealthcarePlace place) {
@@ -621,8 +951,9 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                       
                       const SizedBox(height: 16),
                       
-                      // Search bar
+                      // Info message for verified hospitals
                       Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(16),
@@ -631,29 +962,23 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                             width: 1,
                           ),
                         ),
-                        child: TextField(
-                          controller: searchController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Search healthcare centers...',
-                            hintStyle: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.verified,
+                              color: Colors.white.withOpacity(0.9),
+                              size: 20,
                             ),
-                            prefixIcon: Icon(
-                              Icons.search,
-                              color: Colors.white.withOpacity(0.7),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Showing only verified healthcare centers',
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.9),
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                            border: InputBorder.none,
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 16,
-                            ),
-                          ),
-                          onSubmitted: (value) {
-                            if (value.isNotEmpty) {
-                              _searchHealthcare(value);
-                            }
-                          },
+                          ],
                         ),
                       ),
                     ],
@@ -663,16 +988,16 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
             ),
           ),
           
-          // Liste des centres de santé
-          if (nearbyHealthcare.isNotEmpty)
+          // Liste des hôpitaux vérifiés
+          if (verifiedHospitals.isNotEmpty)
             Container(
               height: 120,
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: nearbyHealthcare.length,
+                itemCount: verifiedHospitals.length,
                 itemBuilder: (context, index) {
-                  final place = nearbyHealthcare[index];
+                  final hospital = verifiedHospitals[index];
                   return Container(
                     width: 280,
                     margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -689,53 +1014,50 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                       ],
                     ),
                     child: ListTile(
-                      leading: place.photoReference != null
-                          ? ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.network(
-                                place.getPhotoUrl(maxWidth: 100)!,
-                                width: 50,
-                                height: 50,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 50,
-                                    height: 50,
-                                    color: Colors.grey[200],
-                                    child: const Icon(
-                                      Icons.local_hospital,
-                                      color: Colors.grey,
-                                    ),
-                                  );
-                                },
-                              ),
-                            )
-                          : Container(
-                              width: 50,
-                              height: 50,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[200],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.local_hospital,
-                                color: Colors.grey,
-                              ),
-                            ),
-                      title: Text(
-                        place.name,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
+                      leading: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF159BBD).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                        child: const Icon(
+                          Icons.local_hospital,
+                          color: Color(0xFF159BBD),
+                        ),
+                      ),
+                      title: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              hospital.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: Colors.green.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Icon(
+                              Icons.verified,
+                              size: 12,
+                              color: Colors.green,
+                            ),
+                          ),
+                        ],
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            place.address,
+                            hospital.address,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey[600],
@@ -743,7 +1065,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (place.rating != null)
+                          if (hospital.rating != null)
                             Row(
                               children: [
                                 const Icon(
@@ -753,14 +1075,14 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
-                                  place.rating!.toStringAsFixed(1),
+                                  hospital.rating!.toStringAsFixed(1),
                                   style: const TextStyle(fontSize: 12),
                                 ),
                               ],
                             ),
                         ],
                       ),
-                      onTap: () => _showPlaceDetails(place),
+                      onTap: () => _showHospitalDetails(hospital),
                     ),
                   );
                 },
@@ -815,7 +1137,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                         child: Row(
                           children: [
                             Text(
-                              isLoading ? 'Searching...' : '${nearbyHealthcare.length} Healthcare Centers',
+                              isLoading ? 'Loading...' : '${verifiedHospitals.length} Verified Hospitals',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.w700,
@@ -840,7 +1162,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                       
                       // Healthcare list
                       Expanded(
-                        child: nearbyHealthcare.isEmpty && !isLoading
+                        child: verifiedHospitals.isEmpty && !isLoading
                             ? Center(
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -852,14 +1174,14 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                         shape: BoxShape.circle,
                                       ),
                                       child: const Icon(
-                                        Icons.local_hospital,
+                                        Icons.verified,
                                         size: 48,
                                         color: Color(0xFF159BBD),
                                       ),
                                     ),
                                     const SizedBox(height: 16),
                                     const Text(
-                                      'No healthcare centers found',
+                                      'No verified hospitals found',
                                       style: TextStyle(
                                         fontSize: 16,
                                         fontWeight: FontWeight.w600,
@@ -868,7 +1190,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
-                                      'Try expanding your search area or check your location',
+                                      'Please check back later as more hospitals get verified',
                                       style: TextStyle(
                                         fontSize: 14,
                                         color: Colors.grey[600],
@@ -880,15 +1202,15 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                               )
                             : ListView.builder(
                                 controller: scrollController,
-                                itemCount: nearbyHealthcare.length,
+                                itemCount: verifiedHospitals.length,
                                 itemBuilder: (context, index) {
-                                  final place = nearbyHealthcare[index];
-                                  final distance = currentPosition != null
+                                  final hospital = verifiedHospitals[index];
+                                  final distance = currentPosition != null && hospital.latitude != null && hospital.longitude != null
                                       ? (GoogleMapsService.calculateDistance(
                                           currentPosition!.latitude,
                                           currentPosition!.longitude,
-                                          place.latitude,
-                                          place.longitude,
+                                          hospital.latitude!,
+                                          hospital.longitude!,
                                         ) / 1000)
                                       : 0.0;
                                   
@@ -914,58 +1236,65 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                     ),
                                     child: ListTile(
                                       contentPadding: const EdgeInsets.all(16),
-                                      leading: place.photoReference != null
-                                          ? ClipRRect(
-                                              borderRadius: BorderRadius.circular(12),
-                                              child: Image.network(
-                                                place.getPhotoUrl(maxWidth: 100)!,
-                                                width: 60,
-                                                height: 60,
-                                                fit: BoxFit.cover,
-                                                errorBuilder: (context, error, stackTrace) {
-                                                  return Container(
-                                                    width: 60,
-                                                    height: 60,
-                                                    decoration: BoxDecoration(
-                                                      color: const Color(0xFF159BBD).withOpacity(0.1),
-                                                      borderRadius: BorderRadius.circular(12),
-                                                    ),
-                                                    child: const Icon(
-                                                      Icons.local_hospital,
-                                                      color: Color(0xFF159BBD),
-                                                      size: 30,
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            )
-                                          : Container(
-                                              width: 60,
-                                              height: 60,
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFF159BBD).withOpacity(0.1),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: const Icon(
-                                                Icons.local_hospital,
-                                                color: Color(0xFF159BBD),
-                                                size: 30,
+                                      leading: Container(
+                                        width: 60,
+                                        height: 60,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF159BBD).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: const Icon(
+                                          Icons.local_hospital,
+                                          color: Color(0xFF159BBD),
+                                          size: 30,
+                                        ),
+                                      ),
+                                      title: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              hospital.name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w600,
+                                                fontSize: 16,
+                                                color: Color(0xFF1A1A1A),
                                               ),
                                             ),
-                                      title: Text(
-                                        place.name,
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 16,
-                                          color: Color(0xFF1A1A1A),
-                                        ),
+                                          ),
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: Colors.green.withOpacity(0.1),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const Icon(
+                                                  Icons.verified,
+                                                  size: 14,
+                                                  color: Colors.green,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                const Text(
+                                                  'Verified',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w600,
+                                                    color: Colors.green,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                       subtitle: Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           const SizedBox(height: 4),
                                           Text(
-                                            place.address,
+                                            hospital.address,
                                             style: TextStyle(
                                               fontSize: 14,
                                               color: Colors.grey[600],
@@ -977,38 +1306,39 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                           Row(
                                             children: [
                                               // Distance badge
-                                              Container(
-                                                padding: const EdgeInsets.symmetric(
-                                                  horizontal: 8,
-                                                  vertical: 4,
-                                                ),
-                                                decoration: BoxDecoration(
-                                                  color: const Color(0xFF159BBD).withOpacity(0.1),
-                                                  borderRadius: BorderRadius.circular(12),
-                                                ),
-                                                child: Row(
-                                                  mainAxisSize: MainAxisSize.min,
-                                                  children: [
-                                                    const Icon(
-                                                      Icons.near_me_rounded,
-                                                      size: 12,
-                                                      color: Color(0xFF159BBD),
-                                                    ),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      '${distance.toStringAsFixed(1)} km',
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
+                                              if (distance > 0)
+                                                Container(
+                                                  padding: const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    color: const Color(0xFF159BBD).withOpacity(0.1),
+                                                    borderRadius: BorderRadius.circular(12),
+                                                  ),
+                                                  child: Row(
+                                                    mainAxisSize: MainAxisSize.min,
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.near_me_rounded,
+                                                        size: 12,
                                                         color: Color(0xFF159BBD),
-                                                        fontWeight: FontWeight.w600,
                                                       ),
-                                                    ),
-                                                  ],
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        '${distance.toStringAsFixed(1)} km',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                          color: Color(0xFF159BBD),
+                                                          fontWeight: FontWeight.w600,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
                                                 ),
-                                              ),
-                                              const SizedBox(width: 12),
+                                              if (distance > 0) const SizedBox(width: 12),
                                               // Rating
-                                              if (place.rating != null)
+                                              if (hospital.rating != null)
                                                 Row(
                                                   children: [
                                                     const Icon(
@@ -1018,7 +1348,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                                     ),
                                                     const SizedBox(width: 4),
                                                     Text(
-                                                      place.rating!.toStringAsFixed(1),
+                                                      hospital.rating!.toStringAsFixed(1),
                                                       style: TextStyle(
                                                         fontSize: 12,
                                                         color: Colors.grey[600],
@@ -1036,7 +1366,7 @@ class _FindHealthcarePageState extends State<FindHealthcarePage> {
                                         size: 16,
                                         color: Colors.grey[400],
                                       ),
-                                      onTap: () => _showPlaceDetails(place),
+                                      onTap: () => _showHospitalDetails(hospital),
                                     ),
                                   );
                                 },

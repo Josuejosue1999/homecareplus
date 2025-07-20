@@ -13,14 +13,14 @@ class DashboardNavigation {
     // Setup navigation between dashboard sections
     setupNavigation() {
         const settingsLink = document.getElementById('settings-link');
-        // Profile link removed for clean UI
+        const profileLink = document.getElementById('profile-link');
         const dashboardLink = document.querySelector('a[href="#dashboard"]');
         const appointmentsLink = document.querySelector('a[href="#appointments"]');
         const messagesLink = document.querySelector('a[href="#messages"]');
         
         const dashboardContent = document.querySelector('.dashboard-content');
         const settingsContent = document.getElementById('settings-content');
-        // Profile content removed for clean UI
+        const profileContent = document.getElementById('profile-content');
         const appointmentsContent = document.getElementById('appointments-content');
         const messagesContent = document.getElementById('messages-content');
 
@@ -37,7 +37,16 @@ class DashboardNavigation {
             });
         }
 
-        // Profile navigation removed for clean UI
+        // Profile navigation
+        if (profileLink) {
+            profileLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSection('profile', dashboardContent, settingsContent, profileContent, appointmentsContent, messagesContent);
+                this.updateHeaderTitle('Profile');
+                // Load clinic profile data
+                this.loadClinicProfile();
+            });
+        }
 
         // Dashboard navigation
         if (dashboardLink) {
@@ -80,6 +89,7 @@ class DashboardNavigation {
         // Hide all sections
         if (dashboardContent) dashboardContent.style.display = 'none';
         if (settingsContent) settingsContent.style.display = 'none';
+        if (profileContent) profileContent.style.display = 'none';
         if (appointmentsContent) appointmentsContent.style.display = 'none';
         if (messagesContent) messagesContent.style.display = 'none';
 
@@ -90,6 +100,9 @@ class DashboardNavigation {
                 break;
             case 'settings':
                 if (settingsContent) settingsContent.style.display = 'block';
+                break;
+            case 'profile':
+                if (profileContent) profileContent.style.display = 'block';
                 break;
             case 'appointments':
                 if (appointmentsContent) appointmentsContent.style.display = 'block';
@@ -110,6 +123,7 @@ class DashboardNavigation {
             const icons = {
                 'Dashboard': 'fas fa-tachometer-alt',
                 'Settings': 'fas fa-cog',
+                'Profile': 'fas fa-user-circle',
                 'Appointments': 'fas fa-calendar-check',
                 'Messages': 'fas fa-comments'
             };
@@ -295,8 +309,50 @@ class DashboardNavigation {
             .finally(() => {
                 this.hideProfileLoadingState();
             });
+        }
+    
+    // Load clinic profile data from Firebase
+    async loadClinicProfile() {
+        try {
+            console.log('🔄 Loading clinic profile data...');
+            const response = await fetch('/api/profile/clinic-data');
+            
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    console.log('✅ Clinic profile data loaded:', data.profile);
+                    this.populateProfileDisplay(data.profile);
+                } else {
+                    console.error('❌ Failed to load clinic profile:', data.error);
+                    this.showProfileError('Failed to load clinic profile data');
+                }
+            } else {
+                console.error('❌ HTTP error loading clinic profile:', response.status);
+                this.showProfileError('Server error loading profile data');
+            }
+        } catch (error) {
+            console.error('❌ Error loading clinic profile:', error);
+            this.showProfileError('Network error loading profile data');
+        }
     }
-
+    
+    // Show profile loading error
+    showProfileError(message) {
+        const profileContainer = document.getElementById('profile-content');
+        if (profileContainer) {
+            profileContainer.innerHTML = `
+                <div class="alert alert-danger text-center">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h5>Error Loading Profile</h5>
+                    <p>${message}</p>
+                    <button class="btn btn-primary" onclick="dashboardNavigation.loadClinicProfile()">
+                        <i class="fas fa-refresh"></i> Try Again
+                    </button>
+                </div>
+            `;
+        }
+    }
+    
     // Populate profile display with data
     populateProfileDisplay(profile) {
         console.log('🔧 Populating profile display with data:', profile);

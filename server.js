@@ -541,25 +541,43 @@ app.post("/api/settings/upload-document", requireAuth, async (req, res) => {
             console.log(`✅ Using Firestore fallback for small file`);
         }
         
-        // Update clinic document
-        console.log(`📄 Updating Firestore document...`);
+        // Update or create clinic document with atomic operation
+        console.log(`📄 Updating/Creating Firestore document for user: ${userId}...`);
         const clinicDocRef = doc(db, 'clinics', userId);
         
-        const updateData = {
-            [`documents.${documentType}`]: {
-                fileName: documentData.fileName,
-                fileType: documentData.fileType,
-                fileSize: documentData.fileSize,
-                uploadMethod: uploadResult.method,
-                uploadedAt: documentData.uploadedAt || new Date().toISOString(),
-                ...(uploadResult.downloadURL && { downloadURL: uploadResult.downloadURL }),
-                ...(uploadResult.storagePath && { storagePath: uploadResult.storagePath }),
-                ...(uploadResult.fileData && { fileData: uploadResult.fileData })
-            },
-            updatedAt: new Date()
+        // Prepare the complete document data with document upload
+        const documentInfo = {
+            fileName: documentData.fileName,
+            fileType: documentData.fileType,
+            fileSize: documentData.fileSize,
+            uploadMethod: uploadResult.method,
+            uploadedAt: documentData.uploadedAt || new Date().toISOString(),
+            ...(uploadResult.downloadURL && { downloadURL: uploadResult.downloadURL }),
+            ...(uploadResult.storagePath && { storagePath: uploadResult.storagePath }),
+            ...(uploadResult.fileData && { fileData: uploadResult.fileData })
         };
         
-        await updateDoc(clinicDocRef, updateData);
+        const clinicData = {
+            email: req.user.email || '',
+            clinicName: req.user.displayName || req.user.email?.split('@')[0] || 'New Clinic',
+            status: 'pending',
+            updatedAt: new Date().toISOString(),
+            documents: {
+                [documentType]: documentInfo
+            }
+        };
+        
+        // Only add createdAt if it's a new document
+        const clinicDoc = await getDoc(clinicDocRef);
+        if (!clinicDoc.exists()) {
+            console.log(`📄 Creating new clinic document for user: ${userId}`);
+            clinicData.createdAt = new Date().toISOString();
+        } else {
+            console.log(`📄 Updating existing clinic document for user: ${userId}`);
+        }
+        
+        // Use setDoc with merge to ensure document is created or updated atomically
+        await setDoc(clinicDocRef, clinicData, { merge: true });
         console.log(`✅ Document ${documentType} uploaded successfully for user: ${userId}`);
         
         res.json({
@@ -2944,6 +2962,153 @@ function calculateGeodesicDistance(lat1, lng1, lat2, lng2) {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 }
+
+// 🏥 Profile API Routes
+app.get('/api/profile/hospital-info', requireAuth, async (req, res) => {
+  try {
+    console.log('📋 Loading hospital information for user:', req.user.uid);
+    
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Get clinic data from Firebase using v9+ syntax
+    const clinicDocRef = doc(db, 'clinics', user.uid);
+    const clinicDoc = await getDoc(clinicDocRef);
+    
+    if (!clinicDoc.exists()) {
+      return res.json({
+        success: true,
+        hospital: {
+          clinicName: 'Not specified',
+          email: user.email || 'Not specified',
+          address: 'Not specified',
+          phone: 'Not specified',
+          about: 'No description available'
+        }
+      });
+    }
+
+    const clinicData = clinicDoc.data();
+    
+    res.json({
+      success: true,
+      hospital: {
+        clinicName: clinicData.clinicName || clinicData.name || 'Not specified',
+        email: clinicData.email || user.email || 'Not specified',
+        address: clinicData.address || clinicData.location || 'Not specified',
+        phone: clinicData.phone || 'Not specified',
+        about: clinicData.about || 'No description available',
+        rating: clinicData.rating || null,
+        verified: clinicData.verified || false,
+        profileImage: clinicData.profileImage || null
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error loading hospital info:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to load hospital information',
+      details: error.message 
+    });
+  }
+});
+
+app.get('/api/profile/services', requireAuth, async (req, res) => {
+  try {
+    console.log('🏥 Loading services for user:', req.user.uid);
+    
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Get clinic data from Firebase using v9+ syntax
+    const clinicDocRef = doc(db, 'clinics', user.uid);
+    const clinicDoc = await getDoc(clinicDocRef);
+    
+    if (!clinicDoc.exists()) {
+      return res.json({
+        success: true,
+        services: []
+      });
+    }
+
+    const clinicData = clinicDoc.data();
+    let services = [];
+    
+    // Check different possible field names for services
+    if (clinicData.services && Array.isArray(clinicData.services)) {
+      services = clinicData.services;
+    } else if (clinicData.facilities && Array.isArray(clinicData.facilities)) {
+      services = clinicData.facilities;
+    } else if (clinicData.services && typeof clinicData.services === 'string') {
+      services = [clinicData.services];
+    }
+    
+    res.json({
+      success: true,
+      services: services
+    });
+
+  } catch (error) {
+    console.error('❌ Error loading services:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to load services',
+      details: error.message 
+    });
+  }
+});
+
+app.get('/api/profile/schedule', requireAuth, async (req, res) => {
+  try {
+    console.log('📅 Loading schedule for user:', req.user.uid);
+    
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    // Get clinic data from Firebase using v9+ syntax
+    const clinicDocRef = doc(db, 'clinics', user.uid);
+    const clinicDoc = await getDoc(clinicDocRef);
+    
+    if (!clinicDoc.exists()) {
+      return res.json({
+        success: true,
+        schedule: {}
+      });
+    }
+
+    const clinicData = clinicDoc.data();
+    let schedule = {};
+    
+    // Check for availableSchedule field
+    if (clinicData.availableSchedule) {
+      schedule = clinicData.availableSchedule;
+    } else if (clinicData.weeklySchedule) {
+      schedule = clinicData.weeklySchedule;
+    } else if (clinicData.schedule) {
+      schedule = clinicData.schedule;
+    }
+    
+    res.json({
+      success: true,
+      schedule: schedule
+    });
+
+  } catch (error) {
+    console.error('❌ Error loading schedule:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to load schedule',
+      details: error.message 
+    });
+  }
+});
 
 // 🔧 Route pour sauvegarder le profil complet de l'hôpital
 app.post('/api/save-hospital-profile', requireAuth, async (req, res) => {

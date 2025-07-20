@@ -16,19 +16,21 @@ class DashboardNavigation {
         const dashboardLink = document.querySelector('a[href="#dashboard"]');
         const appointmentsLink = document.querySelector('a[href="#appointments"]');
         const messagesLink = document.querySelector('a[href="#messages"]');
+        const profileLink = document.getElementById('profile-link');
         const myProfileLink = document.getElementById('my-profile-link');
         
         const dashboardContent = document.querySelector('.dashboard-content');
         const settingsContent = document.getElementById('settings-content');
         const appointmentsContent = document.getElementById('appointments-content');
         const messagesContent = document.getElementById('messages-content');
+        const profileContent = document.getElementById('profile-content');
         const myProfileContent = document.getElementById('my-profile-content');
 
         // Settings navigation
         if (settingsLink) {
             settingsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('settings', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
+                this.showSection('settings', dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent);
                 this.updateHeaderTitle('Settings');
                 // Initialize settings page if not already done
                 if (typeof settingsPage !== 'undefined' && settingsPage.init) {
@@ -41,7 +43,7 @@ class DashboardNavigation {
         if (dashboardLink) {
             dashboardLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('dashboard', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
+                this.showSection('dashboard', dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent);
                 this.updateHeaderTitle('Dashboard');
             });
         }
@@ -50,7 +52,7 @@ class DashboardNavigation {
         if (appointmentsLink) {
             appointmentsLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('appointments', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
+                this.showSection('appointments', dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent);
                 this.updateHeaderTitle('Appointments');
                 // Initialize appointments page if not already done
                 if (typeof appointmentsPage !== 'undefined' && appointmentsPage.init) {
@@ -63,7 +65,7 @@ class DashboardNavigation {
         if (messagesLink) {
             messagesLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('messages', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
+                this.showSection('messages', dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent);
                 this.updateHeaderTitle('Messages');
                 // Initialize messages page if not already done
                 setTimeout(() => {
@@ -76,12 +78,25 @@ class DashboardNavigation {
             });
         }
 
+        // Profile navigation
+        if (profileLink) {
+            profileLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.showSection('profile', dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent);
+                this.updateHeaderTitle('Hospital Profile');
+                // Initialize profile page if not already done
+                if (typeof profilePage !== 'undefined' && profilePage.init) {
+                    setTimeout(() => profilePage.init(), 100);
+                }
+            });
+        }
+
         // My Profile navigation
         if (myProfileLink) {
             myProfileLink.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.showSection('my-profile', dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent);
-                this.updateHeaderTitle('My Profile');
+                this.showSection('my-profile', dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent);
+                this.updateHeaderTitle('My Profile Setup');
                 // Initialize profile steps if not already done
                 if (typeof profileSteps !== 'undefined' && profileSteps.init) {
                     setTimeout(() => profileSteps.init(), 100);
@@ -91,12 +106,13 @@ class DashboardNavigation {
     }
 
     // Show specific section
-    showSection(section, dashboardContent, settingsContent, appointmentsContent, messagesContent, myProfileContent) {
+    showSection(section, dashboardContent, settingsContent, appointmentsContent, messagesContent, profileContent, myProfileContent) {
         // Hide all sections
         if (dashboardContent) dashboardContent.style.display = 'none';
         if (settingsContent) settingsContent.style.display = 'none';
         if (appointmentsContent) appointmentsContent.style.display = 'none';
         if (messagesContent) messagesContent.style.display = 'none';
+        if (profileContent) profileContent.style.display = 'none';
         if (myProfileContent) myProfileContent.style.display = 'none';
 
         // Show selected section
@@ -112,6 +128,9 @@ class DashboardNavigation {
                 break;
             case 'messages':
                 if (messagesContent) messagesContent.style.display = 'block';
+                break;
+            case 'profile':
+                if (profileContent) profileContent.style.display = 'block';
                 break;
             case 'my-profile':
                 if (myProfileContent) myProfileContent.style.display = 'block';
@@ -134,6 +153,7 @@ class DashboardNavigation {
             'dashboard': 'a[href="#dashboard"]',
             'appointments': 'a[href="#appointments"]', 
             'messages': 'a[href="#messages"]',
+            'profile': 'a[href="#profile"]',
             'settings': 'a[href="#settings"]',
             'my-profile': 'a[href="#my-profile"]'
         };

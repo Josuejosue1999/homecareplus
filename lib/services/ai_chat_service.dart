@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:http/http.dart' as http;
 
 class AiChatService {
-  // OpenAI API key - configured for production use
-  static const String _apiKey = const String.fromEnvironment('OPENAI_API_KEY', defaultValue: 'your-openai-api-key-here');
+  // OpenAI API key - Replace with your actual API key
+  static const String _apiKey = 'your-openai-api-key-here';
   static const String _baseUrl = 'https://api.openai.com/v1/chat/completions';
 
   static Future<String> sendMessage(String message, List<Map<String, String>> chatHistory) async {
     try {
       // Check if API key is configured
-      if (_apiKey == 'your-openai-api-key-here') {
+      if (_apiKey.isEmpty || _apiKey == 'your-openai-api-key-here') {
         return _getConfigurationMessage();
       }
       

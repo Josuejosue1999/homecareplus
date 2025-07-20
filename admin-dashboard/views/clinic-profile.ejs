@@ -426,11 +426,21 @@
                     </div>
                 </div>
 
-                <!-- Documents de certificat -->
-                <% if (clinic.documents && clinic.documents.certificate) { %>
+                <!-- Documents téléchargés depuis le dashboard -->
+                <% if (clinic.documents && (clinic.documents.certificate || clinic.documents.id || clinic.documents.additional)) { %>
                 <div class="info-card">
-                    <h5><i class="fas fa-file-medical"></i> Certificate Documents</h5>
+                    <h5><i class="fas fa-cloud-upload-alt"></i> Documents Uploaded from Dashboard</h5>
+                    <div class="alert alert-info mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Documents uploaded by the hospital from their dashboard are displayed below. 
+                        <strong>Current status:</strong> <%= clinic.documents ? 'Documents found' : 'No documents' %>
+                    </div>
+                    <!-- Certificate Document -->
+                    <% if (clinic.documents.certificate) { %>
                     <div class="document-section">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-certificate me-2"></i>Hospital Certificate
+                        </h6>
                         <% if (clinic.documents.certificate.fileName) { %>
                         <div class="document-item d-flex align-items-center justify-content-between p-3 border rounded mb-3">
                             <div class="document-info">
@@ -453,15 +463,21 @@
                                 <% } %>
                     </div>
                 </div>
-            <% } %>
+                        <% } else { %>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No certificate document uploaded yet.
+                        </div>
+                        <% } %>
                     </div>
-        </div>
-        <% } %>
-
-                <!-- Documents supplémentaires -->
-                <% if (clinic.documents && (clinic.documents.id || clinic.documents.additional)) { %>
-        <div class="info-card">
-                    <h5><i class="fas fa-folder-open"></i> Additional Documents</h5>
+                    <% } %>
+                    
+                    <!-- ID/Passport Document -->
+                    <% if (clinic.documents.id) { %>
+                    <div class="document-section mt-4">
+                        <h6 class="text-success mb-3">
+                            <i class="fas fa-id-card me-2"></i>ID/Passport Document
+                        </h6>
                     <div class="document-section">
                         <% if (clinic.documents.id && clinic.documents.id.fileName) { %>
                         <div class="document-item d-flex align-items-center justify-content-between p-3 border rounded mb-3">
@@ -485,9 +501,22 @@
                         <% } %>
                     </div>
                 </div>
+                        <% } else { %>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No ID/Passport document uploaded yet.
+                        </div>
                         <% } %>
-                        
-                        <% if (clinic.documents.additional && clinic.documents.additional.fileName) { %>
+                    </div>
+                    <% } %>
+                    
+                    <!-- Additional Document -->
+                    <% if (clinic.documents.additional) { %>
+                    <div class="document-section mt-4">
+                        <h6 class="text-info mb-3">
+                            <i class="fas fa-file-medical me-2"></i>Additional Document
+                        </h6>
+                        <% if (clinic.documents.additional.fileName) { %>
                         <div class="document-item d-flex align-items-center justify-content-between p-3 border rounded mb-3">
                             <div class="document-info">
                                 <h6 class="mb-1">
@@ -509,7 +538,27 @@
                                 <% } %>
             </div>
                         </div>
+                        <% } else { %>
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No additional document uploaded yet.
+                        </div>
                         <% } %>
+                    </div>
+                    <% } %>
+                </div>
+                <% } else { %>
+                <!-- No documents section -->
+                <div class="info-card">
+                    <h5><i class="fas fa-cloud-upload-alt"></i> Documents Uploaded from Dashboard</h5>
+                    <div class="alert alert-light text-center">
+                        <i class="fas fa-file-upload fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No Documents Uploaded Yet</h6>
+                        <p class="text-muted mb-0">
+                            This hospital hasn't uploaded any documents through their dashboard yet.
+                            <br>
+                            Documents will appear here once they upload them from their Setup section.
+                        </p>
                     </div>
                 </div>
                 <% } %>
